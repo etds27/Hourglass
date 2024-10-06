@@ -17,24 +17,20 @@ RingLight::RingLight(uint8_t ledCount, uint8_t diPin, neoPixelType type) {
 
 
 void RingLight::setLightMode(DeviceState state) {
-  Serial.println("Setting Light Mode");
+  logger.debug("Setting Light Mode");
   m_startTime = millis();
   m_ring.clear();
+  setBrightness(DEFAULT_BRIGHTNESS);
   m_state = state;
   update();
 };
 
 void RingLight::setBrightness(uint8_t brightness) {
-  logger.info("Setting brightness to: " + String(brightness));
+  logger.debug("Setting brightness to: " + String(brightness));
   m_ring.setBrightness(brightness);
 }
 
 void RingLight::updateLightModePairing() {
-  m_ring.setBrightness(128);
-  unsigned long currentSecond = (int)(millis() - m_startTime) / 100;
-  Serial.println(currentSecond);
-  m_ring.clear();
-
   /*
   // 2 equally spaced lights
   for (int i = 0; i < m_ledCount; i++) {
@@ -46,16 +42,7 @@ void RingLight::updateLightModePairing() {
   m_ring.show();
   */
 
-  // 4 equally spaced lights
-  for (int i = 0; i < m_ledCount; i++) {
-    if (i == currentSecond % m_ledCount) {
-      m_ring.setPixelColor(i, m_ring.Color(0, 0, 255));
-      m_ring.setPixelColor(((int)i + m_ledCount / 4) % m_ledCount, m_ring.Color(0, 255, 255));
-      m_ring.setPixelColor(((int)i + m_ledCount / 2) % m_ledCount, m_ring.Color(0, 255, 0));
-      m_ring.setPixelColor(((int)i + 3 * m_ledCount / 4) % m_ledCount, m_ring.Color(255, 255, 0));
-    }
-  }
-  m_ring.show();
+
 
   /* Alternate back and forth
   for (int i = 0; i < m_ledCount; i++) {
@@ -98,6 +85,60 @@ void RingLight::updateLightModeTimer(double pct) {
   }
 }
 
+// Light mode for skipped should be a pulsing gray that changes based on brightness values
+void RingLight::updateLightModeSkipped() {
+  int deltaTime = (int)(millis() - m_startTime);
+
+  // Percentage through pulse sequence
+  double pct = (deltaTime % SKIPPED_PULSE_DURATION) / (double)SKIPPED_PULSE_DURATION;
+  pct = abs(pct - 0.5);
+
+  uint8_t brightness = pct * (SKIPPED_MAX_BRIGHTNESS - SKIPPED_MIN_BRIGHTNESS) + SKIPPED_MIN_BRIGHTNESS;
+  logger.info("deltaTime:  " + String(deltaTime));
+  logger.info("pct:        " + String(pct));
+  logger.info("Brightness: " + String(brightness));
+  setBrightness(brightness);
+
+  for (int i = 0; i < m_ledCount; i++) {
+    m_ring.setPixelColor(i, SKIPPED_COLOR);
+  }
+}
+
+void RingLight::updateLightModeTurnSequence() {
+  logger.debug("Total Players:  " + String(m_turnSequenceData.totalPlayers));
+  logger.debug("My Player:      " + String(m_turnSequenceData.myPlayerIndex));
+  logger.debug("Current Player: " + String(m_turnSequenceData.currentPlayerIndex));
+  logger.debug("");
+  for (int i = 0; i < m_ledCount; i++) {
+    if (i < m_turnSequenceData.totalPlayers) {
+      if (m_turnSequenceData.currentPlayerIndex == i) {
+        m_ring.setPixelColor(i, CURRENT_PLAYER_COLOR);
+      } else if (m_turnSequenceData.myPlayerIndex == i) {
+        m_ring.setPixelColor(i, MY_PLAYER_COLOR);
+      } else {
+        m_ring.setPixelColor(i, OTHER_PLAYER_COLORS);
+      }
+    } else {
+      m_ring.setPixelColor(i, 0, 0, 0);
+    }
+  }
+}
+
+void RingLight::updateLightModeAwaitGameStart() {
+  unsigned long currentSecond = (int)(millis() - m_startTime) / AWAIT_GAME_START_SPEED;
+
+  // 4 equally spaced lights
+  for (int i = 0; i < m_ledCount; i++) {
+    if (i == currentSecond % m_ledCount) {
+      m_ring.setPixelColor(i, AWAIT_GAME_COLOR_1);
+      m_ring.setPixelColor(((int)i + m_ledCount / 4) % m_ledCount, AWAIT_GAME_COLOR_2);
+      m_ring.setPixelColor(((int)i + m_ledCount / 2) % m_ledCount, AWAIT_GAME_COLOR_3);
+      m_ring.setPixelColor(((int)i + 3 * m_ledCount / 4) % m_ledCount, AWAIT_GAME_COLOR_4);
+    }
+  }
+  m_ring.show();
+}
+
 
 void RingLight::update() {
   // logger.info("Updating Ring Light Color");
@@ -105,12 +146,23 @@ void RingLight::update() {
   switch (m_state) {
     case DeviceState::Off:
       break;
-    case DeviceState::Pairing:
+    case DeviceState::AwaitingConnecion:
       updateLightModePairing();
       break;
-    case DeviceState::Timer:
-      double pct = ((double)millis() - m_startTime) / m_timerData.totalTime;
-      updateLightModeTimer(pct);
+    case DeviceState::ActiveTurn:
+      {
+        double pct = ((double)millis() - m_startTime) / m_timerData.totalTime;
+        updateLightModeTimer(pct);
+        break;
+      }
+    case DeviceState::Skipped:
+      updateLightModeSkipped();
+      break;
+    case DeviceState::AwaitingTurn:
+      updateLightModeTurnSequence();
+      break;
+    case DeviceState::AwaitingGameStart:
+      updateLightModeAwaitGameStart();
       break;
   };
   m_ring.show();
@@ -118,4 +170,8 @@ void RingLight::update() {
 
 void RingLight::updateTimerData(struct TimerData data) {
   m_timerData = data;
+}
+
+void RingLight::updateTurnSequenceData(struct TurnSequenceData data) {
+  m_turnSequenceData = data;
 }
