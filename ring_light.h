@@ -34,6 +34,7 @@ private:
   void updateLightModeSkipped();
   void updateLightModeTurnSequence();
   void updateLightModeAwaitGameStart();
+  void updateLightModeAwaitConnection();
 
 public:
   RingLight(uint8_t ledCount = 16, uint8_t diPin = 0, neoPixelType type = NEO_GRB + NEO_KHZ800);

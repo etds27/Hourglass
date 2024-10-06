@@ -10,7 +10,7 @@
 
 // SevenSegmentDisplay* sevenSegment;
 DeviceManager* deviceManager;
-
+RingLight* m_ring;
 
 void setup() {
   loggerLevel = LoggerLevel::INFO;
@@ -30,8 +30,8 @@ void setup() {
   // sevenSegment->setAll();
   // sevenSegment->set(6);
 
-  //m_ring = new RingLight(RING_LED_COUNT, RING_DI_PIN, NEO_GRB + NEO_KHZ800);
-  //m_ring->setLightMode(DeviceState::AwaitingTurn);
+  m_ring = new RingLight(RING_LED_COUNT, RING_DI_PIN, NEO_GRB + NEO_KHZ800);
+  m_ring->setLightMode(DeviceState::AwaitingConnecion);
   //delay(2000);
   // sevenSegment->set(0);
 
@@ -41,6 +41,6 @@ void setup() {
 void loop() {
   //struct TurnSequenceData data = { .totalPlayers = 10, .myPlayerIndex = 7, .currentPlayerIndex = (millis() / 1000) % 10 };
   //m_ring->updateTurnSequenceData(data);
-  //m_ring->update();
-  deviceManager->update();
+  m_ring->update();
+  // deviceManager->update();
 }

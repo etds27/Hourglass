@@ -1,3 +1,4 @@
+#include "BLECharacteristic.h"
 #pragma once
 #include <ArduinoBLE.h>
 

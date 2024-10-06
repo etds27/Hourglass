@@ -30,8 +30,7 @@ void RingLight::setBrightness(uint8_t brightness) {
   m_ring.setBrightness(brightness);
 }
 
-void RingLight::updateLightModePairing() {
-  /*
+/*
   // 2 equally spaced lights
   for (int i = 0; i < m_ledCount; i++) {
     if (i == currentSecond % m_ledCount) {
@@ -44,7 +43,7 @@ void RingLight::updateLightModePairing() {
 
 
 
-  /* Alternate back and forth
+/* Alternate back and forth
   for (int i = 0; i < m_ledCount; i++) {
     if ((currentSecond % 2 == 0 && i % 2 == 0) || (currentSecond % 2 == 1 && i % 2 == 1)) {
       m_ring.setPixelColor(i, m_ring.Color(0, 0, 255));
@@ -54,7 +53,6 @@ void RingLight::updateLightModePairing() {
   }
   m_ring.show();
   */
-}
 
 void RingLight::updateLightModeTimer(double pct) {
   // Restrict pct to be between 0..1
@@ -93,7 +91,7 @@ void RingLight::updateLightModeSkipped() {
   double pct = (deltaTime % SKIPPED_PULSE_DURATION) / (double)SKIPPED_PULSE_DURATION;
   pct = abs(pct - 0.5);
 
-  uint8_t brightness = pct * (SKIPPED_MAX_BRIGHTNESS - SKIPPED_MIN_BRIGHTNESS) + SKIPPED_MIN_BRIGHTNESS;
+  uint8_t brightness = 2 * pct * (SKIPPED_MAX_BRIGHTNESS - SKIPPED_MIN_BRIGHTNESS) + SKIPPED_MIN_BRIGHTNESS;
   logger.info("deltaTime:  " + String(deltaTime));
   logger.info("pct:        " + String(pct));
   logger.info("Brightness: " + String(brightness));
@@ -139,39 +137,57 @@ void RingLight::updateLightModeAwaitGameStart() {
   m_ring.show();
 }
 
+void RingLight::updateLightModeAwaitConnection() {
+  unsigned long currentSecond = (int)(millis() - m_startTime) / AWAIT_CONNECTION_SPEED;
+
+  int timeSlice = currentSecond % (m_ledCount * 2);
+  int waxing = timeSlice / m_ledCount == 0;
+  for (int i = 0; i < m_ledCount * 2; i++) {
+    if (waxing) {
+      if (i <= timeSlice % m_ledCount) {
+        m_ring.setPixelColor(i, AWAIT_CONNECTION_COLOR);
+      }
+    } else {
+      if (i > timeSlice % m_ledCount) {
+        m_ring.setPixelColor(i, AWAIT_CONNECTION_COLOR);
+      }
+    }
+  }
+}
+
 
 void RingLight::update() {
-  // logger.info("Updating Ring Light Color");
-  m_ring.clear();
-  switch (m_state) {
-    case DeviceState::Off:
-      break;
-    case DeviceState::AwaitingConnecion:
-      updateLightModePairing();
-      break;
-    case DeviceState::ActiveTurn:
-      {
-        double pct = ((double)millis() - m_startTime) / m_timerData.totalTime;
-        updateLightModeTimer(pct);
+    // logger.info("Updating Ring Light Color");
+    m_ring.clear();
+    switch (m_state) {
+      case DeviceState::Off:
         break;
-      }
-    case DeviceState::Skipped:
-      updateLightModeSkipped();
-      break;
-    case DeviceState::AwaitingTurn:
-      updateLightModeTurnSequence();
-      break;
-    case DeviceState::AwaitingGameStart:
-      updateLightModeAwaitGameStart();
-      break;
-  };
-  m_ring.show();
+      case DeviceState::AwaitingConnecion:
+        updateLightModeAwaitConnection();
+        break;
+      case DeviceState::ActiveTurn:
+        {
+          double pct = ((double)millis() - m_startTime) / m_timerData.totalTime;
+          updateLightModeTimer(pct);
+          break;
+        }
+      case DeviceState::Skipped:
+        updateLightModeSkipped();
+        break;
+      case DeviceState::AwaitingTurn:
+        updateLightModeTurnSequence();
+        break;
+      case DeviceState::AwaitingGameStart:
+        updateLightModeAwaitGameStart();
+        break;
+    };
+    m_ring.show();
 }
 
 void RingLight::updateTimerData(struct TimerData data) {
-  m_timerData = data;
+    m_timerData = data;
 }
 
 void RingLight::updateTurnSequenceData(struct TurnSequenceData data) {
-  m_turnSequenceData = data;
+    m_turnSequenceData = data;
 }
