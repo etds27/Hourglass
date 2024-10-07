@@ -13,7 +13,7 @@ public:
   char* getDeviceName();
 
   // Reads the device name from the EEPROM where it is stored.
-  char* readDeviceName();
+  char* readDeviceName(char* out);
   void writeDeviceName(char* deviceName, uint8_t length);
 
 
@@ -27,6 +27,7 @@ private:
   bool m_started = false;
   bool m_isGameActive = false;
   unsigned long lastUpdate;
+  unsigned long lastReadOut;
   BLEInterface* m_interface;
   ButtonInputMonitor* m_buttonMonitor;
   char* m_deviceName;

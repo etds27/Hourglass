@@ -7,7 +7,10 @@ BLEInterface::BLEInterface(char* deviceName) {
 };
 
 bool BLEInterface::isConnected() {
-  return BLE.connected();
+  // logger.info("Checking connection");
+  bool connected = BLE.connected();
+  // logger.info("Connection " + String(connected));
+  return connected;
 }
 
 bool BLEInterface::isTurn() {
@@ -31,8 +34,7 @@ int BLEInterface::getCurrentPlayer() {
 }
 
 int BLEInterface::getTotalPlayers() {
-  // return m_numberOfPlayers->value();
-  return 10;
+  return m_numberOfPlayers->value();
 }
 
 bool BLEInterface::getSkipped() {
@@ -106,14 +108,15 @@ void BLEInterface::setService(uint8_t serviceIndex) {
   m_gameActive = new BLEBoolCharacteristic(gameActiveUuid, BLEWrite | BLERead);
   m_service->addCharacteristic(*m_gameActive);
 
-  logger.info("Advertising");
+  logger.info("Advertising with name: ");
+  logger.info(String(m_deviceName));
   BLE.setLocalName(m_deviceName);
   BLE.setAdvertisedService(*m_service);
   BLE.addService(*m_service);
 
   m_currentPlayer->writeValue(2);
   m_timer->writeValue(10000);
-  m_currentPlayer->writeValue(4);
+  m_myPlayerNumber->writeValue(4);
 
 
 
@@ -122,11 +125,16 @@ void BLEInterface::setService(uint8_t serviceIndex) {
 }
 
 void BLEInterface::readData() {
-  logger.info("Num Players:    " + String(getTotalPlayers()) + " " +  String(m_numberOfPlayers->valueLength()));
-  logger.info("Current Player: " + String(getCurrentPlayer()) + " " +  String(m_currentPlayer->valueLength()));
-  logger.info("Timer:          " + String(getTimer()) + " " +  String(m_timer->valueLength()));
-  logger.info("My Turn:        " + String(isTurn()) + " " +  String(m_myTurn->valueLength()));
-  logger.info("My number:      " + String(getMyPlayer()) + " " +  String(m_myPlayerNumber->valueLength()));
-  logger.info("Skipped:        " + String(getSkipped()) + " " +  String(m_skipped->valueLength()));
+  if (!isConnected()) {
+    logger.warning("BLE interface not connected");
+    return;
+  }
+  logger.info(String(m_numberOfPlayers->valueLength()));
+  logger.info("Num Players:    " + String(getTotalPlayers()) + " " + String(m_numberOfPlayers->valueLength()));
+  logger.info("Current Player: " + String(getCurrentPlayer()) + " " + String(m_currentPlayer->valueLength()));
+  logger.info("Timer:          " + String(getTimer()) + " " + String(m_timer->valueLength()));
+  logger.info("My Turn:        " + String(isTurn()) + " " + String(m_myTurn->valueLength()));
+  logger.info("My number:      " + String(getMyPlayer()) + " " + String(m_myPlayerNumber->valueLength()));
+  logger.info("Skipped:        " + String(getSkipped()) + " " + String(m_skipped->valueLength()));
   logger.info("\n");
 }

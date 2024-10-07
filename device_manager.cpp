@@ -5,7 +5,9 @@
 
 DeviceManager::DeviceManager() {
   logger.info("Initializing Device Manager");
-  m_deviceName = getDeviceName();
+  m_deviceName = new char[8];
+  readDeviceName(m_deviceName);
+  logger.info("Device name: " + String(m_deviceName));
   m_interface = new BLEInterface(m_deviceName);
   m_buttonMonitor = new ButtonInputMonitor(BUTTON_INPUT_PIN);
   m_ring = new RingLight(RING_LED_COUNT, RING_DI_PIN, NEO_GRB + NEO_KHZ800);
@@ -18,24 +20,23 @@ void DeviceManager::start() {
   m_interface->setService(0);
   setWaitingForConnection();
   lastUpdate = millis();
+  lastReadOut = millis();
 }
 
 char* DeviceManager::getDeviceName() {
   return m_deviceName;
 }
 
-char* DeviceManager::readDeviceName() {
+char* DeviceManager::readDeviceName(char* out) {
   int i;
   // Read the arduinos ID
   char arduinoID[8];
-  unsigned char value;
   for (i = 0; i < 8; i++) {
-    value = EEPROM.read(i);
-    arduinoID[i] = value;
+    arduinoID[i] = EEPROM.read(i);
   }
   arduinoID[i] = '\0';
-  logger.info("Device name: " + String(arduinoID));
-  return arduinoID;
+  strcpy(out, arduinoID);
+  return out;
 }
 
 void DeviceManager::writeDeviceName(char* deviceName, uint8_t length) {
@@ -133,10 +134,11 @@ void DeviceManager::updateRingMode() {
 }
 
 void DeviceManager::update() {
-  // Get all information about device inputs and device interface
+
   unsigned long currentTime = millis();
   unsigned long deltaTime = currentTime - lastUpdate;
   lastUpdate = currentTime;
+  ButtonInputType buttonAction = m_buttonMonitor->getAction();
 
   if (m_started) {
     logger.error("Attempting to update the device manager before running `start()`");
@@ -157,7 +159,7 @@ void DeviceManager::update() {
     return;
   }
 
-  ButtonInputType buttonAction = m_buttonMonitor->getAction();
+  // Get all information about device inputs and device interface
   bool interfaceTurn = m_interface->isTurn();
   int currentPlayer = m_interface->getCurrentPlayer();
   bool isSkipped = m_interface->getSkipped();
@@ -165,8 +167,9 @@ void DeviceManager::update() {
   int totalPlayers = m_interface->getTotalPlayers();
 
   // Log data from the interface
-  if (millis() % 1000 == 0 && m_interface->isConnected()) {
+  if (currentTime - lastReadOut > 1000) {
     m_interface->readData();
+    lastReadOut = currentTime;
   }
 
   // Game has started and device state needs to be updated
