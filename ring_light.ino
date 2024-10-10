@@ -90,25 +90,33 @@ void loop() {
 
 
 // SevenSegmentDisplay* sevenSegment;
-DeviceManager* deviceManager;
+// DeviceManager* deviceManager;
 // RingLight* m_ring;
-// FastLEDLight* fastLEDLight;
+FastLEDLight* fastLEDLight;
 
 
 void setup() {
-  loggerLevel = LoggerLevel::ERROR;
+  loggerLevel = LoggerLevel::INFO;
   Serial.begin(9600);
   while (!Serial);  
   logger.info("Start of program");
   // Start the BLE peripheral
   
-  deviceManager = new DeviceManager();
-  deviceManager->start();
+  // deviceManager = new DeviceManager();
+  // deviceManager->start();
 
 
 
-  // fastLEDLight = new FastLEDLight(16, 3);
-  // deviceManager->writeDeviceName("FISCHER1", 8);
+  fastLEDLight = new FastLEDLight(16, 3);
+   struct GameStartData data = {.totalPlayers = 4};
+   fastLEDLight->updateAwaitingGameStartData(data);
+   fastLEDLight->setLightMode(DeviceState::AwaitingGameStart);
+
+  //struct TurnSequenceData data = {.totalPlayers = 8, .myPlayerIndex = 1, .currentPlayerIndex = 6};
+  //fastLEDLight->updateTurnSequenceData(data);
+  //fastLEDLight->setLightMode(DeviceState::AwaitingTurn);
+
+  //deviceManager->writeDeviceName("FISCHER1", 8);
   /*
   // 
   logger.info("Finished device setup");
@@ -120,20 +128,25 @@ void setup() {
 
   // m_ring = new RingLight(RING_LED_COUNT, RING_DI_PIN, NEO_GRB + NEO_KHZ800);
   // m_ring->setLightMode(DeviceState::AwaitingConnecion);
-  fastLEDLight->setLightMode(DeviceState::AwaitingConnecion);
   // delay(2000);
   // sevenSegment->set(0);
   */
 
 }
 
+unsigned long start = millis();
+
 void loop() {
+
+  int diff = (millis() - start) / 5000;
+  struct GameStartData data = {.totalPlayers = diff + 1};
+  fastLEDLight->updateAwaitingGameStartData(data);
   // logger.info("Updating " + String(freeMemory()));
   //struct TurnSequenceData data = { .totalPlayers = 10, .myPlayerIndex = 7, .currentPlayerIndex = (millis() / 1000) % 10 };
   //m_ring->updateTurnSequenceData(data);
   // m_ring->update();
-  deviceManager->update();
-  //fastLEDLight->update();
+  // deviceManager->update();
+  fastLEDLight->update();
   // delay(50);
   // logger.info("PRINT");
 }

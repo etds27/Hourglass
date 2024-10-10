@@ -3,6 +3,24 @@
 
 const int RING_REFRESH_RATE = 50;
 
+const uint32_t AWAIT_GAME_COLORS[16] = {
+  AWAIT_GAME_COLOR1,
+  AWAIT_GAME_COLOR2,
+  AWAIT_GAME_COLOR3,
+  AWAIT_GAME_COLOR4,
+  AWAIT_GAME_COLOR5,
+  AWAIT_GAME_COLOR6,
+  AWAIT_GAME_COLOR7,
+  AWAIT_GAME_COLOR8,
+  AWAIT_GAME_COLOR9,
+  AWAIT_GAME_COLOR10,
+  AWAIT_GAME_COLOR11,
+  AWAIT_GAME_COLOR12,
+  AWAIT_GAME_COLOR13,
+  AWAIT_GAME_COLOR14,
+  AWAIT_GAME_COLOR15,
+  AWAIT_GAME_COLOR16
+};
 
 LightInterface::LightInterface(const uint8_t ledCount, const uint8_t diPin) {
   logger.info("Initializing Light Interface");
@@ -125,28 +143,23 @@ void LightInterface::updateLightModeTurnSequence() {
     } else {
       colorBuffer[i] = BLACK;
     }
-    displayBuffer(colorBuffer);
+
+    uint32_t modifiedColorBuffer[16];
+
+    if ((m_turnSequenceData.totalPlayers == 2 || m_turnSequenceData.totalPlayers == 4 || m_turnSequenceData.totalPlayers == 8) && EXPAND_TURN_SEQUENCE_BUFFER) {
+      expandBuffer(colorBuffer, modifiedColorBuffer, m_turnSequenceData.totalPlayers);
+      displayBuffer(modifiedColorBuffer);
+    } else {
+      displayBuffer(colorBuffer);
+    }
   }
 }
 
 void LightInterface::updateLightModeAwaitGameStart() {
-  uint32_t colors[] = { AWAIT_GAME_COLOR_1, AWAIT_GAME_COLOR_2, AWAIT_GAME_COLOR_3, RED, PURPLE, ORANGE, WHITE, BLUE };
   uint32_t colorBuffer[16];
   int segments = max(m_gameStartData.totalPlayers, 1);
-  int lengthSegment = m_ledCount / segments;
-  int remainder = m_ledCount % segments;
 
-  int currentIndex = 0;
-  for (int currentSegment = 0; currentSegment < segments; currentSegment++) {
-    for (int j = 0; j < lengthSegment; j++) {
-      colorBuffer[currentIndex] = colors[currentSegment];
-      currentIndex += 1;
-    }
-    if (currentSegment < remainder) {
-      colorBuffer[currentIndex] = colors[currentSegment];
-      currentIndex += 1;
-    }
-  }
+  expandBuffer(AWAIT_GAME_COLORS, colorBuffer, segments);
 
   unsigned long currentSecond = (int)(millis() - m_startTime) / AWAIT_GAME_START_SPEED;
   uint8_t offset = currentSecond % m_ledCount;
@@ -209,6 +222,25 @@ void LightInterface::update() {
   m_lastUpdate = millis();
 }
 
+void LightInterface::expandBuffer(const uint32_t* smallBuffer, uint32_t* fullBuffer, uint8_t size, bool fill) {
+  int lengthSegment = m_ledCount / size;
+  int remainder = m_ledCount % size;
+
+  int currentIndex = 0;
+  for (int currentSegment = 0; currentSegment < size; currentSegment++) {
+    fullBuffer[currentIndex] = smallBuffer[currentSegment];
+    for (int j = 0; j < lengthSegment; j++) {
+      if (fill) {
+        fullBuffer[currentIndex] = smallBuffer[currentSegment];
+      }
+      currentIndex += 1;
+    }
+    if (currentSegment < remainder && fill) {
+      fullBuffer[currentIndex] = smallBuffer[currentSegment];
+      currentIndex += 1;
+    }
+  }
+}
 
 void LightInterface::displayBuffer(uint32_t* buffer, uint8_t offset) {
   for (int i = 0; i < m_ledCount; i++) {

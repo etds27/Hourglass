@@ -39,7 +39,11 @@ protected:
   void updateLightModeAwaitGameStart();
   void updateLightModeAwaitConnection();
 
+  // Take a buffer of size (2, 4, 8) and populate a full 16 item buffer using the condensed buffer
+  // The fill option will fill in the space between the 
+  void expandBuffer(const uint32_t* smallBuffer, uint32_t* fullBuffer, uint8_t size, bool fill = true);
   void displayBuffer(uint32_t* buffer, uint8_t offset = 0);
+
 
   void setUp();
 
