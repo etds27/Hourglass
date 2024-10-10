@@ -5,6 +5,7 @@ enum LoggerLevel {
   INFO = 1,
   WARNING = 2,
   ERROR = 3,
+  OFF = 4
 };
 
 // General purpose logging class to use within the project

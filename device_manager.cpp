@@ -2,15 +2,28 @@
 #include "device_manager.h"
 #include "logger.h"
 
+#if LED_ADAFRUIT
+#include "ring_light.h"
+#else
+#include "fast_led_light.h"
+#endif
 
 DeviceManager::DeviceManager() {
   logger.info("Initializing Device Manager");
   m_deviceName = new char[8];
   readDeviceName(m_deviceName);
   logger.info("Device name: " + String(m_deviceName));
-  m_interface = new BLEInterface(m_deviceName);
+
+
+#if LED_ADAFRUIT
+  logger.info("Loading Adafruit RingLight");
+  m_ring = new RingLight(RING_LED_COUNT, RING_DI_PIN);
+#else
+  logger.info("Loading FastLED RingLight");
+  m_ring = new FastLEDLight(RING_LED_COUNT, RING_DI_PIN);
+#endif
   m_buttonMonitor = new ButtonInputMonitor(BUTTON_INPUT_PIN);
-  m_ring = new RingLight(RING_LED_COUNT, RING_DI_PIN, NEO_GRB + NEO_KHZ800);
+  m_interface = new BLEInterface(m_deviceName);
 }
 
 void DeviceManager::start() {
@@ -119,6 +132,17 @@ void DeviceManager::setWaitingForConnection() {
   updateRingMode();
 }
 
+void DeviceManager::updateRing() {
+  m_interface->poll();
+  m_ring->update();
+}
+
+void DeviceManager::updateAwaitingGameStartData() {
+  struct GameStartData data = {
+    .totalPlayers = m_interface->getTotalPlayers()
+  };
+  m_ring->updateAwaitingGameStartData(data);
+}
 
 void DeviceManager::updateTurnSequence() {
   int totalPlayers = m_interface->getTotalPlayers();
@@ -134,9 +158,11 @@ void DeviceManager::updateRingMode() {
 }
 
 void DeviceManager::update() {
-
+  m_interface->poll();
   unsigned long currentTime = millis();
   unsigned long deltaTime = currentTime - lastUpdate;
+  // logger.info("Running " + String(deltaTime));
+
   lastUpdate = currentTime;
   ButtonInputType buttonAction = m_buttonMonitor->getAction();
 
@@ -148,14 +174,21 @@ void DeviceManager::update() {
 
   if (!m_interface->isConnected()) {
     setWaitingForConnection();
-    m_ring->update();
+    updateRing();
     return;
+  }
+
+  // Log data from the interface
+  if (currentTime - lastReadOut > 1000) {
+    m_interface->readData();
+    lastReadOut = currentTime;
   }
 
   bool isGameActive = m_interface->isGameActive();
   if (!isGameActive) {
+    updateAwaitingGameStartData();
     setAwaitGameStart();
-    m_ring->update();
+    updateRing();
     return;
   }
 
@@ -166,14 +199,11 @@ void DeviceManager::update() {
   bool isTurn = m_deviceState == DeviceState::ActiveTurn;
   int totalPlayers = m_interface->getTotalPlayers();
 
-  // Log data from the interface
-  if (currentTime - lastReadOut > 1000) {
-    m_interface->readData();
-    lastReadOut = currentTime;
-  }
+
 
   // Game has started and device state needs to be updated
   if (m_deviceState == DeviceState::AwaitingGameStart) {
+
     // This means we are the first player to go in the game. Immediately start the turn
     if (interfaceTurn) {
       startTurn();
@@ -218,5 +248,5 @@ void DeviceManager::update() {
     updateTurnSequence();
   }
 
-  m_ring->update();
+  updateRing();
 }

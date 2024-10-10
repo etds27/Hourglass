@@ -1,6 +1,8 @@
 #pragma once
 #include "colors.h"
 
+#define LED_ADAFRUIT 0
+
 #define RING_LED_COUNT 16
 #define RING_DI_PIN 3
 #define BUTTON_INPUT_PIN 4

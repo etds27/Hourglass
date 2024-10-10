@@ -1,5 +1,6 @@
 #pragma once
-#include "api/Common.h"
+#include <stdint.h>
+#include "device_state.h"
 
 #define LONG_PRESS_DURATION 500
 #define MULTI_CLICK_TIMEOUT 300

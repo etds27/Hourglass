@@ -1,4 +1,3 @@
-#include "BLECharacteristic.h"
 #pragma once
 #include <ArduinoBLE.h>
 
@@ -10,6 +9,7 @@ class BLEInterface {
     bool isConnected();
     bool isTurn();
     void endTurn();
+
     int getTimer();
     int getCurrentPlayer();
     int getTotalPlayers();
@@ -27,10 +27,24 @@ class BLEInterface {
     // Check if a game is active;
     bool isGameActive();
 
+    void poll();
+
   private:
+    unsigned int lastPoll;
     static String serviceIds[];
     char* m_deviceName;
+
+    int m_lastTimer;
+    int m_lastCurrentPlayer;
+    int m_lastTotalPlayers;
+    int m_lastMyPlayer;
+    bool m_lastMyTurn;
+    bool m_lastSkipped;
+    bool m_lastGameActive;
+
+    BLEDevice m_central;
     BLEService* m_service;
+    // BLEIntCharacteristic* m_dummy;
     BLEIntCharacteristic* m_numberOfPlayers;
     BLEIntCharacteristic* m_currentPlayer;
     BLEIntCharacteristic* m_timer;

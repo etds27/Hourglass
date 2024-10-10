@@ -1,7 +1,10 @@
 #pragma once
 #include "input_monitor.h"
 #include "ble_interface.h"
-#include "ring_light.h"
+#include "light_interface.h"
+
+
+
 #include "device_state.h"
 #include "constants.h"
 
@@ -31,10 +34,12 @@ private:
   BLEInterface* m_interface;
   ButtonInputMonitor* m_buttonMonitor;
   char* m_deviceName;
-  RingLight* m_ring;
+  LightInterface* m_ring;
+  void updateRing();
 
   void setWaitingForConnection();
   void setAwaitGameStart();
+  void updateAwaitingGameStartData();
 
   void setSkipped();
   void unsetSkipped();

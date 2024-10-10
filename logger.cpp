@@ -1,5 +1,4 @@
 #include "Arduino.h"
-#include "api/Common.h"
 #include "logger.h"
 
 Logger logger = Logger();
