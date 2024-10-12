@@ -1,6 +1,7 @@
 import pprint
 import aioconsole
 import asyncio
+import time
 from bleak import BleakScanner, BleakClient
 from bleak.backends.device import BLEDevice
 from bleak.uuids import normalize_uuid_16
@@ -13,6 +14,7 @@ class CharacteristicUUID(str, Enum):
     num_players = "d776071e-9584-42db-b095-798a90049ee0"
     current_player = "6efe0bd2-ad04-49bb-8436-b7e1d1902fea"
     timer = "4661b4c1-093d-4db7-bb80-5b5fe3eae519"
+    elapsed_time = "4e1c05f6-c128-4bca-96c3-29c014e00eb6"
     my_player = "f1223124-c708-4b98-a486-48515fa59d3d"
     my_turn = "c27802ab-425e-4b15-8296-4a937da7125f"
     skipped = "c1ed8823-7eb1-44b2-ac01-351e8c6a693c"
@@ -29,8 +31,9 @@ async def main():
         for client in clients:
             await client.write_gatt_char(uuid, value)
             
-    num_players = 8
+    num_players = 4
     current_player = 0
+    turn_length = 10000
 
     # game_devices = [device for device in await BleakScanner.discover(service_uuids = [SERVICE_UUID])]
     # print(game_devices)
@@ -51,11 +54,13 @@ async def main():
             print(f"Player turn  : {0}")
             await client.write_gatt_char(CharacteristicUUID.my_turn.value, bool_to_bytes(False))
             print(f"Number player: {num_players}")
-            await client.write_gatt_char(CharacteristicUUID.num_players.value, int_to_bytes(8))
+            for i in range(1, num_players + 1):
+                await client.write_gatt_char(CharacteristicUUID.num_players.value, int_to_bytes(i))
+                await asyncio.sleep(1)
             print(f"current Player: {0}")
             await client.write_gatt_char(CharacteristicUUID.current_player.value, int_to_bytes(0))
             print(f"Timer: {30000}")
-            await client.write_gatt_char(CharacteristicUUID.timer.value, int_to_bytes(30000))
+            await client.write_gatt_char(CharacteristicUUID.timer.value, int_to_bytes(turn_length))
             print(f"Skipped: {0}")
             await client.write_gatt_char(CharacteristicUUID.skipped.value, bool_to_bytes(False))
             print(f"Game active: {0}")
@@ -69,7 +74,6 @@ async def main():
         await write_to_all_clients(CharacteristicUUID.game_active.value, bool_to_bytes(True))
 
         print("Started game")
-        await asyncio.sleep(1)
 
         # For 5 turns
         for j in range(5):
@@ -80,15 +84,20 @@ async def main():
                 print(f"Client: {i}")
                 current_player = i
                 await write_to_all_clients(CharacteristicUUID.current_player.value, int_to_bytes(current_player))
+                await client.write_gatt_char(CharacteristicUUID.elapsed_time.value, int_to_bytes(0))
                 await client.write_gatt_char(CharacteristicUUID.my_turn.value, bool_to_bytes(True))
 
+                start_time = time.time()
                 while True:
                     value = int.from_bytes(await client.read_gatt_char(CharacteristicUUID.my_turn.value), byteorder="little")
                     if not value:
                         break
+                    delta = round((time.time() - start_time) * 1000)
+                    await client.write_gatt_char(CharacteristicUUID.elapsed_time.value, int_to_bytes(delta))
 
-
-
+                    if delta > turn_length:
+                        await client.write_gatt_char(CharacteristicUUID.my_turn.value, bool_to_bytes(False))
+                        break
 
             # Simulated turns
             for i in range(len(clients) - 1, num_players - len(clients)):

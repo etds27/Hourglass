@@ -10,7 +10,7 @@ struct GameStartData {
 
 struct TimerData {
   int totalTime;
-  int remainingTme;
+  int elapsedTime;
 };
 
 struct TurnSequenceData {
@@ -33,7 +33,7 @@ protected:
   unsigned long m_lastUpdate;
 
   void updateLightModePairing();
-  void updateLightModeTimer(double pct);
+  void updateLightModeTimer();
   void updateLightModeSkipped();
   void updateLightModeTurnSequence();
   void updateLightModeAwaitGameStart();

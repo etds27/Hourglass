@@ -94,16 +94,17 @@ void DeviceManager::setSkipped() {
 void DeviceManager::unsetSkipped() {
   m_interface->unsetSkipped();
   if (isActiveTurn()) {
-    m_deviceState = DeviceState::ActiveTurn;
+    startTurn();
   } else {
-    m_deviceState = DeviceState::AwaitingTurn;
+    setTurnSequenceMode();
   }
   updateRingMode();
 }
 
 void DeviceManager::updateTimer() {
   int timer = m_interface->getTimer();
-  struct TimerData data = { .totalTime = timer, .remainingTme = 1 };
+  int elapsedTime = m_interface->getElapsedTime();
+  struct TimerData data = { .totalTime = timer, .elapsedTime = elapsedTime };
   m_ring->updateTimerData(data);
 }
 
@@ -157,13 +158,25 @@ void DeviceManager::updateRingMode() {
   m_ring->setLightMode(m_deviceState);
 }
 
+
+
 void DeviceManager::update() {
-  m_interface->poll();
   unsigned long currentTime = millis();
   unsigned long deltaTime = currentTime - lastUpdate;
-  // logger.info("Running " + String(deltaTime));
-
   lastUpdate = currentTime;
+
+  // Log data from the interface
+  if (currentTime - lastReadOut > 1000) {
+    m_interface->readData();
+    lastReadOut = currentTime;
+  }
+  // logger.info("Running " + String(deltaTime));
+  BLE.poll();
+  processGameState();
+  updateRing();
+}
+
+void DeviceManager::processGameState() {
   ButtonInputType buttonAction = m_buttonMonitor->getAction();
 
   if (m_started) {
@@ -174,21 +187,13 @@ void DeviceManager::update() {
 
   if (!m_interface->isConnected()) {
     setWaitingForConnection();
-    updateRing();
     return;
-  }
-
-  // Log data from the interface
-  if (currentTime - lastReadOut > 1000) {
-    m_interface->readData();
-    lastReadOut = currentTime;
   }
 
   bool isGameActive = m_interface->isGameActive();
   if (!isGameActive) {
     updateAwaitingGameStartData();
     setAwaitGameStart();
-    updateRing();
     return;
   }
 
@@ -198,8 +203,6 @@ void DeviceManager::update() {
   bool isSkipped = m_interface->getSkipped();
   bool isTurn = m_deviceState == DeviceState::ActiveTurn;
   int totalPlayers = m_interface->getTotalPlayers();
-
-
 
   // Game has started and device state needs to be updated
   if (m_deviceState == DeviceState::AwaitingGameStart) {
@@ -211,6 +214,7 @@ void DeviceManager::update() {
       // Otherwise go into Awaiting Turn mode
       setTurnSequenceMode();
     }
+    return;
   }
 
   if (buttonAction == ButtonInputType::DoubleButtonPress) {
@@ -225,8 +229,9 @@ void DeviceManager::update() {
     }
   }
 
+  // If we are in a skipped state, immediately leave the program
   if (isSkipped) {
-    setSkipped();
+    return;
   } else if (m_deviceState == DeviceState::Skipped && !isSkipped) {
     unsetSkipped();
   }
@@ -236,17 +241,15 @@ void DeviceManager::update() {
     endTurn();
   }
 
-  if (interfaceTurn != isTurn && !isTurn) {
+  if (isTurn) {
+    updateTimer();
+  } else if (interfaceTurn != isTurn && !isTurn) {
     // If the turn just started
     startTurn();
   } else if (m_interface->isTurn() != isTurn && isTurn) {
     // If the turn just ended
     endTurn();
-  }
-
-  if (!isTurn) {
+  } else {
     updateTurnSequence();
   }
-
-  updateRing();
 }

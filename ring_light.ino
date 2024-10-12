@@ -90,28 +90,30 @@ void loop() {
 
 
 // SevenSegmentDisplay* sevenSegment;
-// DeviceManager* deviceManager;
+ DeviceManager* deviceManager;
 // RingLight* m_ring;
-FastLEDLight* fastLEDLight;
+// FastLEDLight* fastLEDLight;
 
 
 void setup() {
-  loggerLevel = LoggerLevel::INFO;
+  loggerLevel = LoggerLevel::OFF;
   Serial.begin(9600);
-  while (!Serial);  
+  while (!Serial)
+    ;
   logger.info("Start of program");
   // Start the BLE peripheral
+
   
-  // deviceManager = new DeviceManager();
-  // deviceManager->start();
+  deviceManager = new DeviceManager();
+  deviceManager->start();
 
 
-
+  /*
   fastLEDLight = new FastLEDLight(16, 3);
-   struct GameStartData data = {.totalPlayers = 4};
-   fastLEDLight->updateAwaitingGameStartData(data);
-   fastLEDLight->setLightMode(DeviceState::AwaitingGameStart);
-
+  struct GameStartData data = { .totalPlayers = 4 };
+  fastLEDLight->updateAwaitingGameStartData(data);
+  fastLEDLight->setLightMode(DeviceState::AwaitingGameStart);
+  */
   //struct TurnSequenceData data = {.totalPlayers = 8, .myPlayerIndex = 1, .currentPlayerIndex = 6};
   //fastLEDLight->updateTurnSequenceData(data);
   //fastLEDLight->setLightMode(DeviceState::AwaitingTurn);
@@ -131,22 +133,21 @@ void setup() {
   // delay(2000);
   // sevenSegment->set(0);
   */
-
 }
 
 unsigned long start = millis();
 
 void loop() {
 
-  int diff = (millis() - start) / 5000;
-  struct GameStartData data = {.totalPlayers = diff + 1};
-  fastLEDLight->updateAwaitingGameStartData(data);
+  // int diff = (millis() - start) / 5000;
+  // struct GameStartData data = { .totalPlayers = diff + 1 };
+  // fastLEDLight->updateAwaitingGameStartData(data);
   // logger.info("Updating " + String(freeMemory()));
   //struct TurnSequenceData data = { .totalPlayers = 10, .myPlayerIndex = 7, .currentPlayerIndex = (millis() / 1000) % 10 };
+  //  fastLEDLight->update();
   //m_ring->updateTurnSequenceData(data);
   // m_ring->update();
-  // deviceManager->update();
-  fastLEDLight->update();
+  deviceManager->update();
   // delay(50);
   // logger.info("PRINT");
 }

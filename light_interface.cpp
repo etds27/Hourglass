@@ -71,7 +71,8 @@ void LightInterface::setLightMode(DeviceState state) {
   m_ring.show();
   */
 
-void LightInterface::updateLightModeTimer(double pct) {
+void LightInterface::updateLightModeTimer() {
+  double pct = (double)m_timerData.elapsedTime / m_timerData.totalTime;
   // Restrict pct to be between 0..1
   pct = std::max(0.0, std::min(pct, 1.0));
   int filled = (int)(pct * m_ledCount);
@@ -201,11 +202,8 @@ void LightInterface::update() {
       updateLightModeAwaitConnection();
       break;
     case DeviceState::ActiveTurn:
-      {
-        double pct = ((double)millis() - m_startTime) / m_timerData.totalTime;
-        updateLightModeTimer(pct);
-        break;
-      }
+      updateLightModeTimer();
+      break;
     case DeviceState::Skipped:
       updateLightModeSkipped();
       break;

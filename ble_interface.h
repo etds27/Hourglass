@@ -11,6 +11,7 @@ class BLEInterface {
     void endTurn();
 
     int getTimer();
+    int getElapsedTime();
     int getCurrentPlayer();
     int getTotalPlayers();
 
@@ -35,6 +36,7 @@ class BLEInterface {
     char* m_deviceName;
 
     int m_lastTimer;
+    int m_lastElapsedTime;
     int m_lastCurrentPlayer;
     int m_lastTotalPlayers;
     int m_lastMyPlayer;
@@ -48,6 +50,7 @@ class BLEInterface {
     BLEIntCharacteristic* m_numberOfPlayers;
     BLEIntCharacteristic* m_currentPlayer;
     BLEIntCharacteristic* m_timer;
+    BLEIntCharacteristic* m_elapsedTime;
     BLEIntCharacteristic* m_myPlayerNumber;
     BLEBoolCharacteristic* m_myTurn;
     BLEBoolCharacteristic* m_skipped;

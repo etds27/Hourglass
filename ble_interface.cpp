@@ -7,6 +7,7 @@ const char* TOTAL_PLAYERS_UUID = "d776071e-9584-42db-b095-798a90049ee0";
 const char* CURRENT_PLAYER_UUID = "6efe0bd2-ad04-49bb-8436-b7e1d1902fea";
 const char* MY_PLAYER_UUID = "f1223124-c708-4b98-a486-48515fa59d3d";
 const char* MY_TURN_UUID = "c27802ab-425e-4b15-8296-4a937da7125f";
+const char* REMAINING_TIME_UUID = "4e1c05f6-c128-4bca-96c3-29c014e00eb6";
 const char* SKIPPED_UUID = "c1ed8823-7eb1-44b2-ac01-351e8c6a693c";
 const char* TIMER_UUID = "4661b4c1-093d-4db7-bb80-5b5fe3eae519";
 const char* GAME_ACTIVE_UUID = "33280653-4d71-4714-a03c-83111b886aa7";
@@ -38,28 +39,33 @@ void BLEInterface::endTurn() {
 }
 
 int BLEInterface::getTimer() {
-    m_lastTimer = m_timer->value();
-    return m_lastTimer;
+  m_lastTimer = m_timer->value();
+  return m_lastTimer;
+}
+
+int BLEInterface::getElapsedTime() {
+  m_lastElapsedTime = m_elapsedTime->value();
+  return m_lastElapsedTime;
 }
 
 int BLEInterface::getMyPlayer() {
-    m_lastMyPlayer = m_myPlayerNumber->value();
-    return m_lastMyPlayer;
+  m_lastMyPlayer = m_myPlayerNumber->value();
+  return m_lastMyPlayer;
 }
 
 int BLEInterface::getCurrentPlayer() {
-    m_lastCurrentPlayer = m_currentPlayer->value();
-    return m_lastCurrentPlayer;
+  m_lastCurrentPlayer = m_currentPlayer->value();
+  return m_lastCurrentPlayer;
 }
 
 int BLEInterface::getTotalPlayers() {
-    m_lastTotalPlayers = m_numberOfPlayers->value();
-    return m_lastTotalPlayers;
+  m_lastTotalPlayers = m_numberOfPlayers->value();
+  return m_lastTotalPlayers;
 }
 
 bool BLEInterface::getSkipped() {
-    m_lastSkipped = m_skipped->value();
-    return m_lastSkipped;
+  m_lastSkipped = m_skipped->value();
+  return m_lastSkipped;
 }
 
 void BLEInterface::setSkipped() {
@@ -71,7 +77,7 @@ void BLEInterface::unsetSkipped() {
 }
 
 bool BLEInterface::isGameActive() {
-    return m_gameActive->value();
+  return m_gameActive->value();
 }
 
 void BLEInterface::poll() {
@@ -88,10 +94,10 @@ void BLEInterface::setService(uint8_t serviceIndex) {
   m_service = new BLEService(SERVICE_UUID);
 
   // Number of players
-   // m_dummy = new BLEIntCharacteristic(DUMMY_UUID, BLERead | BLEWrite);
-   // BLEDescriptor numPlayersDescriptor = BLEDescriptor("6137", "Number of players attached to the host");
-   // m_numberOfPlayers->addDescriptor(numPlayersDescriptor);
-   // m_service->addCharacteristic(*m_dummy);
+  // m_dummy = new BLEIntCharacteristic(DUMMY_UUID, BLERead | BLEWrite);
+  // BLEDescriptor numPlayersDescriptor = BLEDescriptor("6137", "Number of players attached to the host");
+  // m_numberOfPlayers->addDescriptor(numPlayersDescriptor);
+  // m_service->addCharacteristic(*m_dummy);
 
   // Number of players
   m_numberOfPlayers = new BLEIntCharacteristic(TOTAL_PLAYERS_UUID, BLERead | BLEWrite);
@@ -107,6 +113,10 @@ void BLEInterface::setService(uint8_t serviceIndex) {
   m_timer = new BLEIntCharacteristic(TIMER_UUID, BLEWrite | BLERead);
   m_service->addCharacteristic(*m_timer);
 
+  // Remaining time
+  m_elapsedTime = new BLEIntCharacteristic(REMAINING_TIME_UUID, BLEWrite | BLERead);
+  m_service->addCharacteristic(*m_elapsedTime);
+
   // Device's player number
   m_myPlayerNumber = new BLEIntCharacteristic(MY_PLAYER_UUID, BLEWrite | BLERead);
   m_service->addCharacteristic(*m_myPlayerNumber);
@@ -118,7 +128,7 @@ void BLEInterface::setService(uint8_t serviceIndex) {
   m_service->addCharacteristic(*m_myTurn);
 
   // Device is skipped bool
-  m_skipped = new BLEBoolCharacteristic(SKIPPED_UUID, BLERead | BLEWrite | BLENotify | BLERead);
+  m_skipped = new BLEBoolCharacteristic(SKIPPED_UUID, BLERead | BLEWrite | BLENotify);
   m_service->addCharacteristic(*m_skipped);
   m_skipped->writeValue(false);
 

@@ -35,6 +35,8 @@ private:
   ButtonInputMonitor* m_buttonMonitor;
   char* m_deviceName;
   LightInterface* m_ring;
+
+  void processGameState();
   void updateRing();
 
   void setWaitingForConnection();
