@@ -2,23 +2,20 @@
 #include "input_monitor.h"
 #include "ble_interface.h"
 #include "light_interface.h"
-
-
-
 #include "device_state.h"
 #include "constants.h"
 
-class DeviceManager {
+class DeviceManager
+{
 public:
   DeviceManager();
 
   // Device Name
-  char* getDeviceName();
+  char *getDeviceName();
 
   // Reads the device name from the EEPROM where it is stored.
-  char* readDeviceName(char* out);
-  void writeDeviceName(char* deviceName, uint8_t length);
-
+  char *readDeviceName(char *out);
+  void writeDeviceName(char *deviceName, uint8_t length);
 
   void start();
 
@@ -31,15 +28,16 @@ private:
   bool m_isGameActive = false;
   unsigned long lastUpdate;
   unsigned long lastReadOut;
-  BLEInterface* m_interface;
-  ButtonInputMonitor* m_buttonMonitor;
-  char* m_deviceName;
-  LightInterface* m_ring;
+  BLEInterface *m_interface;
+  ButtonInputMonitor *m_buttonMonitor;
+  char *m_deviceName;
+  LightInterface *m_ring;
 
   void processGameState();
   void updateRing();
 
   void setWaitingForConnection();
+  void setGamePaused();
   void setAwaitGameStart();
   void updateAwaitingGameStartData();
 
@@ -56,5 +54,4 @@ private:
 
   void setTurnSequenceMode();
   void updateTurnSequence();
-
 };

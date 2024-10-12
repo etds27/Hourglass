@@ -1,94 +1,115 @@
 #include "ble_interface.h"
 #include "logger.h"
 
-const char* SERVICE_UUID = "d7560343-51d4-4c24-a0fe-118fd9078144";
-const char* DUMMY_UUID = "22a80d5a-0c4f-4019-8515-1708df13747d";
-const char* TOTAL_PLAYERS_UUID = "d776071e-9584-42db-b095-798a90049ee0";
-const char* CURRENT_PLAYER_UUID = "6efe0bd2-ad04-49bb-8436-b7e1d1902fea";
-const char* MY_PLAYER_UUID = "f1223124-c708-4b98-a486-48515fa59d3d";
-const char* MY_TURN_UUID = "c27802ab-425e-4b15-8296-4a937da7125f";
-const char* REMAINING_TIME_UUID = "4e1c05f6-c128-4bca-96c3-29c014e00eb6";
-const char* SKIPPED_UUID = "c1ed8823-7eb1-44b2-ac01-351e8c6a693c";
-const char* TIMER_UUID = "4661b4c1-093d-4db7-bb80-5b5fe3eae519";
-const char* GAME_ACTIVE_UUID = "33280653-4d71-4714-a03c-83111b886aa7";
+const char *SERVICE_UUID = "d7560343-51d4-4c24-a0fe-118fd9078144";
+const char *DUMMY_UUID = "22a80d5a-0c4f-4019-8515-1708df13747d";
+const char *TOTAL_PLAYERS_UUID = "d776071e-9584-42db-b095-798a90049ee0";
+const char *CURRENT_PLAYER_UUID = "6efe0bd2-ad04-49bb-8436-b7e1d1902fea";
+const char *MY_PLAYER_UUID = "f1223124-c708-4b98-a486-48515fa59d3d";
+const char *MY_TURN_UUID = "c27802ab-425e-4b15-8296-4a937da7125f";
+const char *REMAINING_TIME_UUID = "4e1c05f6-c128-4bca-96c3-29c014e00eb6";
+const char *SKIPPED_UUID = "c1ed8823-7eb1-44b2-ac01-351e8c6a693c";
+const char *TIMER_UUID = "4661b4c1-093d-4db7-bb80-5b5fe3eae519";
+const char *GAME_ACTIVE_UUID = "33280653-4d71-4714-a03c-83111b886aa7";
+const char *GAME_PAUSED_UUID = "643fda83-0c6b-4e8e-9829-cbeb20b70b8d";
 
 const int BLE_POLL_RATE = 50;
 
-BLEInterface::BLEInterface(char* deviceName) {
-  if (!BLE.begin()) {
+BLEInterface::BLEInterface(char *deviceName)
+{
+  if (!BLE.begin())
+  {
     Serial.println("Starting BLE failed!");
     while (1)
-      ;  // Stay here if initialization fails
+      ; // Stay here if initialization fails
   }
   m_deviceName = deviceName;
   lastPoll = millis();
 };
 
-bool BLEInterface::isConnected() {
+bool BLEInterface::isConnected()
+{
   BLE.poll();
   return BLE.connected();
 }
 
-bool BLEInterface::isTurn() {
+bool BLEInterface::isTurn()
+{
   m_lastMyTurn = m_myTurn->value();
   return m_lastMyTurn;
 }
 
-void BLEInterface::endTurn() {
+void BLEInterface::endTurn()
+{
   m_myTurn->writeValue(false);
 }
 
-int BLEInterface::getTimer() {
+int BLEInterface::getTimer()
+{
   m_lastTimer = m_timer->value();
   return m_lastTimer;
 }
 
-int BLEInterface::getElapsedTime() {
+int BLEInterface::getElapsedTime()
+{
   m_lastElapsedTime = m_elapsedTime->value();
   return m_lastElapsedTime;
 }
 
-int BLEInterface::getMyPlayer() {
+int BLEInterface::getMyPlayer()
+{
   m_lastMyPlayer = m_myPlayerNumber->value();
   return m_lastMyPlayer;
 }
 
-int BLEInterface::getCurrentPlayer() {
+int BLEInterface::getCurrentPlayer()
+{
   m_lastCurrentPlayer = m_currentPlayer->value();
   return m_lastCurrentPlayer;
 }
 
-int BLEInterface::getTotalPlayers() {
+int BLEInterface::getTotalPlayers()
+{
   m_lastTotalPlayers = m_numberOfPlayers->value();
   return m_lastTotalPlayers;
 }
 
-bool BLEInterface::getSkipped() {
+bool BLEInterface::getSkipped()
+{
   m_lastSkipped = m_skipped->value();
   return m_lastSkipped;
 }
 
-void BLEInterface::setSkipped() {
+void BLEInterface::setSkipped()
+{
   m_skipped->writeValue(true);
 }
 
-void BLEInterface::unsetSkipped() {
+void BLEInterface::unsetSkipped()
+{
   m_skipped->writeValue(false);
 }
 
-bool BLEInterface::isGameActive() {
+bool BLEInterface::isGameActive()
+{
   return m_gameActive->value();
 }
 
-void BLEInterface::poll() {
-  if (millis() - lastPoll > BLE_POLL_RATE) {
+bool BLEInterface::isGamePaused()
+{
+  return m_gamePaused->value();
+}
+
+void BLEInterface::poll()
+{
+  if (millis() - lastPoll > BLE_POLL_RATE)
+  {
     BLE.poll();
   }
 }
 
-
-
-void BLEInterface::setService(uint8_t serviceIndex) {
+void BLEInterface::setService(uint8_t serviceIndex)
+{
 
   logger.info(String(SERVICE_UUID));
   m_service = new BLEService(SERVICE_UUID);
@@ -136,6 +157,10 @@ void BLEInterface::setService(uint8_t serviceIndex) {
   m_gameActive = new BLEBoolCharacteristic(GAME_ACTIVE_UUID, BLEWrite | BLERead);
   m_service->addCharacteristic(*m_gameActive);
 
+  // Game is currently paused
+  m_gamePaused = new BLEBoolCharacteristic(GAME_PAUSED_UUID, BLEWrite | BLERead);
+  m_service->addCharacteristic(*m_gamePaused);
+
   logger.info("Advertising with name: " + String(m_deviceName));
   BLE.setLocalName(m_deviceName);
   BLE.setAdvertisedService(*m_service);
@@ -149,8 +174,10 @@ void BLEInterface::setService(uint8_t serviceIndex) {
   logger.info("Connected");
 }
 
-void BLEInterface::readData() {
-  if (!isConnected()) {
+void BLEInterface::readData()
+{
+  if (!isConnected())
+  {
     logger.warning("BLE interface not connected");
     return;
   }
@@ -162,5 +189,6 @@ void BLEInterface::readData() {
   logger.info("My number:      " + String(getMyPlayer()) + " " + String(m_myPlayerNumber->valueLength()));
   logger.info("Skipped:        " + String(getSkipped()) + " " + String(m_skipped->valueLength()));
   logger.info("Game Active:    " + String(isGameActive()) + " " + String(m_skipped->valueLength()));
+  logger.info("Game Paused:    " + String(isGamePaused()) + " " + String(m_gamePaused->valueLength()));
   logger.info("\n");
 }

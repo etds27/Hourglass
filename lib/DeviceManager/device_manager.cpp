@@ -160,6 +160,17 @@ void DeviceManager::setWaitingForConnection()
   updateRingMode();
 }
 
+void DeviceManager::setGamePaused()
+{
+  if (m_deviceState == DeviceState::Paused)
+  {
+    return;
+  }
+  logger.info("Setting device state to: Paused");
+  m_deviceState = DeviceState::Paused;
+  updateRingMode();
+}
+
 void DeviceManager::updateRing()
 {
   m_interface->poll();
@@ -194,7 +205,6 @@ void DeviceManager::update()
   unsigned long deltaTime = currentTime - lastUpdate;
   lastUpdate = currentTime;
 
-
   // Log data from the interface
   if (currentTime - lastReadOut > 1000)
   {
@@ -225,11 +235,16 @@ void DeviceManager::processGameState()
     return;
   }
 
-  bool isGameActive = m_interface->isGameActive();
-  if (!isGameActive)
+  if (!(m_interface->isGameActive()))
   {
     updateAwaitingGameStartData();
     setAwaitGameStart();
+    return;
+  }
+
+  if ((m_interface->isGamePaused()))
+  {
+    setGamePaused();
     return;
   }
 
@@ -241,7 +256,7 @@ void DeviceManager::processGameState()
   int totalPlayers = m_interface->getTotalPlayers();
 
   // Game has started and device state needs to be updated
-  if (m_deviceState == DeviceState::AwaitingGameStart)
+  if (m_deviceState == DeviceState::AwaitingGameStart || m_deviceState == DeviceState::Paused)
   {
 
     // This means we are the first player to go in the game. Immediately start the turn
@@ -291,7 +306,7 @@ void DeviceManager::processGameState()
     endTurn();
   }
 
-  if (m_interface->isTurn() == isTurn && isTurn )
+  if (m_interface->isTurn() == isTurn && isTurn)
   {
     // Both the Bluetooth interface and device state believe it is our turn
     updateTimer();
