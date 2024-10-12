@@ -1,10 +1,12 @@
 #pragma once
 
-enum class DeviceState {
+enum class DeviceState
+{
   Off,
   AwaitingConnecion,
   AwaitingGameStart,
   ActiveTurn,
   AwaitingTurn,
-  Skipped
+  Skipped,
+  Paused
 };

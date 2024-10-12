@@ -4,22 +4,26 @@
 #include "colors.h"
 #include "device_state.h"
 
-struct GameStartData {
+struct GameStartData
+{
   int totalPlayers;
 };
 
-struct TimerData {
+struct TimerData
+{
   int totalTime;
   int elapsedTime;
 };
 
-struct TurnSequenceData {
+struct TurnSequenceData
+{
   int totalPlayers;
   int myPlayerIndex;
   int currentPlayerIndex;
 };
 
-class LightInterface {
+class LightInterface
+{
 protected:
   DeviceState m_state = DeviceState::Off;
 
@@ -40,10 +44,16 @@ protected:
   void updateLightModeAwaitConnection();
 
   // Take a buffer of size (2, 4, 8) and populate a full 16 item buffer using the condensed buffer
-  // The fill option will fill in the space between the 
-  void expandBuffer(const uint32_t* smallBuffer, uint32_t* fullBuffer, uint8_t size, bool fill = true);
-  void displayBuffer(uint32_t* buffer, uint8_t offset = 0);
+  // The fill option will fill in the space between the
+  void expandBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size, bool fill = true);
 
+  // Replicate the smaller buffer to fit into the full buffer
+  void extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size);
+
+  // Rotate the full sized color buffer by some offset
+  void offsetBuffer(uint32_t *buffer, uint8_t offset);
+
+  void displayBuffer(uint32_t *buffer);
 
   void setUp();
 
@@ -71,4 +81,3 @@ public:
   virtual void setBrightness(uint8_t brightness) = 0;
   virtual void setPixelColor(uint8_t i, uint32_t color) = 0;
 };
-

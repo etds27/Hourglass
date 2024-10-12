@@ -199,7 +199,8 @@ void LightInterface::updateLightModeAwaitGameStart()
 
   unsigned long currentSecond = (int)(millis() - m_startTime) / AWAIT_GAME_START_SPEED;
   uint8_t offset = currentSecond % m_ledCount;
-  displayBuffer(colorBuffer, offset);
+  offsetBuffer(colorBuffer, offset);
+  displayBuffer(colorBuffer);
 }
 
 void LightInterface::updateLightModeAwaitConnection()
@@ -239,7 +240,59 @@ void LightInterface::updateGamePaused()
   // This will give an inchworm type effect
   uint32_t colorBuffer[16] = {};
 
-  displayBuffer(colorBuffer);
+  // Get the current time segment since the beginning of the color mode change
+  unsigned long adjustedTime = (int)(millis() - m_startTime) / (GAME_PAUSED_SPEED);
+
+  // Length of an individual segment
+  uint8_t segmentLength = m_ledCount / GAME_PAUSED_SEGMENTS;
+
+  // The full cycle will run for 2x the number of LEDs per segment
+  uint8_t cycleLength = 2 * segmentLength;
+
+  // Find current stage
+  uint8_t currentSegment = adjustedTime % cycleLength;
+
+  // Current state of animation
+  bool growing = currentSegment < cycleLength / 2;
+
+  // Current value within the growing or shrinking cycles
+  uint8_t subcycle = currentSegment % (cycleLength / 2);
+
+  /*
+  logger.debug("Adjusted Time: " + String(adjustedTime));
+  logger.debug("Segment Length: " + String(segmentLength));
+  logger.debug("Cycle length: " + String(cycleLength));
+  logger.debug("Current Segment: " + String(currentSegment));
+  logger.debug("Growing: " + String(growing));
+  logger.debug("Subcycle: " + String(subcycle));
+  */
+
+  if (growing)
+  {
+    for (int i = 0; i < subcycle; i++)
+    {
+      colorBuffer[i] = GAME_PAUSED_COLOR;
+    }
+  }
+  else
+  {
+    for (int i = subcycle; i < segmentLength; i++)
+    {
+      colorBuffer[i] = GAME_PAUSED_COLOR;
+    }
+  }
+
+  uint32_t fullColorBuffer[16] = {};
+
+  // Because each segment looks the same, we can just take one segment and duplicate it to fill the LED array
+  extendBuffer(colorBuffer, fullColorBuffer, segmentLength);
+  if (GAME_PAUSED_APPLY_OFFSET)
+  {
+    // Offset is the number of full cycles that have already played
+    uint8_t offset = adjustedTime / cycleLength % m_ledCount;
+    offsetBuffer(fullColorBuffer, offset);
+  }
+  displayBuffer(fullColorBuffer);
 }
 
 void LightInterface::update()
@@ -269,11 +322,35 @@ void LightInterface::update()
   case DeviceState::AwaitingGameStart:
     updateLightModeAwaitGameStart();
     break;
+  case DeviceState::Paused:
+    updateGamePaused();
+    break;
   };
   // noInterrupts();
   show();
   // interrupts();
   m_lastUpdate = millis();
+}
+
+void LightInterface::extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size)
+{
+  if (m_ledCount % size)
+  {
+    logger.error("LightInterface::extendBuffer: Smaller buffer size must divide evenly into LED count");
+    return;
+  }
+
+  uint8_t repeat = m_ledCount / size;
+
+  uint8_t currentIndex = 0;
+  for (int i = 0; i < repeat; i++)
+  {
+    for (int j = 0; j < size; j++)
+    {
+      fullBuffer[currentIndex] = smallBuffer[j];
+      currentIndex += 1;
+    }
+  }
 }
 
 void LightInterface::expandBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size, bool fill)
@@ -301,11 +378,23 @@ void LightInterface::expandBuffer(const uint32_t *smallBuffer, uint32_t *fullBuf
   }
 }
 
-void LightInterface::displayBuffer(uint32_t *buffer, uint8_t offset)
+void LightInterface::offsetBuffer(uint32_t *buffer, uint8_t offset)
+{
+  uint32_t *originalBuffer = new uint32_t[m_ledCount];
+  memcpy(originalBuffer, buffer, sizeof(uint32_t) * m_ledCount);
+  for (int i = 0; i < m_ledCount; i++)
+  {
+    uint8_t newIndex = (i + offset) % m_ledCount;
+    buffer[i] = originalBuffer[newIndex];
+  }
+  delete originalBuffer;
+}
+
+void LightInterface::displayBuffer(uint32_t *buffer)
 {
   for (int i = 0; i < m_ledCount; i++)
   {
-    setPixelColor((i + offset) % m_ledCount, buffer[i]);
+    setPixelColor(i, buffer[i]);
   }
 }
 
