@@ -54,6 +54,9 @@ public:
   // Sets the ring light to the appropriate lighting mode associated with the provided device state
   void setLightMode(DeviceState state);
 
+  // Light ring mode for when the game is paused by the companion app
+  void updateGamePaused();
+
   // Updates the current light display according to the known device state and state properties
   void update();
 
