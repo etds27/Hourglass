@@ -125,6 +125,12 @@ void LightInterface::updateLightModeSkipped() {
 }
 
 void LightInterface::updateLightModeTurnSequence() {
+  // TODO: Add support for displaying skipped players in turn sequence mode
+  //    Skipped players will be shown with their lights being pulsed and slightly off color
+  //    Requires support in interface protocol to provide a skipped mask
+  //    Skipped player lights will be calculated and then dimmed with a dynamic local brightness setting that is calculated based on time
+  //    A local brightness function for color will need to be implemented to acheive localized dimming
+
   logger.debug("Total Players:  " + String(m_turnSequenceData.totalPlayers));
   logger.debug("My Player:      " + String(m_turnSequenceData.myPlayerIndex));
   logger.debug("Current Player: " + String(m_turnSequenceData.currentPlayerIndex));

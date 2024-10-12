@@ -271,6 +271,7 @@ void DeviceManager::processGameState()
         endTurn();
       }
       setSkipped();
+      return;
     }
   }
 
@@ -290,22 +291,26 @@ void DeviceManager::processGameState()
     endTurn();
   }
 
-  if (isTurn)
+  if (m_interface->isTurn() == isTurn && isTurn )
   {
+    // Both the Bluetooth interface and device state believe it is our turn
     updateTimer();
   }
   else if (interfaceTurn != isTurn && !isTurn)
   {
+    // If the Bluetooth interface thinks it is our turn but the device state doesnt
     // If the turn just started
     startTurn();
   }
   else if (m_interface->isTurn() != isTurn && isTurn)
   {
+    // If the device thinks it is our turn but the but bluetooth doesnt
     // If the turn just ended
     endTurn();
   }
   else
   {
+    // It is not our turn and we are not skipped so just update the turn sequence
     updateTurnSequence();
   }
 }

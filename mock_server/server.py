@@ -26,6 +26,13 @@ async def main():
 
     def bool_to_bytes(value: bool, len: int = 1) -> bytes:
         return (value).to_bytes(len, byteorder="little")
+    
+    def int_from_bytes(value: bytearray) -> int:
+        return int.from_bytes(value, byteorder="little")
+
+    def bool_from_bytes(value: bytearray) -> bool:
+        return int.from_bytes(value, byteorder="little") != 0
+
 
     async def write_to_all_clients(uuid: CharacteristicUUID, value: bytearray):
         for client in clients:
@@ -78,8 +85,11 @@ async def main():
         for j in range(5):
             print(f"Turn {j + 1}")
             for i, client in enumerate(clients):
-                if await client.read_gatt_char(CharacteristicUUID.skipped.value):
+                skipped = bool_from_bytes(await client.read_gatt_char(CharacteristicUUID.skipped.value))
+                print(skipped)
+                if skipped:
                     print(f"Skipping: {i}")
+                    continue
                 print(f"Client: {i}")
                 current_player = i
                 await write_to_all_clients(CharacteristicUUID.current_player.value, int_to_bytes(current_player))
@@ -88,7 +98,7 @@ async def main():
 
                 start_time = time.time()
                 while True:
-                    value = int.from_bytes(await client.read_gatt_char(CharacteristicUUID.my_turn.value), byteorder="little")
+                    value = int_from_bytes(await client.read_gatt_char(CharacteristicUUID.my_turn.value))
                     if not value:
                         break
                     delta = round((time.time() - start_time) * 1000)
