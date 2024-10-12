@@ -19,6 +19,7 @@ class CharacteristicUUID(str, Enum):
     my_turn = "c27802ab-425e-4b15-8296-4a937da7125f"
     skipped = "c1ed8823-7eb1-44b2-ac01-351e8c6a693c"
     game_active = "33280653-4d71-4714-a03c-83111b886aa7"
+    game_paused = "643fda83-0c6b-4e8e-9829-cbeb20b70b8d"
 
 async def main():
     def int_to_bytes(value: int, len: int = 4) -> bytes:
@@ -41,6 +42,7 @@ async def main():
     num_players = 4
     current_player = 0
     turn_length = 10000
+    enforce_turn_timer = True
 
     # game_devices = [device for device in await BleakScanner.discover(service_uuids = [SERVICE_UUID])]
     # print(game_devices)
@@ -62,7 +64,7 @@ async def main():
             print(f"Number player: {num_players}")
             for i in range(1, num_players + 1):
                 await client.write_gatt_char(CharacteristicUUID.num_players.value, int_to_bytes(i))
-                await asyncio.sleep(1)
+                await asyncio.sleep(2)
             print(f"current Player: {0}")
             await client.write_gatt_char(CharacteristicUUID.current_player.value, int_to_bytes(0))
             print(f"Timer: {30000}")
@@ -71,6 +73,9 @@ async def main():
             await client.write_gatt_char(CharacteristicUUID.skipped.value, bool_to_bytes(False))
             print(f"Game active: {0}")
             await client.write_gatt_char(CharacteristicUUID.game_active.value, bool_to_bytes(False))
+
+            print(f"Game paused: {1}")
+            await client.write_gatt_char(CharacteristicUUID.game_paused.value, bool_to_bytes(True))
         print("Set up clients")
 
         await asyncio.sleep(5)
@@ -80,6 +85,10 @@ async def main():
         await write_to_all_clients(CharacteristicUUID.game_active.value, bool_to_bytes(True))
 
         print("Started game")
+
+        await asyncio.sleep(5)
+        print("Unpausing")
+        await write_to_all_clients(CharacteristicUUID.game_paused, bool_to_bytes(False))
 
         # For 5 turns
         for j in range(5):
@@ -105,7 +114,7 @@ async def main():
                     print(delta)
                     await client.write_gatt_char(CharacteristicUUID.elapsed_time.value, int_to_bytes(delta))
 
-                    if delta > turn_length:
+                    if delta > turn_length and enforce_turn_timer:
                         await client.write_gatt_char(CharacteristicUUID.my_turn.value, bool_to_bytes(False))
                         break
 
