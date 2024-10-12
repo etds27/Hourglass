@@ -39,9 +39,8 @@ async def main():
     # print(game_devices)
 
 
-    devices = await BleakScanner.discover()
-    pprint.pprint(devices)
-    game_devices = [device for device in devices if device.name and device.name and device.address.startswith("48:27")]
+    game_devices = await BleakScanner.discover(service_uuids=[SERVICE_UUID])
+    pprint.pprint(game_devices)
 
     async with BleakClient(game_devices[0], timeout=60, services=[SERVICE_UUID]) as client:
         clients = [client]
@@ -93,6 +92,7 @@ async def main():
                     if not value:
                         break
                     delta = round((time.time() - start_time) * 1000)
+                    print(delta)
                     await client.write_gatt_char(CharacteristicUUID.elapsed_time.value, int_to_bytes(delta))
 
                     if delta > turn_length:
