@@ -100,26 +100,24 @@ void setup()
 {
   loggerLevel = LoggerLevel::DEBUG;
   Serial.begin(9600);
-  while (!Serial)
-    ;
+  // while (!Serial)
+  //   ;
   delay(2000);
   logger.info("Start of program");
   // Start the BLE peripheral
 
-  
   EEPROM.begin(8);
   deviceManager = new DeviceManager();
   // deviceManager->writeDeviceName("FISCHER2", 8);
   // logger.info(String(deviceManager->getDeviceName()));
   deviceManager->start();
-  
-  
+
   // fastLEDLight = new FastLEDLight(16, 3);
   // fastLEDLight->setLightMode(DeviceState::Paused);
-  //struct GameStartData data = { .totalPlayers = 4 };
-  //fastLEDLight->updateAwaitingGameStartData(data);
+  // struct GameStartData data = { .totalPlayers = 4 };
+  // fastLEDLight->updateAwaitingGameStartData(data);
   // fastLEDLight->setLightMode(DeviceState::Paused);
-  
+
   // struct TurnSequenceData data = {.totalPlayers = 8, .myPlayerIndex = 1, .currentPlayerIndex = 6};
   // fastLEDLight->updateTurnSequenceData(data);
   // fastLEDLight->setLightMode(DeviceState::AwaitingTurn);

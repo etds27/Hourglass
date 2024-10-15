@@ -26,8 +26,9 @@ private:
   DeviceState m_deviceState;
   bool m_started = false;
   bool m_isGameActive = false;
-  unsigned long lastUpdate;
-  unsigned long lastReadOut;
+  unsigned long m_lastUpdate;
+  unsigned long m_lastReadOut;
+  unsigned long m_lastConnection;
   BLEInterface *m_interface;
   ButtonInputMonitor *m_buttonMonitor;
   char *m_deviceName;

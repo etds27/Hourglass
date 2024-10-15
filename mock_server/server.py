@@ -51,79 +51,85 @@ async def main():
     game_devices = await BleakScanner.discover(service_uuids=[SERVICE_UUID])
     pprint.pprint(game_devices)
 
-    async with BleakClient(game_devices[0], timeout=60, services=[SERVICE_UUID]) as client:
-        clients = [client]
-        print(f"Setting up client: {client}")
-        # Setup clients
+    clients: List[BleakClient] = []
+    for game_device in game_devices:
+        clients.append(BleakClient(game_device, timeout=60, services=[SERVICE_UUID]))
+        await clients[-1].connect()
+
+    # Setup clients
+    for i, client in enumerate(clients):
+        print(f"Player Number: {i} | {CharacteristicUUID.my_player}")
+        await client.write_gatt_char(CharacteristicUUID.my_player.value, int_to_bytes(i))
+        print(f"Player turn  : {0}")
+        await client.write_gatt_char(CharacteristicUUID.my_turn.value, bool_to_bytes(False))
+        print(f"Number player: {num_players}")
+
+        await write_to_all_clients(CharacteristicUUID.num_players.value, int_to_bytes(i + 1))
+
+        print(f"current Player: {0}")
+        await client.write_gatt_char(CharacteristicUUID.current_player.value, int_to_bytes(0))
+        print(f"Timer: {30000}")
+        await client.write_gatt_char(CharacteristicUUID.timer.value, int_to_bytes(turn_length))
+        print(f"Skipped: {0}")
+        await client.write_gatt_char(CharacteristicUUID.skipped.value, bool_to_bytes(False))
+        print(f"Game active: {0}")
+        await client.write_gatt_char(CharacteristicUUID.game_active.value, bool_to_bytes(False))
+
+        print(f"Game paused: {1}")
+        # await client.write_gatt_char(CharacteristicUUID.game_paused.value, bool_to_bytes(True))
+
+    for i in range(len(clients), num_players + 1):
+        await write_to_all_clients(CharacteristicUUID.num_players.value, int_to_bytes(i))
+        await asyncio.sleep(3)
+
+    print("Set up clients")
+
+    await asyncio.sleep(5)
+
+    print("Starting game")
+    #Start game
+    await write_to_all_clients(CharacteristicUUID.game_active.value, bool_to_bytes(True))
+
+    print("Started game")
+
+    #await asyncio.sleep(5)
+    #print("Unpausing")
+    #await write_to_all_clients(CharacteristicUUID.game_paused.value, bool_to_bytes(False))
+
+    # For 5 turns
+    for j in range(5):
+        print(f"Turn {j + 1}")
         for i, client in enumerate(clients):
-            print(f"Player Number: {i} | {CharacteristicUUID.my_player}")
-            print(int_to_bytes(0))
-            await client.write_gatt_char(CharacteristicUUID.my_player.value, int_to_bytes(0))
-            print(f"Player turn  : {0}")
-            await client.write_gatt_char(CharacteristicUUID.my_turn.value, bool_to_bytes(False))
-            print(f"Number player: {num_players}")
-            for i in range(1, num_players + 1):
-                await client.write_gatt_char(CharacteristicUUID.num_players.value, int_to_bytes(i))
-                await asyncio.sleep(2)
-            print(f"current Player: {0}")
-            await client.write_gatt_char(CharacteristicUUID.current_player.value, int_to_bytes(0))
-            print(f"Timer: {30000}")
-            await client.write_gatt_char(CharacteristicUUID.timer.value, int_to_bytes(turn_length))
-            print(f"Skipped: {0}")
-            await client.write_gatt_char(CharacteristicUUID.skipped.value, bool_to_bytes(False))
-            print(f"Game active: {0}")
-            await client.write_gatt_char(CharacteristicUUID.game_active.value, bool_to_bytes(False))
+            skipped = bool_from_bytes(await client.read_gatt_char(CharacteristicUUID.skipped.value))
+            print(skipped)
+            if skipped:
+                print(f"Skipping: {i}")
+                continue
+            print(f"Client: {i}")
+            current_player = i
+            await write_to_all_clients(CharacteristicUUID.current_player.value, int_to_bytes(current_player))
+            await client.write_gatt_char(CharacteristicUUID.elapsed_time.value, int_to_bytes(0))
+            await client.write_gatt_char(CharacteristicUUID.my_turn.value, bool_to_bytes(True))
 
-            print(f"Game paused: {1}")
-            await client.write_gatt_char(CharacteristicUUID.game_paused.value, bool_to_bytes(True))
-        print("Set up clients")
+            start_time = time.time()
+            while True:
+                value = int_from_bytes(await client.read_gatt_char(CharacteristicUUID.my_turn.value))
+                if not value:
+                    break
+                delta = round((time.time() - start_time) * 1000)
+                print(delta)
+                await client.write_gatt_char(CharacteristicUUID.elapsed_time.value, int_to_bytes(delta))
 
-        await asyncio.sleep(5)
+                if delta > turn_length and enforce_turn_timer:
+                    await client.write_gatt_char(CharacteristicUUID.my_turn.value, bool_to_bytes(False))
+                    break
 
-        print("Starting game")
-        #Start game
-        await write_to_all_clients(CharacteristicUUID.game_active.value, bool_to_bytes(True))
-
-        print("Started game")
-
-        await asyncio.sleep(5)
-        print("Unpausing")
-        await write_to_all_clients(CharacteristicUUID.game_paused.value, bool_to_bytes(False))
-
-        # For 5 turns
-        for j in range(5):
-            print(f"Turn {j + 1}")
-            for i, client in enumerate(clients):
-                skipped = bool_from_bytes(await client.read_gatt_char(CharacteristicUUID.skipped.value))
-                print(skipped)
-                if skipped:
-                    print(f"Skipping: {i}")
-                    continue
-                print(f"Client: {i}")
-                current_player = i
-                await write_to_all_clients(CharacteristicUUID.current_player.value, int_to_bytes(current_player))
-                await client.write_gatt_char(CharacteristicUUID.elapsed_time.value, int_to_bytes(0))
-                await client.write_gatt_char(CharacteristicUUID.my_turn.value, bool_to_bytes(True))
-
-                start_time = time.time()
-                while True:
-                    value = int_from_bytes(await client.read_gatt_char(CharacteristicUUID.my_turn.value))
-                    if not value:
-                        break
-                    delta = round((time.time() - start_time) * 1000)
-                    print(delta)
-                    await client.write_gatt_char(CharacteristicUUID.elapsed_time.value, int_to_bytes(delta))
-
-                    if delta > turn_length and enforce_turn_timer:
-                        await client.write_gatt_char(CharacteristicUUID.my_turn.value, bool_to_bytes(False))
-                        break
-
-            # Simulated turns
-            for i in range(len(clients) - 1, num_players - len(clients)):
-                current_player = i + len(clients)
-                await write_to_all_clients(CharacteristicUUID.current_player.value, int_to_bytes(current_player))
-                print(f"Simming turn {i}")
-                await aioconsole.ainput()
+        # Simulated turns
+        for i in range(len(clients), num_players):
+            current_player = i
+            await write_to_all_clients(CharacteristicUUID.current_player.value, int_to_bytes(current_player))
+            print(f"Simming turn {i}")
+            await aioconsole.ainput()
 
 
 """

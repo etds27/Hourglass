@@ -60,7 +60,7 @@ protected:
 
   void setUp();
 
-  public:
+public:
   LightInterface(const uint8_t ledCount = 16, const uint8_t diPin = 0);
   virtual ~LightInterface();
 

@@ -34,8 +34,9 @@ void DeviceManager::start()
 
   m_interface->setService(0);
   setWaitingForConnection();
-  lastUpdate = millis();
-  lastReadOut = millis();
+  m_lastUpdate = millis();
+  m_lastReadOut = millis();
+  m_lastConnection = millis();
 }
 
 char *DeviceManager::getDeviceName()
@@ -171,7 +172,8 @@ void DeviceManager::setGamePaused()
   updateRingMode();
 }
 
-void DeviceManager::toggleColorBlindMode() {
+void DeviceManager::toggleColorBlindMode()
+{
   m_colorBlindMode = !m_colorBlindMode;
   logger.info("Setting Color Blind Mode to: " + String(m_colorBlindMode));
   m_ring->setColorBlindMode(m_colorBlindMode);
@@ -209,15 +211,15 @@ void DeviceManager::updateRingMode()
 void DeviceManager::update()
 {
   unsigned long currentTime = millis();
-  unsigned long deltaTime = currentTime - lastUpdate;
-  lastUpdate = currentTime;
+  unsigned long deltaTime = currentTime - m_lastUpdate;
+  m_lastUpdate = currentTime;
 
   // Log data from the interface
-  if (currentTime - lastReadOut > 1000)
+  if (currentTime - m_lastReadOut > 1000)
   {
     logger.info("Update Period: " + String(deltaTime));
     m_interface->readData();
-    lastReadOut = currentTime;
+    m_lastReadOut = currentTime;
   }
   // logger.info("Running " + String(deltaTime));
   BLE.poll();
@@ -236,7 +238,14 @@ void DeviceManager::processGameState()
       ;
   }
 
-  if (buttonAction == ButtonInputType::TripleButtonPress)  {
+  // Check how long we have been awaiting connection.
+  // If it is longer than the no connection timeout, enter deep sleep
+  if (m_deviceState == DeviceState::AwaitingConnecion && m_lastUpdate - m_lastConnection > CONNECTION_TIMEOUt) {
+    m_deviceState = DeviceState::Off;
+  }
+
+  if (buttonAction == ButtonInputType::TripleButtonPress)
+  {
     toggleColorBlindMode();
   }
 
@@ -245,7 +254,9 @@ void DeviceManager::processGameState()
     setWaitingForConnection();
     return;
   }
-
+  
+  m_lastConnection = m_lastUpdate;
+  
   if (!(m_interface->isGameActive()))
   {
     updateAwaitingGameStartData();
