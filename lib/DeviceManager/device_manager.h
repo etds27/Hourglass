@@ -33,6 +33,9 @@ private:
   char *m_deviceName;
   LightInterface *m_ring;
 
+  bool m_colorBlindMode = false;
+  void toggleColorBlindMode();
+
   void processGameState();
   void updateRing();
 

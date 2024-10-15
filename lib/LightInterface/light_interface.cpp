@@ -21,6 +21,24 @@ const uint32_t AWAIT_GAME_COLORS[16] = {
     AWAIT_GAME_COLOR15,
     AWAIT_GAME_COLOR16};
 
+const uint32_t AWAIT_GAME_COLORS_ALT[16] = {
+    AWAIT_GAME_COLOR_ALT1,
+    AWAIT_GAME_COLOR_ALT2,
+    AWAIT_GAME_COLOR_ALT3,
+    AWAIT_GAME_COLOR_ALT4,
+    AWAIT_GAME_COLOR_ALT5,
+    AWAIT_GAME_COLOR_ALT6,
+    AWAIT_GAME_COLOR_ALT7,
+    AWAIT_GAME_COLOR_ALT8,
+    AWAIT_GAME_COLOR_ALT9,
+    AWAIT_GAME_COLOR_ALT10,
+    AWAIT_GAME_COLOR_ALT11,
+    AWAIT_GAME_COLOR_ALT12,
+    AWAIT_GAME_COLOR_ALT13,
+    AWAIT_GAME_COLOR_ALT14,
+    AWAIT_GAME_COLOR_ALT15,
+    AWAIT_GAME_COLOR_ALT16};
+
 LightInterface::LightInterface(const uint8_t ledCount, const uint8_t diPin)
 {
   logger.info("Initializing Light Interface");
@@ -36,6 +54,11 @@ void LightInterface::setUp()
 {
   begin();
   clear();
+}
+
+void LightInterface::setColorBlindMode(bool colorBlindMode)
+{
+  m_colorBlindMode = colorBlindMode;
 }
 
 void LightInterface::setLightMode(DeviceState state)
@@ -148,11 +171,14 @@ void LightInterface::updateLightModeTurnSequence()
   //    Skipped player lights will be calculated and then dimmed with a dynamic local brightness setting that is calculated based on time
   //    A local brightness function for color will need to be implemented to acheive localized dimming
 
-  logger.debug("Total Players:  " + String(m_turnSequenceData.totalPlayers));
-  logger.debug("My Player:      " + String(m_turnSequenceData.myPlayerIndex));
-  logger.debug("Current Player: " + String(m_turnSequenceData.currentPlayerIndex));
-  logger.debug("");
+  // logger.debug("Total Players:  " + String(m_turnSequenceData.totalPlayers));
+  // logger.debug("My Player:      " + String(m_turnSequenceData.myPlayerIndex));
+  // logger.debug("Current Player: " + String(m_turnSequenceData.currentPlayerIndex));
+  // logger.debug("");
   uint32_t colorBuffer[16];
+  uint32_t myPlayerColor = (m_colorBlindMode) ? MY_PLAYER_COLOR_ALT : MY_PLAYER_COLOR;
+  uint32_t currentPlayerColor = (m_colorBlindMode) ? CURRENT_PLAYER_COLOR_ALT : CURRENT_PLAYER_COLOR;
+  uint32_t otherPlayerColor = (m_colorBlindMode) ? OTHER_PLAYER_COLOR_ALT : OTHER_PLAYER_COLOR;
 
   for (int i = 0; i < m_ledCount; i++)
   {
@@ -160,15 +186,15 @@ void LightInterface::updateLightModeTurnSequence()
     {
       if (m_turnSequenceData.currentPlayerIndex == i)
       {
-        colorBuffer[i] = CURRENT_PLAYER_COLOR;
+        colorBuffer[i] = currentPlayerColor;
       }
       else if (m_turnSequenceData.myPlayerIndex == i)
       {
-        colorBuffer[i] = MY_PLAYER_COLOR;
+        colorBuffer[i] = myPlayerColor;
       }
       else
       {
-        colorBuffer[i] = OTHER_PLAYER_COLORS;
+        colorBuffer[i] = otherPlayerColor;
       }
     }
     else
@@ -193,9 +219,11 @@ void LightInterface::updateLightModeTurnSequence()
 void LightInterface::updateLightModeAwaitGameStart()
 {
   uint32_t colorBuffer[16];
+  const uint32_t *colors = (m_colorBlindMode) ? AWAIT_GAME_COLORS_ALT : AWAIT_GAME_COLORS;
+
   int segments = max(m_gameStartData.totalPlayers, 1);
 
-  expandBuffer(AWAIT_GAME_COLORS, colorBuffer, segments);
+  expandBuffer(colors, colorBuffer, segments);
 
   unsigned long currentSecond = (int)(millis() - m_startTime) / AWAIT_GAME_START_SPEED;
   uint8_t offset = currentSecond % m_ledCount;
@@ -208,6 +236,7 @@ void LightInterface::updateLightModeAwaitConnection()
   uint32_t colorBuffer[16] = {};
 
   unsigned long currentSecond = (int)(millis() - m_startTime) / AWAIT_CONNECTION_SPEED;
+  uint32_t color = (m_colorBlindMode) ? AWAIT_CONNECTION_COLOR_ALT : AWAIT_CONNECTION_COLOR;
 
   int timeSlice = currentSecond % (m_ledCount * 2);
   int waxing = timeSlice / m_ledCount == 0;
@@ -217,14 +246,14 @@ void LightInterface::updateLightModeAwaitConnection()
     {
       if (i <= timeSlice % m_ledCount)
       {
-        colorBuffer[i] = AWAIT_CONNECTION_COLOR;
+        colorBuffer[i] = color;
       }
     }
     else
     {
       if (i > timeSlice % m_ledCount)
       {
-        colorBuffer[i] = AWAIT_CONNECTION_COLOR;
+        colorBuffer[i] = color;
       }
     }
   }

@@ -29,6 +29,9 @@ protected:
 
   uint8_t m_ledCount;
   uint8_t m_diPin;
+
+  bool m_colorBlindMode = false;
+
   unsigned long m_startTime;
   struct TimerData m_timerData;
   struct TurnSequenceData m_turnSequenceData;
@@ -57,9 +60,12 @@ protected:
 
   void setUp();
 
-public:
+  public:
   LightInterface(const uint8_t ledCount = 16, const uint8_t diPin = 0);
   virtual ~LightInterface();
+
+  // Sets the current colorblind mode for the ringlight
+  void setColorBlindMode(bool colorBlindMode);
 
   // Sets the ring light to the appropriate lighting mode associated with the provided device state
   void setLightMode(DeviceState state);

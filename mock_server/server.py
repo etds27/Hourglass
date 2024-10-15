@@ -88,7 +88,7 @@ async def main():
 
         await asyncio.sleep(5)
         print("Unpausing")
-        await write_to_all_clients(CharacteristicUUID.game_paused, bool_to_bytes(False))
+        await write_to_all_clients(CharacteristicUUID.game_paused.value, bool_to_bytes(False))
 
         # For 5 turns
         for j in range(5):

@@ -92,7 +92,7 @@ void loop() {
 // SevenSegmentDisplay* sevenSegment;
 // DeviceManager* deviceManager;
 // RingLight* m_ring;
-FastLEDLight* fastLEDLight;
+// FastLEDLight* fastLEDLight;
 DeviceManager *deviceManager;
 // ButtonInputMonitor* buttonInputMonitor;
 
@@ -108,17 +108,17 @@ void setup()
 
   
   EEPROM.begin(8);
-  // deviceManager = new DeviceManager();
+  deviceManager = new DeviceManager();
   // deviceManager->writeDeviceName("FISCHER2", 8);
   // logger.info(String(deviceManager->getDeviceName()));
-  // deviceManager->start();
+  deviceManager->start();
   
   
-  fastLEDLight = new FastLEDLight(16, 3);
+  // fastLEDLight = new FastLEDLight(16, 3);
   // fastLEDLight->setLightMode(DeviceState::Paused);
   //struct GameStartData data = { .totalPlayers = 4 };
   //fastLEDLight->updateAwaitingGameStartData(data);
-  fastLEDLight->setLightMode(DeviceState::Paused);
+  // fastLEDLight->setLightMode(DeviceState::Paused);
   
   // struct TurnSequenceData data = {.totalPlayers = 8, .myPlayerIndex = 1, .currentPlayerIndex = 6};
   // fastLEDLight->updateTurnSequenceData(data);
@@ -151,10 +151,10 @@ void loop()
   // fastLEDLight->updateAwaitingGameStartData(data);
   // logger.info("Updating " + String(freeMemory()));
   // struct TurnSequenceData data = { .totalPlayers = 10, .myPlayerIndex = 7, .currentPlayerIndex = (millis() / 1000) % 10 };
-  fastLEDLight->update();
+  // fastLEDLight->update();
   // m_ring->updateTurnSequenceData(data);
   // m_ring->update();
-  // deviceManager->update();
+  deviceManager->update();
   // buttonInputMonitor->getAction();
   // logger.info(String(digitalRead(BUTTON_INPUT_PIN)));
   // delay(1000);

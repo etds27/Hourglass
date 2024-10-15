@@ -171,6 +171,13 @@ void DeviceManager::setGamePaused()
   updateRingMode();
 }
 
+void DeviceManager::toggleColorBlindMode() {
+  m_colorBlindMode = !m_colorBlindMode;
+  logger.info("Setting Color Blind Mode to: " + String(m_colorBlindMode));
+  m_ring->setColorBlindMode(m_colorBlindMode);
+  updateRing();
+}
+
 void DeviceManager::updateRing()
 {
   m_interface->poll();
@@ -227,6 +234,10 @@ void DeviceManager::processGameState()
     logger.error("Attempting to update the device manager before running `start()`");
     while (1)
       ;
+  }
+
+  if (buttonAction == ButtonInputType::TripleButtonPress)  {
+    toggleColorBlindMode();
   }
 
   if (!m_interface->isConnected())
