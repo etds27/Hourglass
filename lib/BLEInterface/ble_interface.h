@@ -32,6 +32,9 @@ public:
   // Check if a game is paused
   bool isGamePaused();
 
+  // Check if the turn timer should be enforced
+  bool isTurnTimerEnforced();
+
   void poll();
 
 private:
@@ -48,6 +51,7 @@ private:
   bool m_lastSkipped;
   bool m_lastGameActive;
   bool m_lastGamePaused;
+  bool m_lastEnforceTurnTimer;
 
   BLEService *m_service;
   // BLEIntCharacteristic* m_dummy;
@@ -60,4 +64,5 @@ private:
   BLEBoolCharacteristic *m_skipped;
   BLEBoolCharacteristic *m_gameActive;
   BLEBoolCharacteristic *m_gamePaused;
+  BLEBoolCharacteristic *m_enforceTurnTimer;
 };

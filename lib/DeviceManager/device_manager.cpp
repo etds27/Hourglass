@@ -127,7 +127,12 @@ void DeviceManager::updateTimer()
 {
   int timer = m_interface->getTimer();
   int elapsedTime = m_interface->getElapsedTime();
-  struct TimerData data = {.totalTime = timer, .elapsedTime = elapsedTime};
+  bool isTurnTimeEnforced = m_interface->isTurnTimerEnforced();
+  struct TimerData data = {
+      .totalTime = timer,
+      .elapsedTime = elapsedTime,
+      .isTurnTimeEnforced = isTurnTimeEnforced};
+
   m_ring->updateTimerData(data);
 }
 
@@ -240,7 +245,8 @@ void DeviceManager::processGameState()
 
   // Check how long we have been awaiting connection.
   // If it is longer than the no connection timeout, enter deep sleep
-  if (m_deviceState == DeviceState::AwaitingConnecion && m_lastUpdate - m_lastConnection > CONNECTION_TIMEOUt) {
+  if (m_deviceState == DeviceState::AwaitingConnecion && m_lastUpdate - m_lastConnection > CONNECTION_TIMEOUt)
+  {
     m_deviceState = DeviceState::Off;
   }
 
@@ -254,9 +260,9 @@ void DeviceManager::processGameState()
     setWaitingForConnection();
     return;
   }
-  
+
   m_lastConnection = m_lastUpdate;
-  
+
   if (!(m_interface->isGameActive()))
   {
     updateAwaitingGameStartData();

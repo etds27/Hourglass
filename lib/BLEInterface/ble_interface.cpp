@@ -12,6 +12,7 @@ const char *SKIPPED_UUID = "c1ed8823-7eb1-44b2-ac01-351e8c6a693c";
 const char *TIMER_UUID = "4661b4c1-093d-4db7-bb80-5b5fe3eae519";
 const char *GAME_ACTIVE_UUID = "33280653-4d71-4714-a03c-83111b886aa7";
 const char *GAME_PAUSED_UUID = "643fda83-0c6b-4e8e-9829-cbeb20b70b8d";
+const char *TURN_TIMER_ENFORCED_UUID = "8b732784-8a53-4a25-9436-99b9a5b9b73a";
 
 const int BLE_POLL_RATE = 50;
 
@@ -100,6 +101,11 @@ bool BLEInterface::isGamePaused()
   return m_gamePaused->value();
 }
 
+bool BLEInterface::isTurnTimerEnforced()
+{
+  return m_enforceTurnTimer->value();
+}
+
 void BLEInterface::poll()
 {
   if (millis() - lastPoll > BLE_POLL_RATE)
@@ -110,7 +116,6 @@ void BLEInterface::poll()
 
 void BLEInterface::setService(uint8_t serviceIndex)
 {
-
   logger.info(String(SERVICE_UUID));
   m_service = new BLEService(SERVICE_UUID);
 
@@ -161,14 +166,14 @@ void BLEInterface::setService(uint8_t serviceIndex)
   m_gamePaused = new BLEBoolCharacteristic(GAME_PAUSED_UUID, BLEWrite | BLERead);
   m_service->addCharacteristic(*m_gamePaused);
 
+  // Turn timer is enforced
+  m_enforceTurnTimer = new BLEBoolCharacteristic(TURN_TIMER_ENFORCED_UUID, BLEWrite | BLERead);
+  m_service->addCharacteristic(*m_enforceTurnTimer);
+
   logger.info("Advertising with name: " + String(m_deviceName));
   BLE.setLocalName(m_deviceName);
   BLE.setAdvertisedService(*m_service);
   BLE.addService(*m_service);
-
-  m_currentPlayer->writeValue(2);
-  m_timer->writeValue(10000);
-  m_myPlayerNumber->writeValue(4);
 
   BLE.advertise();
   logger.info("Connected");

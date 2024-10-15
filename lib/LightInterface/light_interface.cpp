@@ -93,27 +93,49 @@ void LightInterface::setLightMode(DeviceState state)
   m_ring.show();
   */
 
-void LightInterface::updateLightModeTimer()
+void LightInterface::updateLightModeActiveTurn()
 {
+  if (m_timerData.isTurnTimeEnforced)
+  {
+    updateLightModeActiveTurnTimer();
+  }
+  else
+  {
+    updateLightModeActiveTurnNoTimer();
+  }
+}
+
+void LightInterface::updateLightModeActiveTurnNoTimer()
+{  uint32_t colorBuffer[16];
+
+  displayBuffer(colorBuffer);
+}
+
+void LightInterface::updateLightModeActiveTurnTimer()
+{
+  uint32_t colorBuffer[16];
+  uint32_t color1 = (m_colorBlindMode) ? TIMER_COLOR_ALT_1 : TIMER_COLOR_1;
+  uint32_t color2 = (m_colorBlindMode) ? TIMER_COLOR_ALT_2 : TIMER_COLOR_2;
+  uint32_t color3 = (m_colorBlindMode) ? TIMER_COLOR_ALT_3 : TIMER_COLOR_3;
+  uint32_t color;
+
   double pct = (double)m_timerData.elapsedTime / m_timerData.totalTime;
   // Restrict pct to be between 0..1
   pct = std::max(0.0, std::min(pct, 1.0));
   int filled = (int)(pct * m_ledCount);
   int deltaTime = ((int)(millis() - m_startTime)) / 200 - 60;
-  uint32_t colorBuffer[16];
 
-  uint32_t color;
   if (pct < 0.75)
   {
-    color = GREEN;
+    color = color1;
   }
   else if (pct < 0.9)
   {
-    color = YELLOW;
+    color = color2;
   }
   else if (pct < 1.0)
   {
-    color = RED;
+    color = color3;
   }
   else if (deltaTime > 10)
   {
@@ -123,7 +145,7 @@ void LightInterface::updateLightModeTimer()
   {
     if (deltaTime % 2 == 0)
     {
-      color = RED;
+      color = color3;
     }
     else
     {
@@ -340,7 +362,7 @@ void LightInterface::update()
     updateLightModeAwaitConnection();
     break;
   case DeviceState::ActiveTurn:
-    updateLightModeTimer();
+    updateLightModeActiveTurn();
     break;
   case DeviceState::Skipped:
     updateLightModeSkipped();
@@ -419,7 +441,19 @@ void LightInterface::offsetBuffer(uint32_t *buffer, uint8_t offset)
   delete originalBuffer;
 }
 
-void LightInterface::displayBuffer(uint32_t *buffer)
+void LightInterface::reverseBuffer(uint32_t *buffer, uint8_t offset)
+{
+  uint32_t *originalBuffer = new uint32_t[m_ledCount];
+  memcpy(originalBuffer, buffer, sizeof(uint32_t) * m_ledCount);
+  for (int i = 0; i < m_ledCount; i++)
+  {
+    uint8_t newIndex = m_ledCount - i - 1;
+    buffer[i] = originalBuffer[newIndex];
+  }
+  delete originalBuffer;
+}
+
+void LightInterface::displayBuffer(const uint32_t *buffer)
 {
   for (int i = 0; i < m_ledCount; i++)
   {

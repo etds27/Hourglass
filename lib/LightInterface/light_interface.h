@@ -13,6 +13,7 @@ struct TimerData
 {
   int totalTime;
   int elapsedTime;
+  bool isTurnTimeEnforced;
 };
 
 struct TurnSequenceData
@@ -40,7 +41,9 @@ protected:
   unsigned long m_lastUpdate;
 
   void updateLightModePairing();
-  void updateLightModeTimer();
+  void updateLightModeActiveTurn();
+  void updateLightModeActiveTurnTimer();
+  void updateLightModeActiveTurnNoTimer();
   void updateLightModeSkipped();
   void updateLightModeTurnSequence();
   void updateLightModeAwaitGameStart();
@@ -56,7 +59,10 @@ protected:
   // Rotate the full sized color buffer by some offset
   void offsetBuffer(uint32_t *buffer, uint8_t offset);
 
-  void displayBuffer(uint32_t *buffer);
+  // Reverse the full sized color buffer
+  void reverseBuffer(uint32_t *buffer, uint8_t offset);
+
+  void displayBuffer(const uint32_t *buffer);
 
   void setUp();
 
