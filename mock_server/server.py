@@ -20,6 +20,7 @@ class CharacteristicUUID(str, Enum):
     skipped = "c1ed8823-7eb1-44b2-ac01-351e8c6a693c"
     game_active = "33280653-4d71-4714-a03c-83111b886aa7"
     game_paused = "643fda83-0c6b-4e8e-9829-cbeb20b70b8d"
+    turn_timer_enforced = "8b732784-8a53-4a25-9436-99b9a5b9b73a"
 
 async def main():
     def int_to_bytes(value: int, len: int = 4) -> bytes:
@@ -81,6 +82,7 @@ async def main():
     for i in range(len(clients), num_players + 1):
         await write_to_all_clients(CharacteristicUUID.num_players.value, int_to_bytes(i))
         await asyncio.sleep(3)
+    await write_to_all_clients(CharacteristicUUID.turn_timer_enforced.value, bool_to_bytes(enforce_turn_timer))
 
     print("Set up clients")
 
