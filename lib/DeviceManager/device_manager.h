@@ -37,8 +37,10 @@ private:
   bool m_colorBlindMode = false;
   void toggleColorBlindMode();
 
+  void enterDeepSleep();
+
   void processGameState();
-  void updateRing();
+  void updateRing(bool force = false);
 
   void setWaitingForConnection();
   void setGamePaused();

@@ -93,7 +93,7 @@ void loop() {
 // DeviceManager* deviceManager;
 // RingLight* m_ring;
 FastLEDLight* fastLEDLight;
-// DeviceManager *deviceManager;
+DeviceManager *deviceManager;
 // ButtonInputMonitor* buttonInputMonitor;
 
 void setup()
@@ -107,10 +107,10 @@ void setup()
   // Start the BLE peripheral
 
   EEPROM.begin(8);
-  // deviceManager = new DeviceManager();
+  deviceManager = new DeviceManager();
   // deviceManager->writeDeviceName("FISCHER3", 8);
   // logger.info(String(deviceManager->getDeviceName()));
-  // deviceManager->start();
+  deviceManager->start();
 
   logger.info(String(OLIVE & 0xFF0000));
   logger.info(String(OLIVE & 0x00FF00));
@@ -120,11 +120,11 @@ void setup()
   logger.info(String(WHITE));
   // exit(0);
 
-  fastLEDLight = new FastLEDLight(16, 3);
-  struct TimerData data {.totalTime = 1, .elapsedTime = 1, .isTurnTimeEnforced = false};
-  fastLEDLight->updateTimerData(data);
+  // fastLEDLight = new FastLEDLight(16, 3);
+  // struct TimerData data {.totalTime = 1, .elapsedTime = 1, .isTurnTimeEnforced = false};
+  // fastLEDLight->updateTimerData(data);
 
-  fastLEDLight->setLightMode(DeviceState::ActiveTurn);
+  // fastLEDLight->setLightMode(DeviceState::ActiveTurn);
   // struct GameStartData data = { .totalPlayers = 4 };
   // fastLEDLight->updateAwaitingGameStartData(data);
   // fastLEDLight->setLightMode(DeviceState::Paused);
@@ -160,10 +160,10 @@ void loop()
   // fastLEDLight->updateAwaitingGameStartData(data);
   // logger.info("Updating " + String(freeMemory()));
   // struct TurnSequenceData data = { .totalPlayers = 10, .myPlayerIndex = 7, .currentPlayerIndex = (millis() / 1000) % 10 };
-  fastLEDLight->update();
+  // fastLEDLight->update();
   // m_ring->updateTurnSequenceData(data);
   // m_ring->update();
-  // deviceManager->update();
+  deviceManager->update();
   // buttonInputMonitor->getAction();
   // logger.info(String(digitalRead(BUTTON_INPUT_PIN)));
   // delay(1000);

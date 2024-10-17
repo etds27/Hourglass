@@ -375,9 +375,9 @@ void LightInterface::updateGamePaused()
   displayBuffer(colorBuffer);
 }
 
-void LightInterface::update()
+void LightInterface::update(bool force)
 {
-  if (millis() - m_lastUpdate < RING_REFRESH_RATE)
+  if (millis() - m_lastUpdate < RING_REFRESH_RATE && !force)
   {
     return;
   }
@@ -386,6 +386,7 @@ void LightInterface::update()
   switch (m_state)
   {
   case DeviceState::Off:
+    clear();
     break;
   case DeviceState::AwaitingConnecion:
     updateLightModeAwaitConnection();

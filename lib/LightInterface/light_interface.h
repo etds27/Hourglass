@@ -94,7 +94,8 @@ protected:
   void updateGamePaused();
 
   // Updates the current light display according to the known device state and state properties
-  void update();
+  // force: bool: Allow the user to refresh the ring light even if within the refresh rate limit
+  void update(bool force = false);
 
   // Update the data for the timer prior to updating the ring light
   void updateTimerData(struct TimerData data);

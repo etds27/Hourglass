@@ -23,6 +23,8 @@ DeviceManager::DeviceManager()
   m_ring = new FastLEDLight(RING_LED_COUNT, RING_DI_PIN);
 #endif
   m_buttonMonitor = new ButtonInputMonitor(BUTTON_INPUT_PIN);
+  // Allows the main device button to wake the device from sleep state
+  esp_sleep_enable_ext0_wakeup(BUTTON_GPIO_PIN, HIGH);
   m_interface = new BLEInterface(m_deviceName);
 }
 
@@ -185,10 +187,19 @@ void DeviceManager::toggleColorBlindMode()
   updateRing();
 }
 
-void DeviceManager::updateRing()
+void DeviceManager::enterDeepSleep()
 {
-  m_interface->poll();
-  m_ring->update();
+  logger.info("Entering Deep Sleep");
+  m_deviceState = DeviceState::Off;
+  updateRingMode();
+  updateRing(true);
+  delay(1000);
+  esp_deep_sleep_start();
+}
+
+void DeviceManager::updateRing(bool force)
+{
+  m_ring->update(force);
 }
 
 void DeviceManager::updateAwaitingGameStartData()
@@ -247,7 +258,7 @@ void DeviceManager::processGameState()
   // If it is longer than the no connection timeout, enter deep sleep
   if (m_deviceState == DeviceState::AwaitingConnecion && m_lastUpdate - m_lastConnection > CONNECTION_TIMEOUt)
   {
-    m_deviceState = DeviceState::Off;
+    enterDeepSleep();
   }
 
   if (buttonAction == ButtonInputType::TripleButtonPress)
