@@ -34,9 +34,7 @@ void DeviceManager::start()
   logger.info("Starting the device manager");
   m_displayInterface->setDisplayMode(DeviceState::Off);
 
-  #if INTERFACE_TYPE == 0
   m_interface->setService();
-  #endif
   setWaitingForConnection();
   m_lastUpdate = millis();
   m_lastReadOut = millis();

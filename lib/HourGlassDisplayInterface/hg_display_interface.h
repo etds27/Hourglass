@@ -1,11 +1,13 @@
 #pragma once
 #include "device_state.h"
 
+// All required data for any display interface to show the Awaiting Game Start state
 struct GameStartData
 {
     int totalPlayers;
 };
 
+// All required data for any display interface to show the Active Turn state
 struct TimerData
 {
     int totalTime;
@@ -13,6 +15,8 @@ struct TimerData
     bool isTurnTimeEnforced;
 };
 
+
+// All required data for any display interface to show the Awaiting Turn state
 struct TurnSequenceData
 {
     int totalPlayers;
@@ -33,6 +37,7 @@ protected:
 
     unsigned long m_lastUpdate;
 
+    // MARK: Light Modes
     virtual void updateLightModeActiveTurn() = 0;
     virtual void updateLightModeActiveTurnTimer() = 0;
     virtual void updateLightModeActiveTurnNoTimer() = 0;

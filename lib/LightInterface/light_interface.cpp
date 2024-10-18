@@ -50,34 +50,11 @@ LightInterface::LightInterface(const uint8_t ledCount, const uint8_t diPin)
 
 LightInterface::~LightInterface() {}
 
-
 void LightInterface::setDisplayMode(DeviceState state)
 {
   setBrightness(DEFAULT_BRIGHTNESS);
   HGDisplayInterface::setDisplayMode(state);
 }
-
-/*
-  // 2 equally spaced lights
-  for (int i = 0; i < m_ledCount; i++) {
-    if (i == currentSecond % m_ledCount) {
-      m_ring.setPixelColor(i, m_ring.Color(0, 0, 255));
-      m_ring.setPixelColor(((int)i + m_ledCount / 2) % m_ledCount, m_ring.Color(0, 255, 0));
-    }
-  }
-  m_ring.show();
-  */
-
-/* Alternate back and forth
-  for (int i = 0; i < m_ledCount; i++) {
-    if ((currentSecond % 2 == 0 && i % 2 == 0) || (currentSecond % 2 == 1 && i % 2 == 1)) {
-      m_ring.setPixelColor(i, m_ring.Color(0, 0, 255));
-    } else {
-      m_ring.setPixelColor(i, m_ring.Color(0, 255, 255));
-    }
-  }
-  m_ring.show();
-  */
 
 void LightInterface::updateLightModeActiveTurn()
 {
@@ -97,7 +74,8 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
   // These LEDs will grow to fill until reaching the next LED
   // Then it will shrink from the starting edge
   // This will give an inchworm type effect
-  uint32_t colorBuffer[16] = {};
+  uint32_t *colorBuffer = new uint32_t[m_ledCount];
+  uint32_t *fullColorBuffer = new uint32_t[m_ledCount]{};
 
   // Get the current time segment since the beginning of the color mode change
   unsigned long adjustedTime = (int)(millis() - m_startTime) / (NO_TIMER_SPEED);
@@ -141,8 +119,6 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
     }
   }
 
-  uint32_t fullColorBuffer[16] = {};
-
   // Because each segment looks the same, we can just take one segment and duplicate it to fill the LED array
   extendBuffer(colorBuffer, fullColorBuffer, segmentLength);
   if (NO_TIMER_APPLY_OFFSET)
@@ -152,11 +128,14 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
     offsetBuffer(fullColorBuffer, offset);
   }
   displayBuffer(fullColorBuffer);
+
+  delete[] colorBuffer;
+  delete[] fullColorBuffer;
 }
 
 void LightInterface::updateLightModeActiveTurnTimer()
 {
-  uint32_t colorBuffer[16];
+  uint32_t *colorBuffer = new uint32_t[m_ledCount];
   uint32_t color1 = (m_colorBlindMode) ? TIMER_COLOR_ALT_1 : TIMER_COLOR_1;
   uint32_t color2 = (m_colorBlindMode) ? TIMER_COLOR_ALT_2 : TIMER_COLOR_2;
   uint32_t color3 = (m_colorBlindMode) ? TIMER_COLOR_ALT_3 : TIMER_COLOR_3;
@@ -194,7 +173,9 @@ void LightInterface::updateLightModeActiveTurnTimer()
   {
     colorBuffer[i] = color;
   }
+
   displayBuffer(colorBuffer);
+  delete[] colorBuffer;
 }
 
 // Light mode for skipped should be a pulsing gray that changes based on brightness values
@@ -206,7 +187,7 @@ void LightInterface::updateLightModeSkipped()
   double pct = (deltaTime % SKIPPED_PULSE_DURATION) / (double)SKIPPED_PULSE_DURATION;
   pct = abs(pct - 0.5);
   uint8_t brightness = 2 * pct * (SKIPPED_MAX_BRIGHTNESS - SKIPPED_MIN_BRIGHTNESS) + SKIPPED_MIN_BRIGHTNESS;
-  uint32_t colorBuffer[16];
+  uint32_t *colorBuffer = new uint32_t[m_ledCount];
 
   setBrightness(brightness);
 
@@ -216,6 +197,7 @@ void LightInterface::updateLightModeSkipped()
   }
 
   displayBuffer(colorBuffer);
+  delete[] colorBuffer;
 }
 
 void LightInterface::updateLightModeTurnSequence()
@@ -230,7 +212,9 @@ void LightInterface::updateLightModeTurnSequence()
   // logger.debug("My Player:      " + String(m_turnSequenceData.myPlayerIndex));
   // logger.debug("Current Player: " + String(m_turnSequenceData.currentPlayerIndex));
   // logger.debug("");
-  uint32_t colorBuffer[16];
+  uint32_t *colorBuffer = new uint32_t[m_ledCount];
+  uint32_t *modifiedColorBuffer = new uint32_t[m_ledCount];
+
   uint32_t myPlayerColor = (m_colorBlindMode) ? MY_PLAYER_COLOR_ALT : MY_PLAYER_COLOR;
   uint32_t currentPlayerColor = (m_colorBlindMode) ? CURRENT_PLAYER_COLOR_ALT : CURRENT_PLAYER_COLOR;
   uint32_t otherPlayerColor = (m_colorBlindMode) ? OTHER_PLAYER_COLOR_ALT : OTHER_PLAYER_COLOR;
@@ -256,24 +240,25 @@ void LightInterface::updateLightModeTurnSequence()
     {
       colorBuffer[i] = BLACK;
     }
-
-    uint32_t modifiedColorBuffer[16];
-
-    if ((m_turnSequenceData.totalPlayers == 2 || m_turnSequenceData.totalPlayers == 4 || m_turnSequenceData.totalPlayers == 8) && EXPAND_TURN_SEQUENCE_BUFFER)
-    {
-      expandBuffer(colorBuffer, modifiedColorBuffer, m_turnSequenceData.totalPlayers);
-      displayBuffer(modifiedColorBuffer);
-    }
-    else
-    {
-      displayBuffer(colorBuffer);
-    }
   }
+
+  if (m_ledCount % m_turnSequenceData.totalPlayers == 0 && EXPAND_TURN_SEQUENCE_BUFFER)
+  {
+    expandBuffer(colorBuffer, modifiedColorBuffer, m_turnSequenceData.totalPlayers);
+    displayBuffer(modifiedColorBuffer);
+  }
+  else
+  {
+    displayBuffer(colorBuffer);
+  }
+
+  delete[] colorBuffer;
+  delete[] modifiedColorBuffer;
 }
 
 void LightInterface::updateLightModeAwaitGameStart()
 {
-  uint32_t colorBuffer[16];
+  uint32_t *colorBuffer = new uint32_t[m_ledCount];
   const uint32_t *colors = (m_colorBlindMode) ? AWAIT_GAME_COLORS_ALT : AWAIT_GAME_COLORS;
 
   int segments = max(m_gameStartData.totalPlayers, 1);
@@ -284,11 +269,12 @@ void LightInterface::updateLightModeAwaitGameStart()
   uint8_t offset = currentSecond % m_ledCount;
   offsetBuffer(colorBuffer, offset);
   displayBuffer(colorBuffer);
+  delete[] colorBuffer;
 }
 
 void LightInterface::updateLightModeAwaitConnection()
 {
-  uint32_t colorBuffer[16] = {};
+  uint32_t *colorBuffer = new uint32_t[m_ledCount]{};
 
   unsigned long currentSecond = (int)(millis() - m_startTime) / AWAIT_CONNECTION_SPEED;
   uint32_t color = (m_colorBlindMode) ? AWAIT_CONNECTION_COLOR_ALT : AWAIT_CONNECTION_COLOR;
@@ -312,14 +298,20 @@ void LightInterface::updateLightModeAwaitConnection()
       }
     }
   }
+
   displayBuffer(colorBuffer);
+  delete[] colorBuffer;
 }
 
 // Update the paused game screen
 void LightInterface::updateGamePaused()
 {
+  uint32_t *colorBuffer = new uint32_t[m_ledCount]{};
+  uint32_t *blankBuffer = new uint32_t[m_ledCount]{};
+
   unsigned long currentTime = millis();
-  if (currentTime - m_lastColorChange > PAUSED_NEW_COLOR_PERIOD) {
+  if (currentTime - m_lastColorChange > PAUSED_NEW_COLOR_PERIOD)
+  {
     m_lastColorChange = currentTime;
     m_previousColor = m_targetColor;
     uint32_t r = random(0xFF) << 16;
@@ -328,21 +320,19 @@ void LightInterface::updateGamePaused()
     m_targetColor = r | g | b;
   }
 
-  uint32_t colorBuffer[16];
-
-  double pct = (double) (currentTime - m_lastColorChange) / PAUSED_NEW_COLOR_PERIOD;
+  double pct = (double)(currentTime - m_lastColorChange) / PAUSED_NEW_COLOR_PERIOD;
   // Restrict pct to be between 0..1
   pct = std::max(0.0, std::min(pct, 1.0));
-
 
   uint32_t color = interpolateColors(m_previousColor, m_targetColor, pct);
 
   unsigned long currentSecond = (int)(millis() - m_startTime) / PAUSED_BLANK_SPEED;
   uint8_t offset = currentSecond % m_ledCount;
-  uint32_t blankBuffer[16] = {};
 
-  for (int i = 0; i < m_ledCount; i++) {
-    if (!(i == offset || i == m_ledCount - 1 - offset)) {
+  for (int i = 0; i < m_ledCount; i++)
+  {
+    if (!(i == offset || i == m_ledCount - 1 - offset))
+    {
       blankBuffer[i] = WHITE;
     }
   }
@@ -359,9 +349,10 @@ void LightInterface::updateGamePaused()
   overlayBuffer(colorBuffer, blankBuffer, true);
 
   displayBuffer(colorBuffer);
+
+  delete[] blankBuffer;
+  delete[] colorBuffer;
 }
-
-
 
 void LightInterface::extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size)
 {
@@ -433,9 +424,12 @@ void LightInterface::reverseBuffer(uint32_t *buffer, uint8_t offset)
   delete originalBuffer;
 }
 
-void LightInterface::overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, bool inverse) {
-  for (int i = 0; i < m_ledCount; i++) {
-    if (overlayBuffer[i] && !inverse || !overlayBuffer[i] && inverse) {
+void LightInterface::overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, bool inverse)
+{
+  for (int i = 0; i < m_ledCount; i++)
+  {
+    if (overlayBuffer[i] && !inverse || !overlayBuffer[i] && inverse)
+    {
       baseBuffer[i] = overlayBuffer[i];
     }
   }
@@ -449,13 +443,16 @@ void LightInterface::displayBuffer(const uint32_t *buffer)
   }
 }
 
-void LightInterface::solidBuffer(uint32_t *buffer, uint32_t color) {
-  for (int i = 0; i < m_ledCount; i++) {
+void LightInterface::solidBuffer(uint32_t *buffer, uint32_t color)
+{
+  for (int i = 0; i < m_ledCount; i++)
+  {
     buffer[i] = color;
   }
 }
 
-uint32_t LightInterface::interpolateColors(uint32_t color1, uint32_t color2, double pct) {
+uint32_t LightInterface::interpolateColors(uint32_t color1, uint32_t color2, double pct)
+{
   uint32_t colorR1 = color1 & 0xFF0000;
   uint32_t colorG1 = color1 & 0x00FF00;
   uint32_t colorB1 = color1 & 0x0000FF;
@@ -465,9 +462,10 @@ uint32_t LightInterface::interpolateColors(uint32_t color1, uint32_t color2, dou
   return interpolateColors(colorR1, colorG1, colorB1, colorR2, colorG2, colorB2, pct);
 }
 
-uint32_t LightInterface::interpolateColors(uint32_t colorR1, uint32_t colorG1, uint32_t colorB1, uint32_t colorR2, uint32_t colorG2, uint32_t colorB2, double pct) {
-  uint32_t colorR = ((int) colorR2 - (int) colorR1) * pct + colorR1; 
-  uint32_t colorG = ((int) colorG2 - (int) colorG1) * pct + colorG1;
-  uint32_t colorB = ((int) colorB2 - (int) colorB1) * pct + colorB1;
+uint32_t LightInterface::interpolateColors(uint32_t colorR1, uint32_t colorG1, uint32_t colorB1, uint32_t colorR2, uint32_t colorG2, uint32_t colorB2, double pct)
+{
+  uint32_t colorR = ((int)colorR2 - (int)colorR1) * pct + colorR1;
+  uint32_t colorG = ((int)colorG2 - (int)colorG1) * pct + colorG1;
+  uint32_t colorB = ((int)colorB2 - (int)colorB1) * pct + colorB1;
   return colorR & 0xFF0000 | colorG & 0x00FF00 | colorB & 0x0000FF;
 }
