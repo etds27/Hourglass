@@ -108,7 +108,7 @@ void setup()
 
   EEPROM.begin(8);
   deviceManager = new DeviceManager();
-  // deviceManager->writeDeviceName("FISCHER3", 8);
+  // deviceManager->writeDeviceName("FISCHER7", 8);
   // logger.info(String(deviceManager->getDeviceName()));
   deviceManager->start();
 

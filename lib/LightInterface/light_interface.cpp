@@ -1,7 +1,7 @@
 #include "light_interface.h"
 #include "logger.h"
 
-const int RING_REFRESH_RATE = 1;
+// const int RING_REFRESH_RATE = 1;
 
 const uint32_t AWAIT_GAME_COLORS[16] = {
     AWAIT_GAME_COLOR1,
@@ -50,26 +50,12 @@ LightInterface::LightInterface(const uint8_t ledCount, const uint8_t diPin)
 
 LightInterface::~LightInterface() {}
 
-void LightInterface::setUp()
-{
-  begin();
-  clear();
-}
 
-void LightInterface::setColorBlindMode(bool colorBlindMode)
+void LightInterface::setDisplayMode(DeviceState state)
 {
-  m_colorBlindMode = colorBlindMode;
-}
-
-void LightInterface::setLightMode(DeviceState state)
-{
-  logger.debug("Setting Light Mode");
-  m_startTime = millis();
-  clear();
   setBrightness(DEFAULT_BRIGHTNESS);
-  m_state = state;
-  update();
-};
+  HGDisplayInterface::setDisplayMode(state);
+}
 
 /*
   // 2 equally spaced lights
@@ -375,43 +361,7 @@ void LightInterface::updateGamePaused()
   displayBuffer(colorBuffer);
 }
 
-void LightInterface::update(bool force)
-{
-  if (millis() - m_lastUpdate < RING_REFRESH_RATE && !force)
-  {
-    return;
-  }
-  // logger.info("Updating Ring Light Color");
-  clear();
-  switch (m_state)
-  {
-  case DeviceState::Off:
-    clear();
-    break;
-  case DeviceState::AwaitingConnecion:
-    updateLightModeAwaitConnection();
-    break;
-  case DeviceState::ActiveTurn:
-    updateLightModeActiveTurn();
-    break;
-  case DeviceState::Skipped:
-    updateLightModeSkipped();
-    break;
-  case DeviceState::AwaitingTurn:
-    updateLightModeTurnSequence();
-    break;
-  case DeviceState::AwaitingGameStart:
-    updateLightModeAwaitGameStart();
-    break;
-  case DeviceState::Paused:
-    updateGamePaused();
-    break;
-  };
-  // noInterrupts();
-  show();
-  // interrupts();
-  m_lastUpdate = millis();
-}
+
 
 void LightInterface::extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size)
 {
@@ -520,19 +470,4 @@ uint32_t LightInterface::interpolateColors(uint32_t colorR1, uint32_t colorG1, u
   uint32_t colorG = ((int) colorG2 - (int) colorG1) * pct + colorG1;
   uint32_t colorB = ((int) colorB2 - (int) colorB1) * pct + colorB1;
   return colorR & 0xFF0000 | colorG & 0x00FF00 | colorB & 0x0000FF;
-}
-
-void LightInterface::updateTimerData(struct TimerData data)
-{
-  m_timerData = data;
-}
-
-void LightInterface::updateTurnSequenceData(struct TurnSequenceData data)
-{
-  m_turnSequenceData = data;
-}
-
-void LightInterface::updateAwaitingGameStartData(struct GameStartData data)
-{
-  m_gameStartData = data;
 }

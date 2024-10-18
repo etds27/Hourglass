@@ -20,7 +20,7 @@ DeviceManager::DeviceManager()
   m_ring = new RingLight(RING_LED_COUNT, RING_DI_PIN);
 #else
   logger.info("Loading FastLED RingLight");
-  m_ring = new FastLEDLight(RING_LED_COUNT, RING_DI_PIN);
+  m_displayInterface = new FastLEDLight(RING_LED_COUNT, RING_DI_PIN);
 #endif
   m_buttonMonitor = new ButtonInputMonitor(BUTTON_INPUT_PIN);
   // Allows the main device button to wake the device from sleep state
@@ -31,8 +31,7 @@ DeviceManager::DeviceManager()
 void DeviceManager::start()
 {
   logger.info("Starting the device manager");
-  m_ring->setBrightness(5);
-  m_ring->setLightMode(DeviceState::Off);
+  m_displayInterface->setDisplayMode(DeviceState::Off);
 
   m_interface->setService(0);
   setWaitingForConnection();
@@ -135,7 +134,7 @@ void DeviceManager::updateTimer()
       .elapsedTime = elapsedTime,
       .isTurnTimeEnforced = isTurnTimeEnforced};
 
-  m_ring->updateTimerData(data);
+  m_displayInterface->updateTimerData(data);
 }
 
 void DeviceManager::setTurnSequenceMode()
@@ -183,7 +182,7 @@ void DeviceManager::toggleColorBlindMode()
 {
   m_colorBlindMode = !m_colorBlindMode;
   logger.info("Setting Color Blind Mode to: " + String(m_colorBlindMode));
-  m_ring->setColorBlindMode(m_colorBlindMode);
+  m_displayInterface->setColorBlindMode(m_colorBlindMode);
   updateRing();
 }
 
@@ -199,14 +198,14 @@ void DeviceManager::enterDeepSleep()
 
 void DeviceManager::updateRing(bool force)
 {
-  m_ring->update(force);
+  m_displayInterface->update(force);
 }
 
 void DeviceManager::updateAwaitingGameStartData()
 {
   struct GameStartData data = {
       .totalPlayers = m_interface->getTotalPlayers()};
-  m_ring->updateAwaitingGameStartData(data);
+  m_displayInterface->updateAwaitingGameStartData(data);
 }
 
 void DeviceManager::updateTurnSequence()
@@ -216,12 +215,12 @@ void DeviceManager::updateTurnSequence()
   int currentPlayer = m_interface->getCurrentPlayer();
 
   struct TurnSequenceData data = {.totalPlayers = totalPlayers, .myPlayerIndex = myPlayer, .currentPlayerIndex = currentPlayer};
-  m_ring->updateTurnSequenceData(data);
+  m_displayInterface->updateTurnSequenceData(data);
 }
 
 void DeviceManager::updateRingMode()
 {
-  m_ring->setLightMode(m_deviceState);
+  m_displayInterface->setDisplayMode(m_deviceState);
 }
 
 void DeviceManager::update()
