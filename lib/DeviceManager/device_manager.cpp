@@ -1,5 +1,6 @@
 #include <EEPROM.h>
 #include "device_manager.h"
+#include "ble_interface.h"
 #include "logger.h"
 
 #if LED_ADAFRUIT
@@ -33,7 +34,9 @@ void DeviceManager::start()
   logger.info("Starting the device manager");
   m_displayInterface->setDisplayMode(DeviceState::Off);
 
-  m_interface->setService(0);
+  #if INTERFACE_TYPE == 0
+  m_interface->setService();
+  #endif
   setWaitingForConnection();
   m_lastUpdate = millis();
   m_lastReadOut = millis();

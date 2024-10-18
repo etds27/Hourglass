@@ -114,7 +114,7 @@ void BLEInterface::poll()
   }
 }
 
-void BLEInterface::setService(uint8_t serviceIndex)
+void BLEInterface::setService()
 {
   logger.info(String(SERVICE_UUID));
   m_service = new BLEService(SERVICE_UUID);

@@ -1,6 +1,6 @@
 #pragma once
 #include "input_monitor.h"
-#include "ble_interface.h"
+#include "hg_central_interface.h"
 #include "hg_display_interface.h"
 #include "device_state.h"
 #include "constants.h"
@@ -48,7 +48,7 @@ private:
   unsigned long m_lastConnection;
 
   // Interface for retrieving information from the central device
-  BLEInterface *m_interface;
+  HGCentralInterface *m_interface;
 
   // Monitor for button to control turn status
   ButtonInputMonitor *m_buttonMonitor;

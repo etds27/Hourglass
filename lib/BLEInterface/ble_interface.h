@@ -1,57 +1,48 @@
 #pragma once
 #include <ArduinoBLE.h>
+#include "hg_central_interface.h"
 
-class BLEInterface
+class BLEInterface : public HGCentralInterface
 {
 public:
   BLEInterface(char *deviceName);
-  void setService(uint8_t serviceIndex);
-  void readData();
-  bool isConnected();
-  bool isTurn();
-  void endTurn();
 
-  int getTimer();
-  int getElapsedTime();
-  int getCurrentPlayer();
-  int getTotalPlayers();
+    void readData();
+    bool isConnected();
+    bool isTurn();
+    void endTurn();
 
-  // Gets the current device's player index
-  int getMyPlayer();
+    int getTimer();
+    int getElapsedTime();
+    int getCurrentPlayer();
+    int getTotalPlayers();
 
-  // Gets the current status of if the device is being skipped in the queue
-  bool getSkipped();
-  // Lets the device tell the server that it should be skipped for future turns
-  void setSkipped();
-  // Lets the device tell the server that it should not be skipped for future turns
-  void unsetSkipped();
+    // Gets the current device's player index
+    int getMyPlayer();
 
-  // Check if a game is active
-  bool isGameActive();
+    // Gets the current status of if the device is being skipped in the queue
+    bool getSkipped();
+    // Lets the device tell the server that it should be skipped for future turns
+    void setSkipped();
+    // Lets the device tell the server that it should not be skipped for future turns
+    void unsetSkipped();
 
-  // Check if a game is paused
-  bool isGamePaused();
+    // Check if a game is active
+    bool isGameActive();
 
-  // Check if the turn timer should be enforced
-  bool isTurnTimerEnforced();
+    // Check if a game is paused
+    bool isGamePaused();
+
+    // Check if the turn timer should be enforced
+    bool isTurnTimerEnforced();
+
+
+  void setService();
 
   void poll();
 
 private:
-  unsigned int lastPoll;
   static String serviceIds[];
-  char *m_deviceName;
-
-  int m_lastTimer;
-  int m_lastElapsedTime;
-  int m_lastCurrentPlayer;
-  int m_lastTotalPlayers;
-  int m_lastMyPlayer;
-  bool m_lastMyTurn;
-  bool m_lastSkipped;
-  bool m_lastGameActive;
-  bool m_lastGamePaused;
-  bool m_lastEnforceTurnTimer;
 
   BLEService *m_service;
   // BLEIntCharacteristic* m_dummy;
