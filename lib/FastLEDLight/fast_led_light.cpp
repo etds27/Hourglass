@@ -17,6 +17,7 @@ void FastLEDLight::show() {
 
 void FastLEDLight::setBrightness(uint8_t brightness) {
   FastLED.setBrightness(brightness);
+  logger.error("Setting brightness to: " + String(brightness));
 }
 
 void FastLEDLight::setPixelColor(uint8_t i, uint32_t color) {

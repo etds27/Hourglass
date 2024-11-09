@@ -4,9 +4,9 @@
 #define LED_ADAFRUIT 0
 
 #define RING_LED_COUNT 16
-#define RING_DI_PIN 2
-#define BUTTON_INPUT_PIN 15
-#define BUTTON_GPIO_PIN GPIO_NUM_14
+#define RING_DI_PIN 5
+#define BUTTON_INPUT_PIN 2
+#define BUTTON_GPIO_PIN GPIO_NUM_2
 
 #define CONNECTION_TIMEOUt 120000
 
@@ -24,6 +24,7 @@
 #define NO_TIMER_SPEED 200
 // Must divide evenly into the total LED count
 #define NO_TIMER_SEGMENTS 4
+
 #define NO_TIMER_APPLY_OFFSET 1
 #define NO_TIMER_COLOR WHITE
 

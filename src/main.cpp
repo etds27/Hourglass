@@ -112,12 +112,12 @@ void setup()
   // logger.info(String(deviceManager->getDeviceName()));
   deviceManager->start();
 
-  logger.info(String(OLIVE & 0xFF0000));
-  logger.info(String(OLIVE & 0x00FF00));
-  logger.info(String(OLIVE & 0x0000FF));
+  // logger.info(String(OLIVE & 0xFF0000));
+  // logger.info(String(OLIVE & 0x00FF00));
+  // logger.info(String(OLIVE & 0x0000FF));
   //logger.info(String(WHITE << 24));
   //logger.info(String(WHITE << 16));
-  logger.info(String(WHITE));
+  // logger.info(String(WHITE));
   // exit(0);
 
   // fastLEDLight = new FastLEDLight(16, 3);
