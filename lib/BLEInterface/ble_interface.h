@@ -21,7 +21,7 @@ public:
     int getMyPlayer();
 
     // Gets the current status of if the device is being skipped in the queue
-    bool getSkipped();
+    bool isSkipped();
     // Lets the device tell the server that it should be skipped for future turns
     void setSkipped();
     // Lets the device tell the server that it should not be skipped for future turns
@@ -56,4 +56,7 @@ private:
   BLEBoolCharacteristic *m_gameActive;
   BLEBoolCharacteristic *m_gamePaused;
   BLEBoolCharacteristic *m_enforceTurnTimer;
+
+  BLEDescriptor *m_activeTurnDescriptor;
+  BLEDescriptor *m_skippedDescriptor;
 };

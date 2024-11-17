@@ -17,7 +17,7 @@ public:
     virtual int getMyPlayer() = 0;
 
     // Gets the current status of if the device is being skipped in the queue
-    virtual bool getSkipped() = 0;
+    virtual bool isSkipped() = 0;
     // Lets the device tell the server that it should be skipped for future turns
     virtual void setSkipped() = 0;
     // Lets the device tell the server that it should not be skipped for future turns

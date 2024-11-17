@@ -33,16 +33,29 @@ protected:
   // Reverse the full sized color buffer
   void reverseBuffer(uint32_t *buffer, uint8_t offset);
 
-  // Overlays the overlay buffer on top of the base buffer
-  // Blank/Black values in the overlay buffer will not overwrite the base buffer
-  // The base buffer will be updated with the new result
-  // The inverse argument will overlay only blank leds for negative light designs
-  void overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, bool inverse = false);
+  /// @brief Overlays the overlay buffer on top of the base buffer
+  /// Blank/Black values in the overlay buffer will not overwrite the base buffer
+  /// The base buffer will be updated with the new result
+  /// @param baseBuffer Buffer to modify in place with overlayed content
+  /// @param overlayBuffer Buffer to overlay on the base buffer
+  /// @param inverse If set, the overlay only blank leds for negative light designs
+  void overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, uint8_t bufferSize, bool inverse = false);
 
-  // Set the provided buffer to a single solid color
-  void solidBuffer(uint32_t *buffer, uint32_t color);
+  /// @brief Set the provided buffer to a single solid color
+  /// @param buffer Buffer to modify in-place
+  /// @param bufferSize Size of the provided buffer
+  /// @param color Color to set the buffer to
+  void solidBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t color);
 
+  /// @brief Displays the full sized buffer to the light interface
+  /// @param buffer 
   void displayBuffer(const uint32_t *buffer);
+
+  /// @brief Set a buffer to a specific color for all non zero buffer values
+  /// @param buffer Buffer to update colors of in place
+  /// @param bufferSize Size of the provided buffer
+  /// @param color Color to change buffer to
+  void colorBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t color);
 
   // Linearly interpolate the colors provided by their RGB channels
   uint32_t interpolateColors(uint32_t color1, uint32_t color2, double pct);

@@ -30,6 +30,8 @@ public:
 private:
   DeviceState m_deviceState;
 
+  unsigned long m_lastTurnStart;
+
   // Flag indicating that the `start()` has been called
   bool m_started = false;
 
@@ -88,6 +90,9 @@ private:
   bool isActiveTurn();
 
   void startTurn();
+
+  // Send the end of the turn to the central device
+  void sendEndTurn();
   void endTurn();
 
   void setTurnSequenceMode();

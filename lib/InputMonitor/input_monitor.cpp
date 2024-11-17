@@ -39,7 +39,7 @@ ButtonInputType ButtonInputMonitor::getAction() {
   }
 
   // If the monitor doesnt know it is pressed but it is
-  if (!isPressed && value) {
+  if (!isPressed && value && currentTime - last_press_release > MIN_RELEASE_TIME) {
     isPressed = true;
     last_press_start = currentTime;
     currentPresses += 1;

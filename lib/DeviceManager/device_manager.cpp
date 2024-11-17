@@ -27,6 +27,7 @@ DeviceManager::DeviceManager()
   // Allows the main device button to wake the device from sleep state
   esp_sleep_enable_ext0_wakeup(BUTTON_GPIO_PIN, HIGH);
   m_interface = new BLEInterface(m_deviceName);
+
 }
 
 void DeviceManager::start()
@@ -36,9 +37,11 @@ void DeviceManager::start()
 
   m_interface->setService();
   setWaitingForConnection();
-  m_lastUpdate = millis();
-  m_lastReadOut = millis();
-  m_lastConnection = millis();
+  uint32_t now = millis();
+  m_lastUpdate = now;
+  m_lastReadOut = now;
+  m_lastConnection = now;
+  m_lastTurnStart = now;
 }
 
 char *DeviceManager::getDeviceName()
@@ -85,9 +88,12 @@ bool DeviceManager::isActiveTurn()
 }
 
 // Transition from the active turn to 'turn sequence' mode
-void DeviceManager::endTurn()
+void DeviceManager::sendEndTurn()
 {
   m_interface->endTurn();
+}
+
+void DeviceManager::endTurn() {
   setTurnSequenceMode();
 }
 
@@ -95,6 +101,7 @@ void DeviceManager::startTurn()
 {
   logger.info("Setting device state to: ActiveTurn");
   m_deviceState = DeviceState::ActiveTurn;
+  m_lastTurnStart = millis();
   updateTimer();
   updateRingMode();
 }
@@ -231,10 +238,10 @@ void DeviceManager::update()
   m_lastUpdate = currentTime;
 
   // Log data from the interface
-  if (currentTime - m_lastReadOut > 1000)
+  if (currentTime - m_lastReadOut > 2000)
   {
     logger.info("Update Period: " + String(deltaTime));
-    //m_interface->readData();
+    // m_interface->readData();
     m_lastReadOut = currentTime;
   }
   // logger.info("Running " + String(deltaTime));
@@ -281,16 +288,18 @@ void DeviceManager::processGameState()
     return;
   }
 
-  if ((m_interface->isGamePaused()))
+  if (m_interface->isGamePaused())
   {
+    updateTurnSequence();
     setGamePaused();
     return;
   }
 
   // Get all information about device inputs and device interface
   bool interfaceTurn = m_interface->isTurn();
+  bool interfaceSkipped = m_interface->isSkipped();
   int currentPlayer = m_interface->getCurrentPlayer();
-  bool isSkipped = m_interface->getSkipped();
+  bool isSkipped = m_deviceState == DeviceState::Skipped;
   bool isTurn = m_deviceState == DeviceState::ActiveTurn;
   int totalPlayers = m_interface->getTotalPlayers();
 
@@ -329,6 +338,15 @@ void DeviceManager::processGameState()
     }
   }
 
+  if (isSkipped != interfaceSkipped) {
+    if (isSkipped) {
+      unsetSkipped();
+    } else {
+      setSkipped();
+    }
+    return;
+  }
+
   // If we are in a skipped state, immediately leave the program
   if (isSkipped)
   {
@@ -341,8 +359,15 @@ void DeviceManager::processGameState()
 
   if (buttonAction == ButtonInputType::ButtonPress && isTurn)
   {
-    // If a button was pressed and it is the person's turn
-    endTurn();
+    uint32_t timeSinceTurnStart = millis() - m_lastTurnStart;
+    logger.debug("Time since turn start: " + String(timeSinceTurnStart) + " = " + String(millis()) + " + " + String(m_lastTurnStart));
+    if ( timeSinceTurnStart > MIN_TURN_LENGTH) {
+      // If a button was pressed and it is the person's turn
+      sendEndTurn();
+      return;
+    } else {
+      logger.debug("Attempted to end turn too quickly");
+    }
   }
 
   if (m_interface->isTurn() == isTurn && isTurn)
@@ -350,17 +375,20 @@ void DeviceManager::processGameState()
     // Both the Bluetooth interface and device state believe it is our turn
     updateTimer();
   }
-  else if (interfaceTurn != isTurn && !isTurn)
+  else if (interfaceTurn != isTurn)  
   {
-    // If the Bluetooth interface thinks it is our turn but the device state doesnt
-    // If the turn just started
-    startTurn();
-  }
-  else if (m_interface->isTurn() != isTurn && isTurn)
-  {
-    // If the device thinks it is our turn but the but bluetooth doesnt
-    // If the turn just ended
-    endTurn();
+    logger.debug("Interface turn does not match device turn");
+    if (!isTurn) {
+      logger.debug("Device does not have turn set. Starting new turn");
+      // If the Bluetooth interface thinks it is our turn but the device state doesnt
+      // If the turn just started
+      startTurn();
+    } else {
+      logger.debug("Device has turn set. Ending current turn");
+      // If the device thinks it is our turn but the but bluetooth doesnt
+      // If the turn just ended
+      endTurn();
+    }
   }
   else
   {

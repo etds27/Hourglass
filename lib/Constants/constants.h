@@ -1,17 +1,21 @@
 #pragma once
 #include "colors.h"
 
+#define ENABLE_DEBUG 0
+
 #define LED_ADAFRUIT 0
 
 #define RING_LED_COUNT 16
-#define RING_DI_PIN 2
-#define BUTTON_INPUT_PIN 15
-#define BUTTON_GPIO_PIN GPIO_NUM_14
+#define RING_DI_PIN 5
+#define BUTTON_INPUT_PIN 2
+#define BUTTON_GPIO_PIN GPIO_NUM_2
 
 #define CONNECTION_TIMEOUt 120000
 
+#define MIN_TURN_LENGTH 1000
+
 // Lighting constants
-#define DEFAULT_BRIGHTNESS 25
+#define DEFAULT_BRIGHTNESS 5
 #define RING_REFRESH_RATE 5  // ms
 
 #define TIMER_COLOR_1 GREEN

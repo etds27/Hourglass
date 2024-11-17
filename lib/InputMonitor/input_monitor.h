@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include "device_state.h"
 
+// A press must have been released for this amount of time to register a new press
+#define MIN_RELEASE_TIME 10
 #define LONG_PRESS_DURATION 500
 #define MULTI_CLICK_TIMEOUT 300
 

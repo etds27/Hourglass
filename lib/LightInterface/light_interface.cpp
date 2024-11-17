@@ -74,7 +74,7 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
   // These LEDs will grow to fill until reaching the next LED
   // Then it will shrink from the starting edge
   // This will give an inchworm type effect
-  uint32_t *colorBuffer = new uint32_t[m_ledCount];
+  uint32_t *colorBuffer = new uint32_t[m_ledCount]{};
   uint32_t *fullColorBuffer = new uint32_t[m_ledCount]{};
 
   // Get the current time segment since the beginning of the color mode change
@@ -92,17 +92,20 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
   // Current state of animation
   bool growing = currentSegment < cycleLength / 2;
 
+  // Current cycle
+  uint8_t currentCycle = adjustedTime / cycleLength;
+
   // Current value within the growing or shrinking cycles
   uint8_t subcycle = currentSegment % (cycleLength / 2);
 
-  /*
+  #if ENABLE_DEBUG
   logger.debug("Adjusted Time: " + String(adjustedTime));
   logger.debug("Segment Length: " + String(segmentLength));
   logger.debug("Cycle length: " + String(cycleLength));
   logger.debug("Current Segment: " + String(currentSegment));
   logger.debug("Growing: " + String(growing));
   logger.debug("Subcycle: " + String(subcycle));
-  */
+  #endif
 
   if (growing)
   {
@@ -121,10 +124,14 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
 
   // Because each segment looks the same, we can just take one segment and duplicate it to fill the LED array
   extendBuffer(colorBuffer, fullColorBuffer, segmentLength);
+
+  // Color the first segment green and the opposite segment blue
+  this->colorBuffer(fullColorBuffer, segmentLength, RED);
+  this->colorBuffer(fullColorBuffer + (segmentLength * NO_TIMER_SEGMENTS / 2), segmentLength, BLUE);
   if (NO_TIMER_APPLY_OFFSET)
   {
     // Offset is the number of full cycles that have already played
-    uint8_t offset = adjustedTime / cycleLength % m_ledCount;
+    uint8_t offset = -segmentLength * (currentCycle % NO_TIMER_SEGMENTS);
     offsetBuffer(fullColorBuffer, offset);
   }
   displayBuffer(fullColorBuffer);
@@ -147,7 +154,7 @@ void LightInterface::updateLightModeActiveTurnTimer()
   int filled = (int)(pct * m_ledCount);
   int deltaTime = ((int)(millis() - m_startTime)) / 200 - 60;
 
-  solidBuffer(colorBuffer, BLACK);
+  solidBuffer(colorBuffer, m_ledCount, BLACK);
 
   if (pct < 0.75)
   {
@@ -345,8 +352,8 @@ void LightInterface::updateGamePaused()
   logger.info("");
   */
 
-  solidBuffer(colorBuffer, color);
-  overlayBuffer(colorBuffer, blankBuffer, true);
+  solidBuffer(colorBuffer, m_ledCount, color);
+  overlayBuffer(colorBuffer, blankBuffer, m_ledCount, true);
 
   displayBuffer(colorBuffer);
 
@@ -424,9 +431,9 @@ void LightInterface::reverseBuffer(uint32_t *buffer, uint8_t offset)
   delete originalBuffer;
 }
 
-void LightInterface::overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, bool inverse)
+void LightInterface::overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, uint8_t bufferSize, bool inverse)
 {
-  for (int i = 0; i < m_ledCount; i++)
+  for (int i = 0; i < bufferSize; i++)
   {
     if (overlayBuffer[i] && !inverse || !overlayBuffer[i] && inverse)
     {
@@ -443,11 +450,19 @@ void LightInterface::displayBuffer(const uint32_t *buffer)
   }
 }
 
-void LightInterface::solidBuffer(uint32_t *buffer, uint32_t color)
+void LightInterface::solidBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t color)
 {
-  for (int i = 0; i < m_ledCount; i++)
+  for (int i = 0; i < bufferSize; i++)
   {
     buffer[i] = color;
+  }
+}
+
+void LightInterface::colorBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t color) {
+  for (int i = 0; i < bufferSize; i++) {
+    if (buffer[i] > 0) {
+      buffer[i] = color;
+    }
   }
 }
 
