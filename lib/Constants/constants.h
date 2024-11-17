@@ -28,6 +28,7 @@
 #define NO_TIMER_SPEED 200
 // Must divide evenly into the total LED count
 #define NO_TIMER_SEGMENTS 4
+
 #define NO_TIMER_APPLY_OFFSET 1
 #define NO_TIMER_COLOR WHITE
 
