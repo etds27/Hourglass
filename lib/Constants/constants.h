@@ -25,7 +25,7 @@
 #define TIMER_COLOR_3 RED
 #define TIMER_COLOR_ALT_3 0xCC3311
 
-#define NO_TIMER_SPEED 200
+#define NO_TIMER_SPEED 400
 // Must divide evenly into the total LED count
 #define NO_TIMER_SEGMENTS 4
 

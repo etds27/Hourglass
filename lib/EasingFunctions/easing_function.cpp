@@ -70,7 +70,6 @@ double EasingFunction::EasingFunction::ease(double value, double start, double e
     {
         double midpoint = 0.5;
         // If we are closer to the start
-        logger.debug("Easing in/out");
         if (adjustedValue < midpoint)
         {
             adjustedValue *= 2;

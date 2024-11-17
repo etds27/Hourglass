@@ -4,6 +4,7 @@
 #include "colors.h"
 #include "device_state.h"
 #include "hg_display_interface.h"
+#include "easing_function.h"
 
 class LightInterface : public HGDisplayInterface
 {
@@ -56,6 +57,14 @@ protected:
   /// @param bufferSize Size of the provided buffer
   /// @param color Color to change buffer to
   void colorBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t color);
+
+  /// @brief Obtain the current segment of the display cycle adjusted by the easing function
+  /// @param cycleLength Length of a single cycle in milliseconds
+  /// @param cycleStartTime Start time of a cycle in milliseconds (this can be the display mode change time)
+  /// @param totalSteps Total number of steps in a cycle
+  /// @param easingFunction Easing Function to adjust the cycle completion percentage to
+  /// @return The current step in the cycle adjusted for the Easing Function
+  uint8_t getAdjustedCycleSegment(unsigned long cycleDuration, unsigned long cycleStartTime, uint8_t totalCycleSteps, EasingFunction::EasingFunction* easingFunction);
 
   // Linearly interpolate the colors provided by their RGB channels
   uint32_t interpolateColors(uint32_t color1, uint32_t color2, double pct);

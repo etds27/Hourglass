@@ -77,35 +77,45 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
   uint32_t *colorBuffer = new uint32_t[m_ledCount]{};
   uint32_t *fullColorBuffer = new uint32_t[m_ledCount]{};
 
+  unsigned long timeSinceModeStart = (millis() - m_startTime);
+
   // Get the current time segment since the beginning of the color mode change
-  unsigned long adjustedTime = (int)(millis() - m_startTime) / (NO_TIMER_SPEED);
+  unsigned long adjustedTime = (int)timeSinceModeStart / (NO_TIMER_SPEED);
 
   // Length of an individual segment
   uint8_t segmentLength = m_ledCount / NO_TIMER_SEGMENTS;
 
   // The full cycle will run for 2x the number of LEDs per segment
-  uint8_t cycleLength = 2 * segmentLength;
+  uint8_t totalCycleSteps = 2 * segmentLength;
 
-  // Find current stage
-  uint8_t currentSegment = adjustedTime % cycleLength;
+  // Total cycle duration
+  unsigned long cycleDuration = totalCycleSteps * NO_TIMER_SPEED;
 
-  // Current state of animation
-  bool growing = currentSegment < cycleLength / 2;
+  // Elapsed cycle time
+  unsigned long cycleElapsedTime = timeSinceModeStart % cycleDuration;
 
   // Current cycle
-  uint8_t currentCycle = adjustedTime / cycleLength;
+  uint8_t currentCycle = adjustedTime / totalCycleSteps;
+
+  // Find current stage
+  EasingFunction::EasingFunction *function = new EasingFunction::Cubic(EasingMode::EaseInAndOut);
+  uint8_t currentSegment= getAdjustedCycleSegment(cycleDuration, m_startTime, totalCycleSteps, function);
+  delete function;
+
+  // Current state of animation
+  bool growing = currentSegment < totalCycleSteps / 2;
 
   // Current value within the growing or shrinking cycles
-  uint8_t subcycle = currentSegment % (cycleLength / 2);
+  uint8_t subcycle = currentSegment % (totalCycleSteps / 2);
 
-  #if ENABLE_DEBUG
+#if ENABLE_DEBUG
   logger.debug("Adjusted Time: " + String(adjustedTime));
   logger.debug("Segment Length: " + String(segmentLength));
   logger.debug("Cycle length: " + String(cycleLength));
   logger.debug("Current Segment: " + String(currentSegment));
   logger.debug("Growing: " + String(growing));
   logger.debug("Subcycle: " + String(subcycle));
-  #endif
+#endif
 
   if (growing)
   {
@@ -458,12 +468,24 @@ void LightInterface::solidBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t 
   }
 }
 
-void LightInterface::colorBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t color) {
-  for (int i = 0; i < bufferSize; i++) {
-    if (buffer[i] > 0) {
+void LightInterface::colorBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t color)
+{
+  for (int i = 0; i < bufferSize; i++)
+  {
+    if (buffer[i] > 0)
+    {
       buffer[i] = color;
     }
   }
+}
+
+uint8_t LightInterface::getAdjustedCycleSegment(unsigned long cycleDuration, unsigned long cycleStartTime, uint8_t totalCycleSteps, EasingFunction::EasingFunction *easingFunction)
+{
+  // Adjusted current cycle
+  unsigned long cycleElapsedTime = (millis() - cycleStartTime) % cycleDuration;
+  double pctOfCycle = (double)cycleElapsedTime / cycleDuration;
+  double newPctOfCycle = easingFunction->ease(pctOfCycle);
+  return (int)(newPctOfCycle * totalCycleSteps);
 }
 
 uint32_t LightInterface::interpolateColors(uint32_t color1, uint32_t color2, double pct)
