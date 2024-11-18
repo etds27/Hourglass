@@ -293,23 +293,46 @@ void LightInterface::updateLightModeAwaitConnection()
 {
   uint32_t *colorBuffer = new uint32_t[m_ledCount]{};
 
-  unsigned long currentSecond = (int)(millis() - m_startTime) / AWAIT_CONNECTION_SPEED;
+  // unsigned long currentSecond = (int)(millis() - m_startTime) / AWAIT_CONNECTION_SPEED;
   uint32_t color = (m_colorBlindMode) ? AWAIT_CONNECTION_COLOR_ALT : AWAIT_CONNECTION_COLOR;
 
-  int timeSlice = currentSecond % (m_ledCount * 2);
-  int waxing = timeSlice / m_ledCount == 0;
+  unsigned long timeSinceModeStart = (millis() - m_startTime);
+
+  // Length of an individual segment
+  uint8_t segmentLength = m_ledCount;
+
+  // The full cycle will run for 2x the number of LEDs per segment
+  uint8_t totalCycleSteps = 2 * segmentLength;
+
+  // Total cycle duration
+  unsigned long cycleDuration = totalCycleSteps * NO_TIMER_SPEED;
+
+  // Elapsed cycle time
+  unsigned long cycleElapsedTime = timeSinceModeStart % cycleDuration;
+
+  // Cycle completion percent
+  double cycleCompletionPercent = (double) cycleElapsedTime / (double) cycleDuration;
+
+  // Waxing / Waning
+  bool waxing = cycleCompletionPercent < 0.5;
+
+  // Find current stage
+  EasingFunction::EasingFunction *function = new EasingFunction::Sine(EasingMode::EaseInAndOut);
+  uint8_t currentSingleCycleStep = getAdjustedCycleSegment(cycleDuration / 2, m_startTime, totalCycleSteps / 2, function);
+  delete function;
+
   for (int i = 0; i < m_ledCount; i++)
   {
     if (waxing)
     {
-      if (i <= timeSlice % m_ledCount)
+      if (i <= currentSingleCycleStep % m_ledCount)
       {
         colorBuffer[i] = color;
       }
     }
     else
     {
-      if (i > timeSlice % m_ledCount)
+      if (i > currentSingleCycleStep % m_ledCount)
       {
         colorBuffer[i] = color;
       }
@@ -501,8 +524,28 @@ uint32_t LightInterface::interpolateColors(uint32_t color1, uint32_t color2, dou
 
 uint32_t LightInterface::interpolateColors(uint32_t colorR1, uint32_t colorG1, uint32_t colorB1, uint32_t colorR2, uint32_t colorG2, uint32_t colorB2, double pct)
 {
-  uint32_t colorR = ((int)colorR2 - (int)colorR1) * pct + colorR1;
-  uint32_t colorG = ((int)colorG2 - (int)colorG1) * pct + colorG1;
-  uint32_t colorB = ((int)colorB2 - (int)colorB1) * pct + colorB1;
+  EasingFunction::EasingFunction *easingFunction = new EasingFunction::Linear(EasingMode::EaseIn);
+  uint32_t color = interpolateColors(colorR1, colorG1, colorB1, colorR2, colorG2, colorB2, pct, easingFunction);
+  delete easingFunction;
+  return color;
+}
+
+uint32_t LightInterface::interpolateColors(uint32_t color1, uint32_t color2, double pct, EasingFunction::EasingFunction *easingFunction)
+{
+  uint32_t colorR1 = color1 & 0xFF0000;
+  uint32_t colorG1 = color1 & 0x00FF00;
+  uint32_t colorB1 = color1 & 0x0000FF;
+  uint32_t colorR2 = color2 & 0xFF0000;
+  uint32_t colorG2 = color2 & 0x00FF00;
+  uint32_t colorB2 = color2 & 0x0000FF;
+  return interpolateColors(colorR1, colorG1, colorB1, colorR2, colorG2, colorB2, pct);
+}
+
+uint32_t LightInterface::interpolateColors(uint32_t colorR1, uint32_t colorG1, uint32_t colorB1, uint32_t colorR2, uint32_t colorG2, uint32_t colorB2, double pct, EasingFunction::EasingFunction *easingFunction)
+{
+  double adjustedPct = easingFunction->ease(pct);
+  uint32_t colorR = ((int)colorR2 - (int)colorR1) * adjustedPct + colorR1;
+  uint32_t colorG = ((int)colorG2 - (int)colorG1) * adjustedPct + colorG1;
+  uint32_t colorB = ((int)colorB2 - (int)colorB1) * adjustedPct + colorB1;
   return colorR & 0xFF0000 | colorG & 0x00FF00 | colorB & 0x0000FF;
 }

@@ -49,7 +49,7 @@ protected:
   void solidBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t color);
 
   /// @brief Displays the full sized buffer to the light interface
-  /// @param buffer 
+  /// @param buffer
   void displayBuffer(const uint32_t *buffer);
 
   /// @brief Set a buffer to a specific color for all non zero buffer values
@@ -64,11 +64,47 @@ protected:
   /// @param totalSteps Total number of steps in a cycle
   /// @param easingFunction Easing Function to adjust the cycle completion percentage to
   /// @return The current step in the cycle adjusted for the Easing Function
-  uint8_t getAdjustedCycleSegment(unsigned long cycleDuration, unsigned long cycleStartTime, uint8_t totalCycleSteps, EasingFunction::EasingFunction* easingFunction);
+  uint8_t getAdjustedCycleSegment(unsigned long cycleDuration, unsigned long cycleStartTime, uint8_t totalCycleSteps, EasingFunction::EasingFunction *easingFunction);
 
-  // Linearly interpolate the colors provided by their RGB channels
+  // 
+
+  /// @brief Linearly interpolate the colors provided by their RGB channels
+  /// @param color1 Color to use for interpolation
+  /// @param color2 Color to use for interpolation
+  /// @param pct Percent color shifting between colors provided
+  /// @return Updated color
   uint32_t interpolateColors(uint32_t color1, uint32_t color2, double pct);
+
+  /// @brief Linearly interpolate the colors provided by their RGB channels
+  /// @param colorR1 Color red channel
+  /// @param colorG1 Color green channel
+  /// @param colorB1 Color blue channel
+  /// @param colorR2 Color red channel
+  /// @param colorG2 Color green channel
+  /// @param colorB2 Color blue channel
+  /// @param pct Percent color shifting between colors provided
+  /// @return Updated color
   uint32_t interpolateColors(uint32_t colorR1, uint32_t colorG1, uint32_t colorB1, uint32_t colorR2, uint32_t colorG2, uint32_t colorB2, double pct);
+
+  /// @brief Interpolate the colors provided by their RGB channels using the provided easing function
+  /// @param color1 
+  /// @param color2 
+  /// @param pct Percent color shifting between colors provided
+  /// @param easingFunction Function to adjust percentage to expected curve
+  /// @return Updated color
+  uint32_t interpolateColors(uint32_t color1, uint32_t color2, double pct, EasingFunction::EasingFunction *easingFunction);
+
+  /// @brief Interpolate the colors provided by their RGB channels using the provided easing function
+  /// @param colorR1 Color red channel
+  /// @param colorG1 Color green channel
+  /// @param colorB1 Color blue channel
+  /// @param colorR2 Color red channel
+  /// @param colorG2 Color green channel
+  /// @param colorB2 Color blue channel
+  /// @param pct Percent color shifting between colors provided
+  /// @param easingFunction Function to adjust percentage to expected curve
+  /// @return Updated color
+  uint32_t interpolateColors(uint32_t colorR1, uint32_t colorG1, uint32_t colorB1, uint32_t colorR2, uint32_t colorG2, uint32_t colorB2, double pct, EasingFunction::EasingFunction *easingFunction);
 
 public:
   LightInterface(const uint8_t ledCount = 16, const uint8_t diPin = 0);
