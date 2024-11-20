@@ -99,7 +99,7 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
 
   // Find current stage
   EasingFunction::EasingFunction *function = new EasingFunction::Cubic(EasingMode::EaseInAndOut);
-  uint8_t currentSegment= getAdjustedCycleSegment(cycleDuration, m_startTime, totalCycleSteps, function);
+  uint8_t currentSegment = getAdjustedCycleSegment(cycleDuration, m_startTime, totalCycleSteps, function);
   delete function;
 
   // Current state of animation
@@ -259,7 +259,7 @@ void LightInterface::updateLightModeTurnSequence()
     }
   }
 
-  if (m_ledCount % m_turnSequenceData.totalPlayers == 0 && EXPAND_TURN_SEQUENCE_BUFFER)
+  if ((m_ledCount % m_turnSequenceData.totalPlayers == 0 && UNIFORM_SEQUENCES_REQUIRED && EXPAND_TURN_SEQUENCE_BUFFER) || (EXPAND_TURN_SEQUENCE_BUFFER && !UNIFORM_SEQUENCES_REQUIRED))
   {
     expandBuffer(colorBuffer, modifiedColorBuffer, m_turnSequenceData.totalPlayers);
     displayBuffer(modifiedColorBuffer);
@@ -305,20 +305,20 @@ void LightInterface::updateLightModeAwaitConnection()
   uint8_t totalCycleSteps = 2 * segmentLength;
 
   // Total cycle duration
-  unsigned long cycleDuration = totalCycleSteps * NO_TIMER_SPEED;
+  unsigned long cycleDuration = totalCycleSteps * AWAIT_CONNECTION_SPEED;
 
   // Elapsed cycle time
   unsigned long cycleElapsedTime = timeSinceModeStart % cycleDuration;
 
   // Cycle completion percent
-  double cycleCompletionPercent = (double) cycleElapsedTime / (double) cycleDuration;
+  double cycleCompletionPercent = (double)cycleElapsedTime / (double)cycleDuration;
 
   // Waxing / Waning
   bool waxing = cycleCompletionPercent < 0.5;
 
   // Find current stage
-  EasingFunction::EasingFunction *function = new EasingFunction::Sine(EasingMode::EaseInAndOut);
-  uint8_t currentSingleCycleStep = getAdjustedCycleSegment(cycleDuration / 2, m_startTime, totalCycleSteps / 2, function);
+  EasingFunction::EasingFunction *function = new EasingFunction::Quadratic(EasingMode::EaseInAndOut);
+  uint8_t currentSingleCycleStep = getAdjustedCycleSegment(cycleDuration / 2.0, m_startTime, totalCycleSteps / 2.0, function);
   delete function;
 
   for (int i = 0; i < m_ledCount; i++)
@@ -364,7 +364,9 @@ void LightInterface::updateGamePaused()
   // Restrict pct to be between 0..1
   pct = std::max(0.0, std::min(pct, 1.0));
 
-  uint32_t color = interpolateColors(m_previousColor, m_targetColor, pct);
+  EasingFunction::EasingFunction *easingFunction = new EasingFunction::Circular(EasingMode::EaseInAndOut);
+  uint32_t color = interpolateColors(m_previousColor, m_targetColor, pct, easingFunction);
+  delete easingFunction;
 
   unsigned long currentSecond = (int)(millis() - m_startTime) / PAUSED_BLANK_SPEED;
   uint8_t offset = currentSecond % m_ledCount;

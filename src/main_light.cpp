@@ -28,7 +28,7 @@ void setup()
     };
 
     fastLEDLight->updateTimerData(data);
-    fastLEDLight->setDisplayMode(DeviceState::ActiveTurn);
+    fastLEDLight->setDisplayMode(DeviceState::Paused);
 }
 
 void loop()
