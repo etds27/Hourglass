@@ -86,6 +86,7 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
   uint8_t segmentLength = m_ledCount / NO_TIMER_SEGMENTS;
 
   // The full cycle will run for 2x the number of LEDs per segment
+  // Subtract two steps to skip the start and end blank screens
   uint8_t totalCycleSteps = 2 * segmentLength;
 
   // Total cycle duration
@@ -99,7 +100,9 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
 
   // Find current stage
   EasingFunction::EasingFunction *function = new EasingFunction::Cubic(EasingMode::EaseInAndOut);
-  uint8_t currentSegment = getAdjustedCycleSegment(cycleDuration, m_startTime, totalCycleSteps, function);
+  uint8_t currentSegment = getAdjustedCycleSegment(cycleDuration, m_startTime, totalCycleSteps - 1, function);
+  currentSegment++;
+
   delete function;
 
   // Current state of animation
@@ -111,7 +114,7 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
 #if ENABLE_DEBUG
   logger.debug("Adjusted Time: " + String(adjustedTime));
   logger.debug("Segment Length: " + String(segmentLength));
-  logger.debug("Cycle length: " + String(cycleLength));
+  logger.debug("Cycle length: " + String(totalCycleSteps));
   logger.debug("Current Segment: " + String(currentSegment));
   logger.debug("Growing: " + String(growing));
   logger.debug("Subcycle: " + String(subcycle));
@@ -123,6 +126,13 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
     {
       colorBuffer[i] = NO_TIMER_COLOR;
     }
+    /*
+    // This prevents the ring from being 100% off at the start of the sequence
+    if (subcycle == 0) {
+      // logger.info("Extending first light");
+      colorBuffer[0] = NO_TIMER_COLOR;
+    }
+    */
   }
   else
   {
@@ -130,6 +140,13 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
     {
       colorBuffer[i] = NO_TIMER_COLOR;
     }
+    /*
+    // This prevents the ring from being 100% off at the end of the sequence
+    if (subcycle == segmentLength) {
+      // logger.info("Extending last light");
+      colorBuffer[subcycle - 1] = NO_TIMER_COLOR;
+    }
+    */
   }
 
   // Because each segment looks the same, we can just take one segment and duplicate it to fill the LED array
