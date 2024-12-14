@@ -15,7 +15,7 @@
 #define MIN_TURN_LENGTH 1000
 
 // Lighting constants
-#define DEFAULT_BRIGHTNESS 35
+#define DEFAULT_BRIGHTNESS 25
 #define RING_REFRESH_RATE 5  // ms
 
 #define TIMER_COLOR_1 GREEN

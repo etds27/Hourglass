@@ -498,7 +498,7 @@ void LightInterface::displayBuffer(const uint32_t *buffer)
 {
   for (int i = 0; i < m_ledCount; i++)
   {
-    setPixelColor(i, buffer[i]);
+    setPixelColor((i + TOP_RING_OFFSET) % m_ledCount, buffer[i]);
   }
 }
 
