@@ -15,6 +15,11 @@
 #define MIN_TURN_LENGTH 1000
 
 // Lighting constants
+
+// All Hourglass devices have the ring LED installed in the same orientation. 
+// This orientation does not have the first LED at the top of the ring
+// This offset translates the display buffer to be displayed at the top of the ring.
+#define TOP_RING_OFFSET 2
 #define DEFAULT_BRIGHTNESS 25
 #define RING_REFRESH_RATE 5  // ms
 

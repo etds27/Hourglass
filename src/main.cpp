@@ -16,7 +16,7 @@ DeviceManager *deviceManager;
 
 void setup()
 {
-  loggerLevel = LoggerLevel::DEBUG;
+  loggerLevel = LoggerLevel::OFF;
   Serial.begin(9600);
   // while (!Serial)
   //   ;
@@ -26,8 +26,8 @@ void setup()
 
   EEPROM.begin(8);
   deviceManager = new DeviceManager();
-  // deviceManager->writeDeviceName("FISCHER7", 8);
-  logger.info(String(deviceManager->getDeviceName()));
+  // deviceManager->writeDeviceName("HG4     ", 8);
+  // logger.info(String(deviceManager->getDeviceName()));
   deviceManager->start();
 
   // exit(0);
