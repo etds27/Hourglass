@@ -208,7 +208,7 @@ void LightInterface::updateLightModeActiveTurnTimer()
     colorBuffer[i] = color;
   }
 
-  displayBuffer(colorBuffer);
+  displayBuffer(colorBuffer, false);
   delete[] colorBuffer;
 }
 
@@ -512,7 +512,6 @@ void LightInterface::displayBuffer(const uint32_t *buffer, const bool clockwise)
       setPixelColor(((m_ledCount - i  - 1) + TOP_RING_OFFSET) % m_ledCount, buffer[i]);
     } else {
       setPixelColor((i + TOP_RING_OFFSET) % m_ledCount, buffer[i]);
-
     }
   }
 }

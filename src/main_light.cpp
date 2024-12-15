@@ -26,13 +26,13 @@ void setup()
     uint32_t* buffer = new uint32_t[16]{};
     buffer[0] = BLUE;
     buffer[1] = GREEN;
-    struct GameDebugData data
+    struct TimerData data
     {
-        .buffer = buffer
+        .totalTime = 300, .elapsedTime = 100, .isTurnTimeEnforced = true
     };
 
-    fastLEDLight->updateGameDebugData(data);
-    fastLEDLight->setDisplayMode(DeviceState::Debug);
+    fastLEDLight->updateTimerData(data);
+    fastLEDLight->setDisplayMode(DeviceState::AwaitingConnecion);
 }
 
 void loop()
