@@ -6,6 +6,12 @@
 #include "hg_display_interface.h"
 #include "easing_function.h"
 
+// All required data for any display interface to show the Awaiting Game Start state
+struct GameDebugData
+{
+    uint32_t *buffer;
+};
+
 class LightInterface : public HGDisplayInterface
 {
 protected:
@@ -20,6 +26,8 @@ protected:
   void updateLightModeAwaitGameStart();
   void updateLightModeAwaitConnection();
   void updateGamePaused();
+  void updateGameDebug();
+
 
   // Take a buffer of size (2, 4, 8) and populate a full 16 item buffer using the condensed buffer
   // The fill option will fill in the space between the
@@ -50,7 +58,7 @@ protected:
 
   /// @brief Displays the full sized buffer to the light interface
   /// @param buffer
-  void displayBuffer(const uint32_t *buffer);
+  void displayBuffer(const uint32_t *buffer, const bool clockwise = true);
 
   /// @brief Set a buffer to a specific color for all non zero buffer values
   /// @param buffer Buffer to update colors of in place
@@ -106,6 +114,8 @@ protected:
   /// @return Updated color
   uint32_t interpolateColors(uint32_t colorR1, uint32_t colorG1, uint32_t colorB1, uint32_t colorR2, uint32_t colorG2, uint32_t colorB2, double pct, EasingFunction::EasingFunction *easingFunction);
 
+
+  struct GameDebugData m_gameDebugData;
 public:
   LightInterface(const uint8_t ledCount = 16, const uint8_t diPin = 0);
   virtual ~LightInterface();
@@ -119,4 +129,6 @@ public:
   uint32_t m_previousColor;
 
   void setDisplayMode(DeviceState state);
+
+  void updateGameDebugData(GameDebugData data);
 };

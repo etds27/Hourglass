@@ -7,6 +7,7 @@
 #include <EEPROM.h>
 #include "device_state.h"
 #include "fast_led_light.h"
+#include "light_interface.h"
 
 FastLEDLight *fastLEDLight;
 DeviceManager *deviceManager;
@@ -22,13 +23,16 @@ void setup()
     logger.info("Start of program");
 
     fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
-    struct TimerData data
+    uint32_t* buffer = new uint32_t[16]{};
+    buffer[0] = BLUE;
+    buffer[1] = GREEN;
+    struct GameDebugData data
     {
-        .totalTime = 1, .elapsedTime = 1, .isTurnTimeEnforced = false
+        .buffer = buffer
     };
 
-    fastLEDLight->updateTimerData(data);
-    fastLEDLight->setDisplayMode(DeviceState::ActiveTurn);
+    fastLEDLight->updateGameDebugData(data);
+    fastLEDLight->setDisplayMode(DeviceState::Debug);
 }
 
 void loop()

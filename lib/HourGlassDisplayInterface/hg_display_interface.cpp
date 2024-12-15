@@ -56,6 +56,9 @@ void HGDisplayInterface::update(bool force)
   case DeviceState::Paused:
     updateGamePaused();
     break;
+  case DeviceState::Debug:
+    updateGameDebug();
+    break;
   };
   // noInterrupts();
   show();

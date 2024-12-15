@@ -8,5 +8,6 @@ enum class DeviceState
   ActiveTurn,
   AwaitingTurn,
   Skipped,
-  Paused
+  Paused,
+  Debug
 };

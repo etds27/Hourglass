@@ -413,6 +413,16 @@ void LightInterface::updateGamePaused()
   delete[] colorBuffer;
 }
 
+void LightInterface::updateGameDebug()
+{
+  displayBuffer(m_gameDebugData.buffer);
+}
+
+void LightInterface::updateGameDebugData(GameDebugData data)
+{
+  m_gameDebugData = data;
+}
+
 void LightInterface::extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size)
 {
   if (m_ledCount % size)
@@ -494,11 +504,16 @@ void LightInterface::overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlay
   }
 }
 
-void LightInterface::displayBuffer(const uint32_t *buffer)
+void LightInterface::displayBuffer(const uint32_t *buffer, const bool clockwise)
 {
   for (int i = 0; i < m_ledCount; i++)
   {
-    setPixelColor((i + TOP_RING_OFFSET) % m_ledCount, buffer[i]);
+    if (clockwise) {
+      setPixelColor(((m_ledCount - i  - 1) + TOP_RING_OFFSET) % m_ledCount, buffer[i]);
+    } else {
+      setPixelColor((i + TOP_RING_OFFSET) % m_ledCount, buffer[i]);
+
+    }
   }
 }
 

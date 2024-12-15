@@ -45,6 +45,7 @@ protected:
     virtual void updateLightModeTurnSequence() = 0;
     virtual void updateLightModeAwaitGameStart() = 0;
     virtual void updateLightModeAwaitConnection() = 0;
+    virtual void updateGameDebug() = 0;
     // Light ring mode for when the game is paused by the companion app
     virtual void updateGamePaused() = 0;
 
