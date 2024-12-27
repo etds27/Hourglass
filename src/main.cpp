@@ -12,12 +12,35 @@
 // RingLight* m_ring;
 FastLEDLight* fastLEDLight;
 DeviceManager *deviceManager;
+unsigned long lastMemoryUpdate = millis();
 // ButtonInputMonitor* buttonInputMonitor;
 
 void setup()
 {
+
+  switch (LOGGER_LEVEL)
+  {
+  case 0:
+    loggerLevel = LoggerLevel::DEBUG;
+    break;
+  case 1:
+    loggerLevel = LoggerLevel::INFO;
+    break;
+  case 2:
+    loggerLevel = LoggerLevel::WARNING;
+    break;
+  case 3:
+    loggerLevel = LoggerLevel::ERROR;
+    break;
+  case 4:
+    loggerLevel = LoggerLevel::OFF;
+    break;
+  default:
   loggerLevel = LoggerLevel::OFF;
-  Serial.begin(9600);
+    break;
+  }
+
+  Serial.begin(115200);
   // while (!Serial)
   //   ;
   delay(2000);
@@ -77,7 +100,16 @@ void loop()
   // fastLEDLight->update();
   // m_ring->updateTurnSequenceData(data);
   // m_ring->update();
+
+  if (ENABLE_DEBUG) {
+    if (millis() - lastMemoryUpdate > 1000) {
+      size_t freeMemory = esp_get_free_heap_size();
+      logger.info("Free Memory: " + String(freeMemory));
+      lastMemoryUpdate = millis();
+    }
+  }
   deviceManager->update();
+
   // buttonInputMonitor->getAction();
   // logger.info(String(digitalRead(BUTTON_INPUT_PIN)));
   // delay(1000);
