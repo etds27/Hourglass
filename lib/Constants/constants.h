@@ -3,6 +3,13 @@
 
 #define ENABLE_DEBUG 0
 
+//  DEBUG = 0,
+//  INFO = 1,
+//  WARNING = 2,
+//  ERROR = 3,
+//  OFF = 4
+#define LOGGER_LEVEL 4
+
 #define LED_ADAFRUIT 0
 
 #define RING_LED_COUNT 16
