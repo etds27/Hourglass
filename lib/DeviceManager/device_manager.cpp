@@ -16,7 +16,7 @@ DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
 
   m_buttonMonitor = new ButtonInputMonitor(BUTTON_INPUT_PIN);
   // Allows the main device button to wake the device from sleep state
-  esp_sleep_enable_ext0_wakeup(BUTTON_GPIO_PIN, HIGH);
+  // esp_sleep_enable_ext0_wakeup(BUTTON_GPIO_PIN, HIGH);
   m_interface = new BLEInterface(m_deviceName);
 }
 
