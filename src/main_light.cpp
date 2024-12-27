@@ -24,15 +24,19 @@ void setup()
 
     fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
     uint32_t* buffer = new uint32_t[16]{};
+
+    // Use for calibrating each light.
+    // To move lights to left, increase ring offset
+    // To move lights to right, decrease ring offset
     buffer[0] = BLUE;
     buffer[1] = GREEN;
-    struct TimerData data
+    struct GameDebugData data
     {
-        .totalTime = 300, .elapsedTime = 100, .isTurnTimeEnforced = true
+        .buffer = buffer
     };
 
-    fastLEDLight->updateTimerData(data);
-    fastLEDLight->setDisplayMode(DeviceState::AwaitingConnecion);
+    fastLEDLight->updateGameDebugData(data);
+    fastLEDLight->setDisplayMode(DeviceState::Debug);
 }
 
 void loop()
