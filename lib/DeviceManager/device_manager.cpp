@@ -180,7 +180,10 @@ void DeviceManager::update()
   if (currentTime - m_lastReadOut > 2000)
   {
     logger.info("Update Period: " + String(deltaTime));
-    // m_interface->readData();
+    
+    if (ENABLE_DEBUG) {
+      m_interface->readData();
+    }
     m_lastReadOut = currentTime;
   }
   // logger.info("Running " + String(deltaTime));
@@ -204,7 +207,8 @@ void DeviceManager::processGameState()
   // If it is longer than the no connection timeout, enter deep sleep
   if (m_deviceState == DeviceState::State::AwaitingConnection && m_lastUpdate - m_lastConnection > CONNECTION_TIMEOUT)
   {
-    enterDeepSleep();
+    logger.debug("Entering deep sleep");
+    // enterDeepSleep();
   }
 
   if (buttonAction == ButtonInputType::TripleButtonPress)
