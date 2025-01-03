@@ -1,13 +1,11 @@
-#pragma once
-
 #ifdef SIMULATOR
 #include <iostream>
 #include <string>
+using LogString = std::string;
 #else
 #include <Arduino.h>
+using LogString = String;
 #endif
-
-using LogString = std::string;
 
 namespace Logging {
   enum LoggerLevel {
