@@ -1,5 +1,13 @@
 #include "light_interface.h"
 #include "logger.h"
+#include <cmath>
+#include <algorithm>
+#include <cstring>
+
+#ifdef SIMULATOR
+#include <random>
+#include "simulator_tools.h"
+#endif
 
 // const int RING_REFRESH_RATE = 1;
 
@@ -224,7 +232,7 @@ void LightInterface::updateLightModeSkipped()
 
   // Percentage through pulse sequence
   double pct = (deltaTime % SKIPPED_PULSE_DURATION) / (double)SKIPPED_PULSE_DURATION;
-  pct = abs(pct - 0.5);
+  pct = fabs(pct - 0.5);
   uint8_t brightness = 2 * pct * (SKIPPED_MAX_BRIGHTNESS - SKIPPED_MIN_BRIGHTNESS) + SKIPPED_MIN_BRIGHTNESS;
   uint32_t *colorBuffer = new uint32_t[m_ledCount];
 
@@ -300,7 +308,7 @@ void LightInterface::updateLightModeAwaitGameStart()
   uint32_t *colorBuffer = new uint32_t[m_ledCount];
   const uint32_t *colors = (m_colorBlindMode) ? AWAIT_GAME_COLORS_ALT : AWAIT_GAME_COLORS;
 
-  int segments = max(m_gameStartData.totalPlayers, 1);
+  int segments = std::max(m_gameStartData.totalPlayers, 1);
 
   expandBuffer(colors, colorBuffer, segments);
 
@@ -376,9 +384,20 @@ void LightInterface::updateGamePaused()
   {
     m_lastColorChange = currentTime;
     m_previousColor = m_targetColor;
+
+    #ifdef SIMULATOR
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 0xFF);
+
+    uint32_t r = dis(gen) << 16;
+    uint32_t g = dis(gen) << 8;
+    uint32_t b = dis(gen);
+    #else
     uint32_t r = random(0xFF) << 16;
     uint32_t g = random(0xFF) << 8;
     uint32_t b = random(0xFF);
+    #endif
     m_targetColor = r | g | b;
   }
 

@@ -1,5 +1,13 @@
 #pragma once
+
+#ifdef SIMULATOR
+#include <iostream>
+#include <string>
+using LogString = std::string;
+#else
 #include <Arduino.h>
+using LogString = String;
+#endif
 
 enum LoggerLevel {
   DEBUG = 0,
@@ -12,13 +20,13 @@ enum LoggerLevel {
 // General purpose logging class to use within the project
 class Logger {
 public:
-  void debug(String message);
-  void info(String message);
-  void warning(String message);
-  void error(String message);
+  void debug(LogString message);
+  void info(LogString message);
+  void warning(LogString message);
+  void error(LogString message);
 
 private:
-  void log(String message, LoggerLevel level);
+  void log(LogString message, LoggerLevel level);
 };
 
 extern Logger logger;

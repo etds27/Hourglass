@@ -1,6 +1,6 @@
 #include "easing_function.h"
 #include "logger.h"
-#include <math.h>
+#include <cmath>
 
 EasingFunction::EasingFunction::EasingFunction(EasingMode mode)
 {

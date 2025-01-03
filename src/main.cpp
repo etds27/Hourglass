@@ -45,7 +45,7 @@ void setup()
     loggerLevel = LoggerLevel::OFF;
     break;
   default:
-  loggerLevel = LoggerLevel::OFF;
+    loggerLevel = LoggerLevel::OFF;
     break;
   }
 

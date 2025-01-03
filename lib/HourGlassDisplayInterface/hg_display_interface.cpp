@@ -2,6 +2,10 @@
 #include "logger.h"
 #include "constants.h"
 
+#ifdef SIMULATOR
+#include "simulator_tools.h"
+#endif
+
 HGDisplayInterface::~HGDisplayInterface() {}
 
 void HGDisplayInterface::setUp()
