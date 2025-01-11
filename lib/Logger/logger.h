@@ -1,10 +1,9 @@
+#pragma once
 #ifdef SIMULATOR
 #include <iostream>
 #include <string>
-using LogString = std::string;
 #else
 #include <Arduino.h>
-using LogString = String;
 #endif
 
 namespace Logging {

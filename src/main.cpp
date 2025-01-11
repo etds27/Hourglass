@@ -61,6 +61,7 @@ void setup()
     break;
   }
 
+  #ifndef SIMULATOR
   Serial.begin(115200);
   // while (!Serial)
   //   ;
