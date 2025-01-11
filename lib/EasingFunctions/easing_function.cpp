@@ -1,6 +1,7 @@
 #include "easing_function.h"
 #include "logger.h"
 #include <cmath>
+#include "constants.h"
 
 EasingFunction::EasingFunction::EasingFunction(EasingMode mode)
 {
