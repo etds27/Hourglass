@@ -10,12 +10,17 @@
 // LCD:      2
 #define DISPLAY_TYPE 2
 
+
+#ifndef M_PI
+#define M_PI 3.1415926
+#endif
+
 //  DEBUG = 0,
 //  INFO = 1,
 //  WARNING = 2,
 //  ERROR = 3,
 //  OFF = 4
-#define LOGGER_LEVEL 4
+#define LOGGER_LEVEL 0
 
 #define LED_ADAFRUIT 0
 
@@ -37,7 +42,12 @@
 // All Hourglass devices have the ring LED installed in the same orientation. 
 // This orientation does not have the first LED at the top of the ring
 // This offset translates the display buffer to be displayed at the top of the ring.
+#ifdef SIMULATOR
+#define TOP_RING_OFFSET 4
+#else
 #define TOP_RING_OFFSET 14
+#endif
+
 #define DEFAULT_BRIGHTNESS 25
 #define DISPLAY_REFRESH_RATE 5  // ms
 
