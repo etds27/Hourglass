@@ -1,15 +1,27 @@
+#if 0
+#ifdef SIMULATOR
+#include "simulator_tools.h"
+#include "gl_ring_interface.h"
+#else
 #include <Arduino.h>
+#include <EEPROM.h>
+#include "fast_led_light.h"
+#endif
+
 #include "easing_function.h"
 #include "colors.h"
 #include "constants.h"
 #include "logger.h"
 #include "device_manager.h"
-#include <EEPROM.h>
 #include "device_state.h"
-#include "fast_led_light.h"
 #include "light_interface.h"
 
+
+#ifdef SIMULATOR
+LightInterface *fastLEDLight;
+#else
 FastLEDLight *fastLEDLight;
+#endif
 DeviceManager *deviceManager;
 // ButtonInputMonitor* buttonInputMonitor;
 
@@ -21,8 +33,9 @@ void setup()
     //   ;
     delay(2000);
     logger.info("Start of program");
-
     fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
+    #endif
+
     uint32_t* buffer = new uint32_t[16]{};
 
     // Use for calibrating each light.
@@ -43,3 +56,5 @@ void loop()
 {
     fastLEDLight->update();
 }
+
+#endif
