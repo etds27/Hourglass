@@ -1,12 +1,16 @@
 #pragma once
+
+#ifdef SIMULATOR
+
 #include "light_interface.h"
 #include <GL/glu.h>
 #include <GL/gl.h>
 
-class FastLEDLight : public LightInterface {
+
+class GLRingInterface : public LightInterface {
 public:
-  FastLEDLight(const uint8_t ledCount, const uint8_t diPin);
-  ~FastLEDLight();
+  GLRingInterface(const uint8_t ledCount);
+  ~GLRingInterface();
 
 
   void begin();
@@ -14,4 +18,11 @@ public:
   void show();
   void setBrightness(uint8_t brightness);
   void setPixelColor(uint8_t i, uint32_t color);
+
+  private:
+  void drawPixel(const uint8_t i);
+   uint32_t *m_leds;
+   uint8_t m_brightness;
 };
+
+#endif
