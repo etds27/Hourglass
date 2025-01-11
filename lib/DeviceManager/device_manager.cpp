@@ -20,7 +20,8 @@ DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
   logger.info("Initializing Device Manager");
   m_deviceName = new char[8];
   readDeviceName(m_deviceName);
-  // logger.info("Device name: " + std::string(m_deviceName));
+  logger.info("Device name: " + std::string(m_deviceName));
+
 
 #ifdef SIMULATOR
   m_inputInterface = new GLInputInterface();
