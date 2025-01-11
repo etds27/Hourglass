@@ -1,5 +1,6 @@
 #pragma once
 #include "input_monitor.h"
+#include "input_interface.h"
 #include "hg_central_interface.h"
 #include "hg_display_interface.h"
 #include "device_state.h"
@@ -19,7 +20,9 @@ public:
   char *readDeviceName(char *out);
 
   // Writes the device name to the EEPROM and updates the stored device name for the Device Manager
-  void writeDeviceName(char *deviceName, uint8_t length);
+  #ifndef SIMULATOR
+  void writeDeviceName(const char *deviceName, uint8_t length);
+  #endif
 
   // Initializes the bluetooth peripheral interface and sets up the light for output
   void start();
@@ -62,6 +65,7 @@ private:
 
   // Monitor for button to control turn status
   ButtonInputMonitor *m_buttonMonitor;
+  InputInterface *m_inputInterface;
 
   // Device name
   char *m_deviceName;

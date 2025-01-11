@@ -1,6 +1,16 @@
+#ifndef SIMULATOR
 #include <EEPROM.h>
-#include "device_manager.h"
 #include "ble_interface.h"
+#include "button_input_interface.h"
+#else
+#include "gl_input_interface.h"
+#include "gl_ring_interface.h"
+#include "simulator_central_interface.h"
+#include "simulator_tools.h"
+#endif
+
+#include <cstring>
+#include "device_manager.h"
 #include "logger.h"
 
 DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
@@ -10,14 +20,16 @@ DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
   logger.info("Initializing Device Manager");
   m_deviceName = new char[8];
   readDeviceName(m_deviceName);
-  logger.info("Device name: " + String(m_deviceName));
+  logger.info("Device name: " + std::string(m_deviceName));
 
-  logger.info("Initializing Display Data Structs");
 
   m_buttonMonitor = new ButtonInputMonitor(BUTTON_INPUT_PIN);
   // Allows the main device button to wake the device from sleep state
   // esp_sleep_enable_ext0_wakeup(BUTTON_GPIO_PIN, HIGH);
-  m_interface = new BLEInterface(m_deviceName);
+}
+
+DeviceManager::~DeviceManager()
+{
 }
 
 DeviceManager::~DeviceManager()
@@ -45,36 +57,46 @@ char *DeviceManager::getDeviceName()
 
 char *DeviceManager::readDeviceName(char *out)
 {
+  char arduinoID[8] = {};
+  #ifdef SIMULATOR
+  out = new char[10] {
+    'S', 'I', 'M', 'U', 'L', 'A', 'T', 'O', 'R', '\0'
+  };
+  #else
   int i;
   // Read the arduinos ID
 
-  char arduinoID[8] = {};
 
   for (i = 0; i < 8; i++)
   {
     arduinoID[i] = EEPROM.read(i);
   }
   arduinoID[i] = '\0';
+  #endif
   logger.info("Read arduino name");
-  logger.info(String(arduinoID));
+  logger.info(arduinoID);
   strcpy(out, arduinoID);
   return out;
 }
 
-void DeviceManager::writeDeviceName(char *deviceName, uint8_t length)
+#ifndef SIMULATOR
+void DeviceManager::writeDeviceName(const char *deviceName, uint8_t length)
 {
   // Write unique ID to EEPROM
   int i;
-  logger.info("Writing Device Name: " + String(deviceName));
+  logger.info("Writing Device Name: " + LogString(deviceName));
   for (i = 0; i < length; i++)
   {
     EEPROM.write(i, deviceName[i]);
   }
   EEPROM.write(i, '\0');
   EEPROM.commit();
-  logger.info("Wrote device name to EEPROM: " + String(deviceName));
-  m_deviceName = deviceName;
+  char message[100];
+  sprintf(message, "Wrote device name to EEPROM: %s", deviceName);
+  logger.info(message);
+  strcpy(m_deviceName, deviceName);
 }
+#endif
 
 bool DeviceManager::isActiveTurn()
 {
@@ -128,7 +150,7 @@ void DeviceManager::setWaitingForConnection()
 void DeviceManager::toggleColorBlindMode()
 {
   m_colorBlindMode = !m_colorBlindMode;
-  logger.info("Setting Color Blind Mode to: " + String(m_colorBlindMode));
+  logger.info("Setting Color Blind Mode to: " + m_colorBlindMode);
   m_displayManager->setColorBlindMode(m_colorBlindMode);
   updateRing();
 }
@@ -139,8 +161,11 @@ void DeviceManager::enterDeepSleep()
   m_deviceState = DeviceState::State::Off;
   updateRingMode();
   updateRing(true);
+
+  #ifndef SIMULATOR
   delay(1000);
   esp_deep_sleep_start();
+  #endif
 }
 
 void DeviceManager::updateRing(bool force)
@@ -179,7 +204,7 @@ void DeviceManager::update()
   // Log data from the interface
   if (currentTime - m_lastReadOut > 2000)
   {
-    logger.info("Update Period: " + String(deltaTime));
+    logger.info("Update Period: " + deltaTime);
     
     if (ENABLE_DEBUG) {
       m_interface->readData();
@@ -187,7 +212,9 @@ void DeviceManager::update()
     m_lastReadOut = currentTime;
   }
   // logger.info("Running " + String(deltaTime));
+  #ifndef SIMULATOR
   BLE.poll();
+  #endif
   processGameState();
   updateRing();
 }
