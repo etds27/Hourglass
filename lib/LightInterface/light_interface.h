@@ -131,6 +131,24 @@ public:
   uint32_t m_targetColor;
   uint32_t m_previousColor;
 
+  /// @brief Dim an RGB color by a specific value
+  ///
+  /// The color will be converted to HSV, then have the brightness value reduced, then converted back to RGB
+  /// @param color Color to dim
+  /// @param brightness Brightness adjustment factor between 0 and 255
+  /// @return Brightness adjusted color
+  uint32_t dimColor(uint32_t color, uint8_t brightness);
+
+
+  /// @brief Dim an RGB color by a specific value
+  ///
+  /// The color will be converted to HSV, then have the brightness value reduced, then converted back to RGB
+  /// @param color Color to dim
+  /// @param brightness Brightness adjustment factor between 0 and 255
+  /// @return Brightness adjusted color
+  uint32_t dimColor(uint32_t color, uint8_t brightness);
+
+
   void setDisplayMode(DeviceState::State state);
 
   void updateGameDebugData(GameDebugData data);

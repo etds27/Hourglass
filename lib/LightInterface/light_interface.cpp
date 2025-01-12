@@ -3,6 +3,7 @@
 #include <cmath>
 #include <algorithm>
 #include <cstring>
+#include "HsvConverter.h"
 
 #ifdef SIMULATOR
 #include <random>
@@ -303,6 +304,29 @@ void LightInterface::updateLightModeTurnSequence()
   delete[] modifiedColorBuffer;
 }
 
+uint32_t LightInterface::dimColor(uint32_t color, uint8_t brightness)
+{
+  char buffer[50];
+  sprintf(buffer, "RGB Color (Initial): %d", color);
+  logger.debug(buffer);
+  uint32_t hsvColor = HsvConverter::rgb2hsv(color);
+  sprintf(buffer, "HSV Color (Initial): %d", hsvColor);
+  logger.debug(buffer);
+
+  uint8_t v = hsvColor & 0xFF;
+  v = (v * brightness) / 255;
+
+  hsvColor = (hsvColor & 0xFFFF00) | v;
+  sprintf(buffer, "HSV Color (Adjusted): %d", hsvColor);
+  logger.debug(buffer);
+
+  uint32_t adjustedRgb = HsvConverter::hsv2rgb(hsvColor);
+  sprintf(buffer, "RGB Color (Adjusted): %d\n", adjustedRgb);
+  logger.debug(buffer);
+
+  return adjustedRgb;
+}
+
 void LightInterface::updateLightModeAwaitGameStart()
 {
   uint32_t *colorBuffer = new uint32_t[m_ledCount];
@@ -385,7 +409,7 @@ void LightInterface::updateGamePaused()
     m_lastColorChange = currentTime;
     m_previousColor = m_targetColor;
 
-    #ifdef SIMULATOR
+#ifdef SIMULATOR
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(0, 0xFF);
@@ -393,11 +417,11 @@ void LightInterface::updateGamePaused()
     uint32_t r = dis(gen) << 16;
     uint32_t g = dis(gen) << 8;
     uint32_t b = dis(gen);
-    #else
+#else
     uint32_t r = random(0xFF) << 16;
     uint32_t g = random(0xFF) << 8;
     uint32_t b = random(0xFF);
-    #endif
+#endif
     m_targetColor = r | g | b;
   }
 
