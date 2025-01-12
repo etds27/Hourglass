@@ -5,6 +5,7 @@
 #include "device_state.h"
 #include "hg_display_interface.h"
 #include "easing_function.h"
+#include "color_converter.h"
 
 // All required data for any display interface to show the Awaiting Game Start state
 struct GameDebugData
@@ -40,14 +41,6 @@ protected:
 
   // Reverse the full sized color buffer
   void reverseBuffer(uint32_t *buffer, uint8_t offset);
-
-  /// @brief Overlays the overlay buffer on top of the base buffer
-  /// Blank/Black values in the overlay buffer will not overwrite the base buffer
-  /// The base buffer will be updated with the new result
-  /// @param baseBuffer Buffer to modify in place with overlayed content
-  /// @param overlayBuffer Buffer to overlay on the base buffer
-  /// @param inverse If set, the overlay only blank leds for negative light designs
-  void overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, uint8_t bufferSize, bool inverse = false);
 
   /// @brief Set the provided buffer to a single solid color
   /// @param buffer Buffer to modify in-place
@@ -128,19 +121,24 @@ public:
   // Replicate the smaller buffer to fit into the full buffer
   void extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size);
   
+  void copyBuffer(const uint32_t *sourceBuffer, uint32_t *targetBuffer, uint8_t size);
+
+  /// @brief Overlays the overlay buffer on top of the base buffer
+  /// Blank/Black values in the overlay buffer will not overwrite the base buffer
+  /// The base buffer will be updated with the new result
+  /// @param baseBuffer Buffer to modify in place with overlayed content
+  /// @param overlayBuffer Buffer to overlay on the base buffer
+  /// @param inverse If set, the overlay only blank leds for negative light designs
+  void overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, uint8_t bufferSize, bool inverse = false);
+
+  void printBuffer(uint32_t *buffer);
+
   // Non enforced turn timer
   unsigned long m_lastColorChange;
   uint32_t m_targetColor;
   uint32_t m_previousColor;
 
-  /// @brief Dim an RGB color by a specific value
-  ///
-  /// The color will be converted to HSV, then have the brightness value reduced, then converted back to RGB
-  /// @param color Color to dim
-  /// @param brightness Brightness adjustment factor between 0 and 255
-  /// @return Brightness adjusted color
-  uint32_t dimColor(uint32_t color, uint8_t brightness);
-
+  void transformBufferColor(uint32_t *buffer, uint8_t bufferSize, ColorTransform::ColorTransform *transform);
 
   /// @brief Dim an RGB color by a specific value
   ///
@@ -154,4 +152,6 @@ public:
   void setDisplayMode(DeviceState::State state);
 
   void updateGameDebugData(GameDebugData data);
+
+
 };

@@ -3,7 +3,7 @@
 #include <cmath>
 #include <algorithm>
 #include <cstring>
-#include "HsvConverter.h"
+#include "color_converter.h"
 
 #ifdef SIMULATOR
 #include <random>
@@ -58,6 +58,22 @@ LightInterface::LightInterface(const uint8_t ledCount, const uint8_t diPin)
 }
 
 LightInterface::~LightInterface() {}
+
+void LightInterface::transformBufferColor(uint32_t *buffer, uint8_t bufferSize, ColorTransform::ColorTransform *transform)
+{
+  for (int i = 0; i < bufferSize; i++)
+  {
+    buffer[i] = transform->applyTransform(buffer[i]);
+  }
+}
+
+void LightInterface::transformBufferColor(uint32_t *buffer, uint8_t bufferSize, ColorTransform::ColorTransform *transform)
+{
+  for (int i = 0; i < bufferSize; i++)
+  {
+    buffer[i] = transform->applyTransform(buffer[i]);
+  }
+}
 
 void LightInterface::setDisplayMode(DeviceState::State state)
 {
@@ -304,29 +320,6 @@ void LightInterface::updateLightModeTurnSequence()
   delete[] modifiedColorBuffer;
 }
 
-uint32_t LightInterface::dimColor(uint32_t color, uint8_t brightness)
-{
-  char buffer[50];
-  sprintf(buffer, "RGB Color (Initial): %d", color);
-  logger.debug(buffer);
-  uint32_t hsvColor = HsvConverter::rgb2hsv(color);
-  sprintf(buffer, "HSV Color (Initial): %d", hsvColor);
-  logger.debug(buffer);
-
-  uint8_t v = hsvColor & 0xFF;
-  v = (v * brightness) / 255;
-
-  hsvColor = (hsvColor & 0xFFFF00) | v;
-  sprintf(buffer, "HSV Color (Adjusted): %d", hsvColor);
-  logger.debug(buffer);
-
-  uint32_t adjustedRgb = HsvConverter::hsv2rgb(hsvColor);
-  sprintf(buffer, "RGB Color (Adjusted): %d\n", adjustedRgb);
-  logger.debug(buffer);
-
-  return adjustedRgb;
-}
-
 void LightInterface::updateLightModeAwaitGameStart()
 {
   uint32_t *colorBuffer = new uint32_t[m_ledCount];
@@ -492,6 +485,14 @@ void LightInterface::extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuf
   }
 }
 
+void LightInterface::copyBuffer(const uint32_t *sourceBuffer, uint32_t *targetBuffer, uint8_t size)
+{
+  for (int i = 0; i < size; i++)
+  {
+    targetBuffer[i] = sourceBuffer[i];
+  }
+}
+
 void LightInterface::expandBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size, bool fill)
 {
   int lengthSegment = m_ledCount / size;
@@ -549,6 +550,16 @@ void LightInterface::overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlay
     {
       baseBuffer[i] = overlayBuffer[i];
     }
+  }
+}
+
+void LightInterface::printBuffer(uint32_t *buffer)
+{
+  char bufferString[256];
+  for (int i = 0; i < m_ledCount; i++)
+  {
+    sprintf(bufferString, "printBuffer: Buffer[%d]: %d", i, buffer[i]);
+    logger.info(bufferString);
   }
 }
 
