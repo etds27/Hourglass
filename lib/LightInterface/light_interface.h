@@ -36,11 +36,7 @@ protected:
   // The fill option will fill in the space between the
   void expandBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size, bool fill = true);
 
-  // Replicate the smaller buffer to fit into the full buffer
-  void extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size);
 
-  // Rotate the full sized color buffer by some offset
-  void offsetBuffer(uint32_t *buffer, uint8_t offset);
 
   // Reverse the full sized color buffer
   void reverseBuffer(uint32_t *buffer, uint8_t offset);
@@ -126,6 +122,12 @@ public:
   virtual void setBrightness(uint8_t brightness) = 0;
   virtual void setPixelColor(uint8_t i, uint32_t color) = 0;
 
+  // Rotate the full sized color buffer by some offset
+  void offsetBuffer(uint32_t *buffer, uint8_t offset);
+
+  // Replicate the smaller buffer to fit into the full buffer
+  void extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size);
+  
   // Non enforced turn timer
   unsigned long m_lastColorChange;
   uint32_t m_targetColor;
