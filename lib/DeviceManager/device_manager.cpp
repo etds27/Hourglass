@@ -72,7 +72,7 @@ void DeviceManager::writeDeviceName(char *deviceName, uint8_t length)
 
 bool DeviceManager::isActiveTurn()
 {
-  return m_deviceState == DeviceState::ActiveTurn;
+  return m_interface->isTurn();
 }
 
 // Transition from the active turn to 'turn sequence' mode
@@ -86,10 +86,17 @@ void DeviceManager::endTurn()
   setTurnSequenceMode();
 }
 
+bool DeviceManager::updateCommandedDeviceState()
+{
+  DeviceState::State newDeviceState = m_interface->getCommandedDeviceState();
+  bool diff = m_deviceState == newDeviceState;
+  m_deviceState = m_interface->getCommandedDeviceState();
+  return diff;
+}
+
 void DeviceManager::startTurn()
 {
   logger.info("Setting device state to: ActiveTurn");
-  m_deviceState = DeviceState::ActiveTurn;
   m_lastTurnStart = millis();
   updateTimer();
   updateRingMode();
@@ -137,7 +144,6 @@ void DeviceManager::updateTimer()
 void DeviceManager::setTurnSequenceMode()
 {
   logger.info("Setting device state to: AwaitingTurn");
-  m_deviceState = DeviceState::AwaitingTurn;
   updateTurnSequence();
   updateRingMode();
 }
@@ -267,131 +273,42 @@ void DeviceManager::processGameState()
     setWaitingForConnection();
     return;
   }
-
   m_lastConnection = m_lastUpdate;
 
-  if (!(m_interface->isGameActive()))
-  {
-    updateAwaitingGameStartData();
-    setAwaitGameStart();
-    return;
-  }
 
-  if (m_interface->isGamePaused())
+  // *** DISPLAY FOR ACTIVE GAME ***
+
+  // Determine is a device state change was made. If it was, we will update the state after getting display specific data
+  bool updateDeviceState = updateCommandedDeviceState();
+
+  // Retrieve state specific data for display modes
+  switch (m_deviceState)
   {
+  case DeviceState::State::AwaitingGameStart:
+    updateAwaitingGameStartData();
+  case DeviceState::State::ActiveTurnEnforced:
+    updateTimer();
+    case DeviceState::State::AwaitingTurn:
     updateTurnSequence();
-    setGamePaused();
-    return;
   }
 
   // Get all information about device inputs and device interface
   bool interfaceTurn = m_interface->isTurn();
   bool interfaceSkipped = m_interface->isSkipped();
   int currentPlayer = m_interface->getCurrentPlayer();
-  bool isSkipped = m_deviceState == DeviceState::Skipped;
-  bool isTurn = m_deviceState == DeviceState::ActiveTurn;
+  bool isSkipped = m_deviceState == DeviceState::State::Skipped;
+  bool isTurn = m_deviceState == DeviceState::State::ActiveTurnEnforced ||
+                m_deviceState == DeviceState::State::ActiveTurnNotEnforced;
   int totalPlayers = m_interface->getTotalPlayers();
 
-  // Game has started and device state needs to be updated
-  if (m_deviceState == DeviceState::AwaitingGameStart || m_deviceState == DeviceState::Paused)
-  {
-
-    // This means we are the first player to go in the game. Immediately start the turn
-    if (interfaceTurn)
-    {
-      startTurn();
-    }
-    else
-    {
-      // Otherwise go into Awaiting Turn mode
-      setTurnSequenceMode();
-    }
-    return;
-  }
+  // *** INPUT PROCESSING ***
 
   if (buttonAction == ButtonInputType::DoubleButtonPress)
   {
-    // If a double press action was detected
-    if (isSkipped)
-    {
-      unsetSkipped();
-    }
-    else
-    {
-      if (isActiveTurn())
-      {
-        endTurn();
-      }
-      setSkipped();
-      return;
-    }
+    m_interface->toggleSkippedState();
   }
 
-  if (isSkipped != interfaceSkipped)
-  {
-    if (isSkipped)
-    {
-      unsetSkipped();
-    }
-    else
-    {
-      setSkipped();
-    }
-    return;
-  }
-
-  // If we are in a skipped state, immediately leave the program
-  if (isSkipped)
-  {
-    return;
-  }
-  else if (m_deviceState == DeviceState::Skipped && !isSkipped)
-  {
-    unsetSkipped();
-  }
-
-  if (buttonAction == ButtonInputType::ButtonPress && isTurn)
-  {
-    uint32_t timeSinceTurnStart = millis() - m_lastTurnStart;
-    logger.debug("Time since turn start: " + String(timeSinceTurnStart) + " = " + String(millis()) + " + " + String(m_lastTurnStart));
-    if (timeSinceTurnStart > MIN_TURN_LENGTH)
-    {
-      // If a button was pressed and it is the person's turn
-      sendEndTurn();
-      return;
-    }
-    else
-    {
-      logger.debug("Attempted to end turn too quickly");
-    }
-  }
-
-  if (m_interface->isTurn() == isTurn && isTurn)
-  {
-    // Both the Bluetooth interface and device state believe it is our turn
-    updateTimer();
-  }
-  else if (interfaceTurn != isTurn)
-  {
-    logger.debug("Interface turn does not match device turn");
-    if (!isTurn)
-    {
-      logger.debug("Device does not have turn set. Starting new turn");
-      // If the Bluetooth interface thinks it is our turn but the device state doesnt
-      // If the turn just started
-      startTurn();
-    }
-    else
-    {
-      logger.debug("Device has turn set. Ending current turn");
-      // If the device thinks it is our turn but the but bluetooth doesnt
-      // If the turn just ended
-      endTurn();
-    }
-  }
-  else
-  {
-    // It is not our turn and we are not skipped so just update the turn sequence
-    updateTurnSequence();
+  if (isActiveTurn() && buttonAction == ButtonInputType::ButtonPress) {
+    sendEndTurn();
   }
 }
