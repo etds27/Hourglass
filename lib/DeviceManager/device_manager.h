@@ -79,25 +79,16 @@ private:
   // Update the display interface with the current game state
   void updateRing(bool force = false);
   
-  void setWaitingForConnection();
-  void setGamePaused();
-  void setAwaitGameStart();
+  void setWaitingForConnection();;
   void updateAwaitingGameStartData();
-
-  void setSkipped();
-  void unsetSkipped();
 
   void updateTimer();
   void updateRingMode();
 
   bool isActiveTurn();
 
-  void startTurn();
 
   // Send the end of the turn to the central device
   void sendEndTurn();
-  void endTurn();
-
-  void setTurnSequenceMode();
   void updateTurnSequence();
 };

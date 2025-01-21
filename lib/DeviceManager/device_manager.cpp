@@ -81,51 +81,12 @@ void DeviceManager::sendEndTurn()
   m_interface->endTurn();
 }
 
-void DeviceManager::endTurn()
-{
-  setTurnSequenceMode();
-}
-
 bool DeviceManager::updateCommandedDeviceState()
 {
   DeviceState::State newDeviceState = m_interface->getCommandedDeviceState();
   bool diff = m_deviceState == newDeviceState;
   m_deviceState = m_interface->getCommandedDeviceState();
   return diff;
-}
-
-void DeviceManager::startTurn()
-{
-  logger.info("Setting device state to: ActiveTurn");
-  m_lastTurnStart = millis();
-  updateTimer();
-  updateRingMode();
-}
-
-void DeviceManager::setSkipped()
-{
-  if (m_deviceState == DeviceState::State::Skipped)
-  {
-    return;
-  }
-  logger.info("Setting device state to: Skipped");
-  m_deviceState = DeviceState::State::Skipped;
-  m_interface->setSkipped();
-  updateRingMode();
-}
-
-void DeviceManager::unsetSkipped()
-{
-  m_interface->unsetSkipped();
-  if (isActiveTurn())
-  {
-    startTurn();
-  }
-  else
-  {
-    setTurnSequenceMode();
-  }
-  updateRingMode();
 }
 
 void DeviceManager::updateTimer()
@@ -141,24 +102,6 @@ void DeviceManager::updateTimer()
   m_displayManager->updateTimerData(data);
 }
 
-void DeviceManager::setTurnSequenceMode()
-{
-  logger.info("Setting device state to: AwaitingTurn");
-  updateTurnSequence();
-  updateRingMode();
-}
-
-void DeviceManager::setAwaitGameStart()
-{
-  if (m_deviceState == DeviceState::State::AwaitingGameStart)
-  {
-    return;
-  }
-  logger.info("Setting device state to: AwaitingGameStart");
-  m_deviceState = DeviceState::State::AwaitingGameStart;
-  updateRingMode();
-}
-
 void DeviceManager::setWaitingForConnection()
 {
   if (m_deviceState == DeviceState::State::AwaitingConnecion)
@@ -167,17 +110,6 @@ void DeviceManager::setWaitingForConnection()
   }
   logger.info("Setting device state to: AwaitingConnecion");
   m_deviceState = DeviceState::State::AwaitingConnecion;
-  updateRingMode();
-}
-
-void DeviceManager::setGamePaused()
-{
-  if (m_deviceState == DeviceState::State::Paused)
-  {
-    return;
-  }
-  logger.info("Setting device state to: Paused");
-  m_deviceState = DeviceState::State::Paused;
   updateRingMode();
 }
 
@@ -291,15 +223,6 @@ void DeviceManager::processGameState()
     case DeviceState::State::AwaitingTurn:
     updateTurnSequence();
   }
-
-  // Get all information about device inputs and device interface
-  bool interfaceTurn = m_interface->isTurn();
-  bool interfaceSkipped = m_interface->isSkipped();
-  int currentPlayer = m_interface->getCurrentPlayer();
-  bool isSkipped = m_deviceState == DeviceState::State::Skipped;
-  bool isTurn = m_deviceState == DeviceState::State::ActiveTurnEnforced ||
-                m_deviceState == DeviceState::State::ActiveTurnNotEnforced;
-  int totalPlayers = m_interface->getTotalPlayers();
 
   // *** INPUT PROCESSING ***
 
