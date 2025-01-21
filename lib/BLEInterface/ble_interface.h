@@ -1,6 +1,7 @@
 #pragma once
 #include <ArduinoBLE.h>
 #include "hg_central_interface.h"
+#include "device_state.h"
 
 class BLEInterface : public HGCentralInterface
 {
@@ -11,6 +12,8 @@ public:
     bool isConnected();
     bool isTurn();
     void endTurn();
+    void toggleSkippedState();
+
 
     int getTimer();
     int getElapsedTime();
@@ -36,6 +39,8 @@ public:
     // Check if the turn timer should be enforced
     bool isTurnTimerEnforced();
 
+    DeviceState::State getCommandedDeviceState();
+
 
   void setService();
 
@@ -56,6 +61,10 @@ private:
   BLEBoolCharacteristic *m_gameActive;
   BLEBoolCharacteristic *m_gamePaused;
   BLEBoolCharacteristic *m_enforceTurnTimer;
+  BLEIntCharacteristic *m_gameState;
+  BLEBoolCharacteristic *m_endTurn;
+  BLEBoolCharacteristic *m_toggleSkip;
+  BLEByteCharacteristic *m_skippedPlayers;
 
   BLEDescriptor *m_activeTurnDescriptor;
   BLEDescriptor *m_skippedDescriptor;
