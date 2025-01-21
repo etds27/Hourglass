@@ -1,4 +1,5 @@
 #pragma once
+#include "device_state.h"
 
 class HGCentralInterface
 {
@@ -7,6 +8,8 @@ public:
     virtual bool isConnected() = 0;
     virtual bool isTurn() = 0;
     virtual void endTurn() = 0;
+    virtual void toggleSkippedState() = 0;
+
 
     virtual int getTimer() = 0;
     virtual int getElapsedTime() = 0;
@@ -28,6 +31,9 @@ public:
 
     // Check if a game is paused
     virtual bool isGamePaused() = 0;
+
+    virtual DeviceState::State getCommandedDeviceState() = 0;
+
 
     // Check if the turn timer should be enforced
     virtual bool isTurnTimerEnforced() = 0;
@@ -51,4 +57,5 @@ protected:
     bool m_lastGameActive;
     bool m_lastGamePaused;
     bool m_lastEnforceTurnTimer;
+    DeviceState::State m_deviceState;
 };

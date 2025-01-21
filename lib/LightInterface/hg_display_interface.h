@@ -1,7 +1,5 @@
 #pragma once
 #include "device_state.h"
-#include "constants.h"
-#include <stdint.h>
 
 // All required data for any display interface to show the Awaiting Game Start state
 struct GameStartData
@@ -12,8 +10,8 @@ struct GameStartData
 // All required data for any display interface to show the Active Turn state
 struct TimerData
 {
-    uint32_t totalTime;
-    uint32_t elapsedTime;
+    int totalTime;
+    int elapsedTime;
     bool isTurnTimeEnforced;
 };
 
@@ -29,13 +27,6 @@ struct TurnSequenceData
 class HGDisplayInterface
 {
 protected:
-    /// @brief Clears the current display before showing the updated view
-    bool m_clearBeforeUpdate = true;
-    virtual bool getClearBeforeUpdate() const;
-
-    /// @brief Minimum time (in ms) to wait before the display will redraw
-    uint32_t m_refreshRate = DISPLAY_REFRESH_RATE;
-
     DeviceState::State m_state = DeviceState::State::Off;
     bool m_colorBlindMode = false;
 

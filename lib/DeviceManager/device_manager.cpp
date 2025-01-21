@@ -21,7 +21,7 @@ DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
 void DeviceManager::start()
 {
   logger.info("Starting the device manager");
-  m_displayManager->setDisplayMode(DeviceState::Off);
+  m_displayManager->setDisplayMode(DeviceState::State::Off);
 
   m_interface->setService();
   setWaitingForConnection();
@@ -97,12 +97,12 @@ void DeviceManager::startTurn()
 
 void DeviceManager::setSkipped()
 {
-  if (m_deviceState == DeviceState::Skipped)
+  if (m_deviceState == DeviceState::State::Skipped)
   {
     return;
   }
   logger.info("Setting device state to: Skipped");
-  m_deviceState = DeviceState::Skipped;
+  m_deviceState = DeviceState::State::Skipped;
   m_interface->setSkipped();
   updateRingMode();
 }
@@ -144,34 +144,34 @@ void DeviceManager::setTurnSequenceMode()
 
 void DeviceManager::setAwaitGameStart()
 {
-  if (m_deviceState == DeviceState::AwaitingGameStart)
+  if (m_deviceState == DeviceState::State::AwaitingGameStart)
   {
     return;
   }
   logger.info("Setting device state to: AwaitingGameStart");
-  m_deviceState = DeviceState::AwaitingGameStart;
+  m_deviceState = DeviceState::State::AwaitingGameStart;
   updateRingMode();
 }
 
 void DeviceManager::setWaitingForConnection()
 {
-  if (m_deviceState == DeviceState::AwaitingConnecion)
+  if (m_deviceState == DeviceState::State::AwaitingConnecion)
   {
     return;
   }
   logger.info("Setting device state to: AwaitingConnecion");
-  m_deviceState = DeviceState::AwaitingConnecion;
+  m_deviceState = DeviceState::State::AwaitingConnecion;
   updateRingMode();
 }
 
 void DeviceManager::setGamePaused()
 {
-  if (m_deviceState == DeviceState::Paused)
+  if (m_deviceState == DeviceState::State::Paused)
   {
     return;
   }
   logger.info("Setting device state to: Paused");
-  m_deviceState = DeviceState::Paused;
+  m_deviceState = DeviceState::State::Paused;
   updateRingMode();
 }
 
@@ -186,7 +186,7 @@ void DeviceManager::toggleColorBlindMode()
 void DeviceManager::enterDeepSleep()
 {
   logger.info("Entering Deep Sleep");
-  m_deviceState = DeviceState::Off;
+  m_deviceState = DeviceState::State::Off;
   updateRingMode();
   updateRing(true);
   delay(1000);
@@ -252,7 +252,7 @@ void DeviceManager::processGameState()
 
   // Check how long we have been awaiting connection.
   // If it is longer than the no connection timeout, enter deep sleep
-  if (m_deviceState == DeviceState::AwaitingConnecion && m_lastUpdate - m_lastConnection > CONNECTION_TIMEOUt)
+  if (m_deviceState == DeviceState::State::AwaitingConnecion && m_lastUpdate - m_lastConnection > CONNECTION_TIMEOUt)
   {
     enterDeepSleep();
   }

@@ -16,7 +16,7 @@ void HGDisplayInterface::setColorBlindMode(bool colorBlindMode)
   m_colorBlindMode = colorBlindMode;
 }
 
-void HGDisplayInterface::setDisplayMode(DeviceState state)
+void HGDisplayInterface::setDisplayMode(DeviceState::State state)
 {
   logger.debug("Setting Light Mode");
   m_startTime = millis();
@@ -40,28 +40,31 @@ void HGDisplayInterface::update(bool force)
 
   switch (m_state)
   {
-  case DeviceState::Off:
+  case DeviceState::State::Off:
     clear();
     break;
-  case DeviceState::AwaitingConnecion:
+  case DeviceState::State::AwaitingConnecion:
     updateLightModeAwaitConnection();
     break;
-  case DeviceState::ActiveTurn:
-    updateLightModeActiveTurn();
+  case DeviceState::State::ActiveTurnEnforced:
+    updateLightModeActiveTurnTimer();
     break;
-  case DeviceState::Skipped:
+  case DeviceState::State::ActiveTurnNotEnforced:
+  updateLightModeActiveTurnNoTimer();
+  break;
+  case DeviceState::State::Skipped:
     updateLightModeSkipped();
     break;
-  case DeviceState::AwaitingTurn:
+  case DeviceState::State::AwaitingTurn:
     updateLightModeTurnSequence();
     break;
-  case DeviceState::AwaitingGameStart:
+  case DeviceState::State::AwaitingGameStart:
     updateLightModeAwaitGameStart();
     break;
-  case DeviceState::Paused:
+  case DeviceState::State::Paused:
     updateGamePaused();
     break;
-  case DeviceState::Debug:
+  case DeviceState::State::Debug:
     updateGameDebug();
     break;
   };

@@ -131,7 +131,7 @@ public:
   uint32_t m_targetColor;
   uint32_t m_previousColor;
 
-  void setDisplayMode(DeviceState state);
+  void setDisplayMode(DeviceState::State state);
 
   void updateGameDebugData(GameDebugData data);
 };

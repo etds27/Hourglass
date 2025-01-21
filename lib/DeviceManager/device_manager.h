@@ -29,9 +29,11 @@ public:
 
 private:
   HourglassDisplayManager *m_displayManager;
-  DeviceState m_deviceState;
+  DeviceState::State m_deviceState;
 
   unsigned long m_lastTurnStart;
+
+  bool updateCommandedDeviceState();
 
   // Flag indicating that the `start()` has been called
   bool m_started = false;
