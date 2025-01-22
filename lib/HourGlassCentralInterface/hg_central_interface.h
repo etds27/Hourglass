@@ -19,13 +19,6 @@ public:
     // Gets the current device's player index
     virtual int getMyPlayer() = 0;
 
-    // Gets the current status of if the device is being skipped in the queue
-    virtual bool isSkipped() = 0;
-    // Lets the device tell the server that it should be skipped for future turns
-    virtual void setSkipped() = 0;
-    // Lets the device tell the server that it should not be skipped for future turns
-    virtual void unsetSkipped() = 0;
-
     // Check if a game is active
     virtual bool isGameActive() = 0;
 

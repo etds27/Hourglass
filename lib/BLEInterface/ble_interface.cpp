@@ -10,7 +10,6 @@ const char *END_TURN_UUID = "c27802ab-425e-4b15-8296-4a937da7125f";
 const char *TOGGLE_SKIP_UUID = "9b4fa66f-20cf-4a7b-ba6a-fc3890cbc0c7";
 const char *SKIPPED_PLAYERS_UUID = "3e35aa50-3594-4b32-9684-dbacb5ba91ee";
 const char *REMAINING_TIME_UUID = "4e1c05f6-c128-4bca-96c3-29c014e00eb6";
-const char *SKIPPED_UUID = "c1ed8823-7eb1-44b2-ac01-351e8c6a693c";
 const char *TIMER_UUID = "4661b4c1-093d-4db7-bb80-5b5fe3eae519";
 
 const char *DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb";
@@ -52,11 +51,13 @@ void BLEInterface::endTurn()
 {
   // Write an end turn notification by setting the value to true first to initiate the end turn
   // Then a false is written to ensure that the next `endTurn` action will write correctly
+  logger.debug("Sending End Turn Notification");
   m_endTurn->writeValue(true);
   m_endTurn->writeValue(false);
 }
 
 void BLEInterface::toggleSkippedState() {
+  logger.debug("Sending Skipped State Toggle Notification");
   m_toggleSkip->writeValue(true);
   m_toggleSkip->writeValue(false);
 }
@@ -89,21 +90,6 @@ int BLEInterface::getTotalPlayers()
 {
   m_lastTotalPlayers = m_numberOfPlayers->value();
   return m_lastTotalPlayers;
-}
-
-bool BLEInterface::isSkipped()
-{
-  return m_skipped->value();
-}
-
-void BLEInterface::setSkipped()
-{
-  m_skipped->writeValue(true);
-}
-
-void BLEInterface::unsetSkipped()
-{
-  m_skipped->writeValue(false);
 }
 
 bool BLEInterface::isGameActive()
@@ -164,7 +150,7 @@ void BLEInterface::setService()
   m_myPlayerNumber = new BLEIntCharacteristic(MY_PLAYER_UUID, BLEWrite | BLERead);
   m_service->addCharacteristic(*m_myPlayerNumber);
 
-  // My turn bool
+  // Game State Characteristic
   m_gameState = new BLEIntCharacteristic(DEVICE_STATE_UUID, BLEWrite | BLENotify | BLERead);
   m_service->addCharacteristic(*m_gameState);
 
@@ -172,12 +158,9 @@ void BLEInterface::setService()
   m_endTurn = new BLEBoolCharacteristic(END_TURN_UUID, BLEWrite | BLENotify | BLERead);
   m_service->addCharacteristic(*m_endTurn);
 
-  // Device is skipped bool
-  m_skipped = new BLEBoolCharacteristic(SKIPPED_UUID, BLERead | BLEWrite | BLENotify);
-  m_skippedDescriptor = new BLEDescriptor(DESCRIPTOR_UUID, "Skip Turn Descriptor");
-  m_skipped->addDescriptor(*m_skippedDescriptor);
-  m_service->addCharacteristic(*m_skipped);
-  m_skipped->writeValue(false);
+  // Skip action Characteristic
+  m_toggleSkip = new BLEBoolCharacteristic(TOGGLE_SKIP_UUID, BLEWrite | BLENotify | BLERead);
+  m_service->addCharacteristic(*m_toggleSkip);
 
   // Game is currently paused
   m_skippedPlayers = new BLEByteCharacteristic(SKIPPED_PLAYERS_UUID, BLEWrite | BLERead);
@@ -204,10 +187,6 @@ void BLEInterface::readData()
   logger.info("Current Player: " + String(getCurrentPlayer()) + " " + String(m_currentPlayer->valueLength()));
   logger.info("Timer:          " + String(getTimer()) + " " + String(m_timer->valueLength()));
   logger.info("Elapsed Time:   " + String(getElapsedTime()) + " " + String(m_elapsedTime->valueLength()));
-  logger.info("My Turn:        " + String(isTurn()) + " " + String(m_myTurn->valueLength()));
   logger.info("My number:      " + String(getMyPlayer()) + " " + String(m_myPlayerNumber->valueLength()));
-  logger.info("Skipped:        " + String(isSkipped()) + " " + String(m_skipped->valueLength()));
-  logger.info("Game Active:    " + String(isGameActive()) + " " + String(m_skipped->valueLength()));
-  logger.info("Game Paused:    " + String(isGamePaused()) + " " + String(m_gamePaused->valueLength()));
   logger.info("\n");
 }
