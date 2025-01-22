@@ -43,7 +43,7 @@ void HGDisplayInterface::update(bool force)
   case DeviceState::State::Off:
     clear();
     break;
-  case DeviceState::State::AwaitingConnecion:
+  case DeviceState::State::AwaitingConnection:
     updateLightModeAwaitConnection();
     break;
   case DeviceState::State::ActiveTurnEnforced:
@@ -84,7 +84,7 @@ void HGDisplayInterface::updateTurnSequenceData(struct TurnSequenceData data)
   m_turnSequenceData = data;
 }
 
-void HGDisplayInterface::updateAwaitingGameStartData(struct GameStartData data)
+void HGDisplayInterface::updateAwaitingGameStartData(const struct GameStartData data)
 {
   m_gameStartData = data;
 }
