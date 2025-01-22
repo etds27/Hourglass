@@ -11,6 +11,7 @@ class DeviceManager
 {
 public:
   DeviceManager(HourglassDisplayManager *displayManager);
+  ~DeviceManager();
   // Device Name
   char *getDeviceName();
 
@@ -51,6 +52,9 @@ private:
   // Last time the device was connected to the central
   // Used to determine deep sleep eligibility
   unsigned long m_lastConnection;
+
+
+  GameStartData* gameStartData;
 
   // Interface for retrieving information from the central device
   HGCentralInterface *m_interface;

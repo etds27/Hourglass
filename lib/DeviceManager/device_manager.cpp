@@ -12,10 +12,18 @@ DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
   readDeviceName(m_deviceName);
   logger.info("Device name: " + String(m_deviceName));
 
+  logger.info("Initializing Display Data Structs");
+  gameStartData = new GameStartData;
+
   m_buttonMonitor = new ButtonInputMonitor(BUTTON_INPUT_PIN);
   // Allows the main device button to wake the device from sleep state
   esp_sleep_enable_ext0_wakeup(BUTTON_GPIO_PIN, HIGH);
   m_interface = new BLEInterface(m_deviceName);
+}
+
+DeviceManager::~DeviceManager()
+{
+  delete gameStartData;
 }
 
 void DeviceManager::start()
@@ -84,7 +92,12 @@ void DeviceManager::sendEndTurn()
 bool DeviceManager::updateCommandedDeviceState()
 {
   DeviceState::State newDeviceState = m_interface->getCommandedDeviceState();
-  bool diff = m_deviceState == newDeviceState;
+  bool diff = m_deviceState != newDeviceState;
+  if (diff) {
+    char message[50];
+    sprintf(message, "Device State transition: %i -> %i", static_cast<int>(m_deviceState), static_cast<int>(newDeviceState));
+    logger.info(message);
+  }
   m_deviceState = m_interface->getCommandedDeviceState();
   return diff;
 }
@@ -104,12 +117,12 @@ void DeviceManager::updateTimer()
 
 void DeviceManager::setWaitingForConnection()
 {
-  if (m_deviceState == DeviceState::State::AwaitingConnecion)
+  if (m_deviceState == DeviceState::State::AwaitingConnection)
   {
     return;
   }
-  logger.info("Setting device state to: AwaitingConnecion");
-  m_deviceState = DeviceState::State::AwaitingConnecion;
+  logger.info("Setting device state to: AwaitingConnection");
+  m_deviceState = DeviceState::State::AwaitingConnection;
   updateRingMode();
 }
 
@@ -138,9 +151,8 @@ void DeviceManager::updateRing(bool force)
 
 void DeviceManager::updateAwaitingGameStartData()
 {
-  struct GameStartData data = {
-      .totalPlayers = m_interface->getTotalPlayers()};
-  m_displayManager->updateAwaitingGameStartData(data);
+  gameStartData->totalPlayers = m_interface->getTotalPlayers();
+  m_displayInterface->updateAwaitingGameStartData(*gameStartData);
 }
 
 void DeviceManager::updateTurnSequence()
@@ -190,7 +202,7 @@ void DeviceManager::processGameState()
 
   // Check how long we have been awaiting connection.
   // If it is longer than the no connection timeout, enter deep sleep
-  if (m_deviceState == DeviceState::State::AwaitingConnecion && m_lastUpdate - m_lastConnection > CONNECTION_TIMEOUt)
+  if (m_deviceState == DeviceState::State::AwaitingConnection && m_lastUpdate - m_lastConnection > CONNECTION_TIMEOUt)
   {
     enterDeepSleep();
   }
@@ -209,24 +221,28 @@ void DeviceManager::processGameState()
 
 
   // *** DISPLAY FOR ACTIVE GAME ***
-
   // Determine is a device state change was made. If it was, we will update the state after getting display specific data
   bool updateDeviceState = updateCommandedDeviceState();
-
   // Retrieve state specific data for display modes
   switch (m_deviceState)
   {
   case DeviceState::State::AwaitingGameStart:
     updateAwaitingGameStartData();
+    break;
   case DeviceState::State::ActiveTurnEnforced:
     updateTimer();
-    case DeviceState::State::AwaitingTurn:
+    break;
+  case DeviceState::State::AwaitingTurn:
     updateTurnSequence();
+    break;
+  }
+
+  if (updateDeviceState) {
+    m_displayInterface->setDisplayMode(m_deviceState);
   }
 
   // *** INPUT PROCESSING ***
-
-  if (buttonAction == ButtonInputType::DoubleButtonPress)
+  if (buttonAction == ButtonInputType::DoubleButtonPress && DeviceState::isStateSkipEligible(m_deviceState))
   {
     m_interface->toggleSkippedState();
   }
