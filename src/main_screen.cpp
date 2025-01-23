@@ -2,6 +2,7 @@
 #include <EEPROM.h>
 #include "device_manager.h"
 #include "lcd_ring.h"
+#include "fast_led_light.h"
 
 #define ILI9341_DRIVER
 
@@ -30,18 +31,27 @@
 
 
 TFT_eSPI *tft = new TFT_eSPI();
-LCDRing *ring = new LCDRing(16, tft);
+LCDRing *lRing = new LCDRing(16, tft);
+FastLEDLight *fRing = new FastLEDLight(16, 12);
+DeviceManager *deviceManager;
+HourglassDisplayManager *displayManager;
 void setup() {
+
     Serial.begin(115200);
+
+    displayManager = new HourglassDisplayManager();
+    displayManager->addDisplayInterface(lRing);
+    displayManager->addDisplayInterface(fRing);
+
+    deviceManager = new DeviceManager(displayManager);
     tft->init();
     tft->setRotation(1); // Adjust rotation (0-3)
 
     tft->fillScreen(TFT_BLACK);
 
-    ring->begin();
-    ring->setDisplayMode(DeviceState::AwaitingConnecion);
+    deviceManager->start();
 }
 
 void loop() {
-    ring->update();
+    deviceManager->update();
 }
