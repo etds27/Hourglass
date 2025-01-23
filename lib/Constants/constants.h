@@ -17,7 +17,11 @@
 #define BUTTON_INPUT_PIN 4
 #define BUTTON_GPIO_PIN GPIO_NUM_4
 
-#define CONNECTION_TIMEOUt 120000
+#define CONNECTION_TIMEOUT 120000
+
+
+/// Amount of time to wait after the BLE device has connected to allow Central device to discover all characteristics
+#define EXPECTED_CHARACTERISTIC_DISCOVERY 1500
 
 #define MIN_TURN_LENGTH 1000
 
