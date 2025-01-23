@@ -214,6 +214,7 @@ void DeviceManager::processGameState()
 
   if (!m_interface->isConnected())
   {
+    m_lastDisconnection = m_lastUpdate;
     setWaitingForConnection();
     return;
   }
