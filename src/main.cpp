@@ -23,7 +23,7 @@ LCDRing *lRing;
 LCDTimer *lTimer;
 void setup()
 {
-  loggerLevel = LoggerLevel::DEBUG;
+  loggerLevel = LoggerLevel::INFO;
   Serial.begin(115200);
   // while (!Serial)
   //   ;
