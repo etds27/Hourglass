@@ -53,6 +53,9 @@ private:
   // Used to determine deep sleep eligibility
   unsigned long m_lastConnection;
 
+  /// @brief Last time the device was disconnected from the central
+  /// Used to display AwaitingConnection state after connection has been made
+  unsigned long m_lastDisconnection;
 
   GameStartData* gameStartData;
 
