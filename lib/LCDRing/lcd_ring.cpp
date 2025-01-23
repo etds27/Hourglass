@@ -45,7 +45,6 @@ void LCDRing::show()
             drawPixel(i);
         }
     }
-    logger.info("m_leds[2]: " + String(m_leds[2]) + " m_previousLeds[2]: " + String(m_previousLeds[2]));
     m_previousLeds = m_leds;
 }
 
