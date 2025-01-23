@@ -202,7 +202,7 @@ void DeviceManager::processGameState()
 
   // Check how long we have been awaiting connection.
   // If it is longer than the no connection timeout, enter deep sleep
-  if (m_deviceState == DeviceState::State::AwaitingConnection && m_lastUpdate - m_lastConnection > CONNECTION_TIMEOUt)
+  if (m_deviceState == DeviceState::State::AwaitingConnection && m_lastUpdate - m_lastConnection > CONNECTION_TIMEOUT)
   {
     enterDeepSleep();
   }
