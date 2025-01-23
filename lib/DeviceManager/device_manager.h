@@ -4,21 +4,13 @@
 #include "hg_display_interface.h"
 #include "device_state.h"
 #include "constants.h"
-<<<<<<< HEAD
-=======
 #include "hg_display_manager.h"
->>>>>>> 1b5bca3 (Updated device manager to display manager)
 
 // Maintains the device state while it is powered on
 class DeviceManager
 {
 public:
-<<<<<<< HEAD
-  DeviceManager();
-
-=======
   DeviceManager(HourglassDisplayManager *displayManager);
->>>>>>> 1b5bca3 (Updated device manager to display manager)
   // Device Name
   char *getDeviceName();
 
