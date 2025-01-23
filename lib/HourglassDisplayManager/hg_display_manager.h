@@ -1,3 +1,4 @@
+#pragma once
 #include "hg_display_interface.h"
 #include "logger.h"
 #include <vector>
