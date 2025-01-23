@@ -4,13 +4,17 @@
 #include "hg_display_interface.h"
 #include "device_state.h"
 #include "constants.h"
+#include "TFT_eSPI.h"
 
 // Maintains the device state while it is powered on
 class DeviceManager
 {
 public:
+#if DISPLAY_TYPE == 2
+  DeviceManager(TFT_eSPI* tft);
+#else
   DeviceManager();
-
+#endif
   // Device Name
   char *getDeviceName();
 

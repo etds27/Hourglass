@@ -3,6 +3,13 @@
 
 #define ENABLE_DEBUG 0
 
+
+// Display Type Enumeration
+// Adafruit: 0
+// FastLED:  1
+// LCD:      2
+#define DISPLAY_TYPE 2
+
 #define LED_ADAFRUIT 0
 
 #define RING_LED_COUNT 16
