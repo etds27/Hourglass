@@ -4,17 +4,13 @@
 #include "hg_display_interface.h"
 #include "device_state.h"
 #include "constants.h"
-#include "TFT_eSPI.h"
+#include "hg_display_manager.h"
 
 // Maintains the device state while it is powered on
 class DeviceManager
 {
 public:
-#if DISPLAY_TYPE == 2
-  DeviceManager(TFT_eSPI* tft);
-#else
-  DeviceManager();
-#endif
+  DeviceManager(HourglassDisplayManager *displayManager);
   // Device Name
   char *getDeviceName();
 
@@ -32,6 +28,7 @@ public:
   void update();
 
 private:
+  HourglassDisplayManager *m_displayManager;
   DeviceState m_deviceState;
 
   unsigned long m_lastTurnStart;
@@ -63,7 +60,7 @@ private:
   char *m_deviceName;
 
   // Display output for current game state
-  HGDisplayInterface *m_displayInterface;
+  // HGDisplayInterface *m_displayInterface;
 
   // Flag indicating the current color blind status
   bool m_colorBlindMode = false;

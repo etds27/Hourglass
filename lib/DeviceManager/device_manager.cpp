@@ -3,35 +3,14 @@
 #include "ble_interface.h"
 #include "logger.h"
 
-#if DISPLAY_TYPE == 0
-#include "ring_light.h"
-#elif DISPLAY_TYPE == 1
-#include "fast_led_light.h"
-#elif DISPLAY_TYPE == 2
-#include "lcd_ring.h"
-#endif
-
-#if DISPLAY_TYPE == 2
-DeviceManager::DeviceManager(TFT_eSPI *tft)
-#else
-DeviceManager::DeviceManager()
-#endif
+DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
 {
+  m_displayManager = displayManager;
+
   logger.info("Initializing Device Manager");
   m_deviceName = new char[8];
   readDeviceName(m_deviceName);
   logger.info("Device name: " + String(m_deviceName));
-
-#if DISPLAY_TYPE == 0
-  logger.info("Loading Adafruit RingLight");
-  m_ring = new RingLight(RING_LED_COUNT, RING_DI_PIN);
-#elif DISPLAY_TYPE == 1
-  logger.info("Loading FastLED RingLight");
-  m_displayInterface = new FastLEDLight(RING_LED_COUNT, RING_DI_PIN);
-#elif DISPLAY_TYPE == 2
-  logger.info("Loading LCD Ring");
-  m_displayInterface = new LCDRing(RING_LED_COUNT, tft);
-#endif
 
   m_buttonMonitor = new ButtonInputMonitor(BUTTON_INPUT_PIN);
   // Allows the main device button to wake the device from sleep state
@@ -42,7 +21,7 @@ DeviceManager::DeviceManager()
 void DeviceManager::start()
 {
   logger.info("Starting the device manager");
-  m_displayInterface->setDisplayMode(DeviceState::Off);
+  m_displayManager->setDisplayMode(DeviceState::Off);
 
   m_interface->setService();
   setWaitingForConnection();
@@ -152,7 +131,7 @@ void DeviceManager::updateTimer()
       .elapsedTime = elapsedTime,
       .isTurnTimeEnforced = isTurnTimeEnforced};
 
-  m_displayInterface->updateTimerData(data);
+  m_displayManager->updateTimerData(data);
 }
 
 void DeviceManager::setTurnSequenceMode()
@@ -200,7 +179,7 @@ void DeviceManager::toggleColorBlindMode()
 {
   m_colorBlindMode = !m_colorBlindMode;
   logger.info("Setting Color Blind Mode to: " + String(m_colorBlindMode));
-  m_displayInterface->setColorBlindMode(m_colorBlindMode);
+  m_displayManager->setColorBlindMode(m_colorBlindMode);
   updateRing();
 }
 
@@ -216,14 +195,14 @@ void DeviceManager::enterDeepSleep()
 
 void DeviceManager::updateRing(bool force)
 {
-  m_displayInterface->update(force);
+  m_displayManager->update(force);
 }
 
 void DeviceManager::updateAwaitingGameStartData()
 {
   struct GameStartData data = {
       .totalPlayers = m_interface->getTotalPlayers()};
-  m_displayInterface->updateAwaitingGameStartData(data);
+  m_displayManager->updateAwaitingGameStartData(data);
 }
 
 void DeviceManager::updateTurnSequence()
@@ -233,12 +212,12 @@ void DeviceManager::updateTurnSequence()
   int currentPlayer = m_interface->getCurrentPlayer();
 
   struct TurnSequenceData data = {.totalPlayers = totalPlayers, .myPlayerIndex = myPlayer, .currentPlayerIndex = currentPlayer};
-  m_displayInterface->updateTurnSequenceData(data);
+  m_displayManager->updateTurnSequenceData(data);
 }
 
 void DeviceManager::updateRingMode()
 {
-  m_displayInterface->setDisplayMode(m_deviceState);
+  m_displayManager->setDisplayMode(m_deviceState);
 }
 
 void DeviceManager::update()
