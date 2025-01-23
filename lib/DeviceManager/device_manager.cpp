@@ -219,6 +219,13 @@ void DeviceManager::processGameState()
   }
   m_lastConnection = m_lastUpdate;
 
+  // This prolongs the Awaiting Connection state for EXPECTED_CHARACTERISTIC_DISCOVERY ms after the initial device connection is initiated by the central device
+  // During this time, the central device will discover and populate all characteristics so when the commanded state is first shown, all data is available
+  // If this check is not made, the display will have undefined behavior between initial connection and service discovery
+  if (m_lastUpdate - m_lastDisconnection < EXPECTED_CHARACTERISTIC_DISCOVERY) {
+    return;
+  }
+
 
   // *** DISPLAY FOR ACTIVE GAME ***
   // Determine is a device state change was made. If it was, we will update the state after getting display specific data
