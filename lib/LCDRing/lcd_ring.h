@@ -16,6 +16,9 @@ public:
     void setPixelColor(uint8_t i, uint32_t color);
 
 protected:
+  uint8_t m_ringOffset = 12;
+  uint8_t getRingOffset() const override;
+
   bool m_clearBeforeUpdate = false;
 
 private:

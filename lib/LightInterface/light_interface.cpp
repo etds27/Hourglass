@@ -56,6 +56,11 @@ void LightInterface::setDisplayMode(DeviceState state)
   HGDisplayInterface::setDisplayMode(state);
 }
 
+uint8_t LightInterface::getRingOffset() const
+{
+    return m_ringOffset;
+}
+
 void LightInterface::updateLightModeActiveTurn()
 {
   if (m_timerData.isTurnTimeEnforced)
@@ -509,9 +514,9 @@ void LightInterface::displayBuffer(const uint32_t *buffer, const bool clockwise)
   for (int i = 0; i < m_ledCount; i++)
   {
     if (clockwise) {
-      setPixelColor(((m_ledCount - i  - 1) + TOP_RING_OFFSET) % m_ledCount, buffer[i]);
+      setPixelColor(((m_ledCount - i  - 1) + getRingOffset()) % m_ledCount, buffer[i]);
     } else {
-      setPixelColor((i + TOP_RING_OFFSET) % m_ledCount, buffer[i]);
+      setPixelColor((i + getRingOffset()) % m_ledCount, buffer[i]);
     }
   }
 }

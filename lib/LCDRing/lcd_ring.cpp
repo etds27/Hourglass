@@ -60,6 +60,16 @@ void LCDRing::setPixelColor(uint8_t i, uint32_t color)
     m_leds[i] = rgb24to565(color);
 }
 
+uint8_t LCDRing::getRingOffset() const
+{
+    return m_ringOffset;
+}
+
+bool LCDRing::getClearBeforeUpdate() const
+{
+    return m_clearBeforeUpdate;
+}
+
 void LCDRing::drawPixel(const uint8_t i)
 {
     double theta = (i  + 0.5) / 16.0 * 2 * PI;
@@ -68,6 +78,7 @@ void LCDRing::drawPixel(const uint8_t i)
     m_tft->fillSmoothCircle(centerX, centerY, PIXEL_RADIUS, m_leds[i]);
 }
 
+// TODO: Move to color conversion library when available
 uint16_t LCDRing::rgb24to565(uint32_t color)
 {
     uint8_t r = color >> 16;
