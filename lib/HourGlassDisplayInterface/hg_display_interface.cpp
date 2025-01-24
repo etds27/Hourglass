@@ -27,12 +27,17 @@ void HGDisplayInterface::setDisplayMode(DeviceState state)
 
 void HGDisplayInterface::update(bool force)
 {
-  if (millis() - m_lastUpdate < RING_REFRESH_RATE && !force)
+  // Exit if attempting to redraw display before reaching the refresh rate
+  if (millis() - m_lastUpdate < m_refreshRate && !force)
   {
     return;
   }
   // logger.info("Updating Ring Light Color");
-  clear();
+
+  if (m_clearBeforeUpdate) {
+    clear();
+  }
+
   switch (m_state)
   {
   case DeviceState::Off:

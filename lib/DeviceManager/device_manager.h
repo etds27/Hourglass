@@ -4,13 +4,13 @@
 #include "hg_display_interface.h"
 #include "device_state.h"
 #include "constants.h"
+#include "hg_display_manager.h"
 
 // Maintains the device state while it is powered on
 class DeviceManager
 {
 public:
-  DeviceManager();
-
+  DeviceManager(HourglassDisplayManager *displayManager);
   // Device Name
   char *getDeviceName();
 
@@ -28,6 +28,7 @@ public:
   void update();
 
 private:
+  HourglassDisplayManager *m_displayManager;
   DeviceState m_deviceState;
 
   unsigned long m_lastTurnStart;
@@ -59,7 +60,7 @@ private:
   char *m_deviceName;
 
   // Display output for current game state
-  HGDisplayInterface *m_displayInterface;
+  // HGDisplayInterface *m_displayInterface;
 
   // Flag indicating the current color blind status
   bool m_colorBlindMode = false;
