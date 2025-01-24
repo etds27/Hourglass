@@ -6,12 +6,14 @@
 #include <EEPROM.h>
 #include "device_state.h"
 #include "fast_led_light.h"
+#include "hg_display_manager.h"
 
 // SevenSegmentDisplay* sevenSegment;
 // DeviceManager* deviceManager;
 // RingLight* m_ring;
 FastLEDLight* fastLEDLight;
 DeviceManager *deviceManager;
+HourglassDisplayManager *displayManager;
 // ButtonInputMonitor* buttonInputMonitor;
 
 void setup()
@@ -25,14 +27,18 @@ void setup()
   // Start the BLE peripheral
 
   EEPROM.begin(8);
-  deviceManager = new DeviceManager();
+
+  fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
+  displayManager = new HourglassDisplayManager();
+  displayManager->addDisplayInterface(fastLEDLight);
+
+  deviceManager = new DeviceManager(displayManager);
   // deviceManager->writeDeviceName("HG4     ", 8);
   // logger.info(String(deviceManager->getDeviceName()));
   deviceManager->start();
 
   // exit(0);
 
-  // fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
   // struct TimerData data {.totalTime = 1, .elapsedTime = 1, .isTurnTimeEnforced = false};
 
   // fastLEDLight->updateTimerData(data);

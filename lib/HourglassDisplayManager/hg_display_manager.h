@@ -1,3 +1,4 @@
+#pragma once
 #include "hg_display_interface.h"
 #include "logger.h"
 #include <vector>
@@ -5,7 +6,12 @@
 
 class HourglassDisplayManager {
     public:
-    void addDisplayInterface(HGDisplayInterface *inteface);
+    /// @brief Add a display interface to the collection
+    void addDisplayInterface(HGDisplayInterface *interface);
+
+    /// @brief Get the number of display interfaces managed
+    /// @return Number of display interfaces
+    uint8_t count();
     
     // Sets the current colorblind mode for the ringlight
     void setColorBlindMode(bool colorBlindMode);
