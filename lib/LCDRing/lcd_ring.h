@@ -15,10 +15,14 @@ public:
     void setBrightness(uint8_t brightness);
     void setPixelColor(uint8_t i, uint32_t color);
 
+protected:
+  bool m_clearBeforeUpdate = false;
+
 private:
   void drawPixel(const uint8_t i);
-   std::vector<uint32_t> m_leds;
-   std::vector<uint32_t> m_previousLeds;
+  uint16_t rgb24to565(uint32_t color);
+   std::vector<uint16_t> m_leds;
+   std::vector<uint16_t> m_previousLeds;
    uint8_t m_brightness;
    TFT_eSPI *m_tft;
 };

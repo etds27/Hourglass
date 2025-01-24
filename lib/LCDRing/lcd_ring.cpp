@@ -10,8 +10,8 @@
 LCDRing::LCDRing(const uint8_t ledCount, TFT_eSPI *tft)
 {
     m_tft = tft;
-    m_leds = std::vector<uint32_t>(m_ledCount, 0);
-    m_previousLeds = std::vector<uint32_t>(m_ledCount, 0);
+    m_leds = std::vector<uint16_t>(m_ledCount, 0);
+    m_previousLeds = std::vector<uint16_t>(m_ledCount, 0);
     setUp();
 }
 
@@ -56,7 +56,8 @@ void LCDRing::setBrightness(uint8_t brightness)
 
 void LCDRing::setPixelColor(uint8_t i, uint32_t color)
 {
-    m_leds[i] = color;
+
+    m_leds[i] = rgb24to565(color);
 }
 
 void LCDRing::drawPixel(const uint8_t i)
@@ -65,4 +66,12 @@ void LCDRing::drawPixel(const uint8_t i)
     int centerX = (int)(RING_RADIUS * cos(theta)) + TFT_WIDTH / 2;
     int centerY = (int)(RING_RADIUS * sin(theta)) + TFT_HEIGHT / 2;
     m_tft->fillSmoothCircle(centerX, centerY, PIXEL_RADIUS, m_leds[i]);
+}
+
+uint16_t LCDRing::rgb24to565(uint32_t color)
+{
+    uint8_t r = color >> 16;
+    uint8_t g = color >> 8 & 0xFF;
+    uint8_t b = color & 0xFF;
+    return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
 }
