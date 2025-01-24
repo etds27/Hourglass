@@ -3,6 +3,8 @@
 #include "device_manager.h"
 #include "lcd_ring.h"
 #include "fast_led_light.h"
+#include "lcd_timer.h"
+#include "hg_display_interface.h"
 
 #define ILI9341_DRIVER
 
@@ -29,29 +31,50 @@
 #define SPI_TOUCH_FREQUENCY  2500000
 
 
-
-TFT_eSPI *tft = new TFT_eSPI();
-LCDRing *lRing = new LCDRing(16, tft);
+TFT_eSPI tft = TFT_eSPI();
+LCDRing *lRing = new LCDRing(16, &tft);
+LCDTimer *lTimer = new LCDTimer(&tft);
 FastLEDLight *fRing = new FastLEDLight(16, 12);
+TimerData *data = new TimerData;
+
 DeviceManager *deviceManager;
 HourglassDisplayManager *displayManager;
 void setup() {
 
     Serial.begin(115200);
+ 
+    data->totalTime = 10000;
+    data->elapsedTime = 0;
+    data->isTurnTimeEnforced = true;
 
     displayManager = new HourglassDisplayManager();
     displayManager->addDisplayInterface(lRing);
-    displayManager->addDisplayInterface(fRing);
+    //displayManager->addDisplayInterface(fRing);
+    displayManager->addDisplayInterface(lTimer);
 
     deviceManager = new DeviceManager(displayManager);
-    tft->init();
-    tft->setRotation(1); // Adjust rotation (0-3)
+    tft.init();
+    tft.setRotation(1); // Adjust rotation (0-3)
 
-    tft->fillScreen(TFT_BLACK);
+    tft.fillScreen(TFT_BLACK);
+    //tft.setTextColor(TFT_WHITE, TFT_BLACK); // Set the font colour AND the background colour
+                                               // so the anti-aliasing works
+    //tft.setTextSize(2);  // Set text size (1 = small, 2 = medium, etc.)
 
-    deviceManager->start();
+    // Display text at position (x, y)
+    //tft.setCursor(tft.width() / 2, tft.height() / 2); // Set cursor at top left of screen
+    //tft.println("Hello, TFT!");
+
+    //tft.setCursor(TFT_WIDTH / 2, TFT_HEIGHT / 2);
+    //tft.println("ESP32 + TFT_eSPI");
+    // deviceManager->start();
+    displayManager->updateTimerData(*data);
+    displayManager->setDisplayMode(DeviceState::ActiveTurn);
 }
 
 void loop() {
-    deviceManager->update();
+    uint32_t elapsedTime = millis() % 10000;
+    data->elapsedTime = elapsedTime;
+    displayManager->updateTimerData(*data);
+    displayManager->update();
 }
