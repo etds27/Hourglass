@@ -30,7 +30,6 @@ void LCDTimer::updateLightModeActiveTurnTimer()
 
     
     m_tft->setTextSize(3);  // Set text size (1 = small, 2 = medium, etc.)
-    m_tft->setCursor(m_tft->width() / 2 - 50, m_tft->height() / 2); // Set cursor at top left of screen
 
     /*
     // Display text at position (x, y)
@@ -74,8 +73,15 @@ void LCDTimer::updateLightModeActiveTurnTimer()
     }
 
     /// logger.info("Displaying text");
-    char displayBuffer[20];
+    char displayBuffer[7];
     sprintf(displayBuffer, "%02d:%02d %c", major, minor, unit);
+
+    uint16_t textWidth = m_tft->textWidth(displayBuffer);
+    uint16_t fontHeight = m_tft->fontHeight();
+    uint16_t cursorX = m_tft->width() / 2 - textWidth / 2;
+    uint16_t cursorY = m_tft->height() / 2 - fontHeight / 2;
+    m_tft->setCursor(cursorX, cursorY); // Set cursor at top left of screen
+
     m_tft->print(displayBuffer);
 }
 
