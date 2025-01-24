@@ -31,6 +31,7 @@ class HGDisplayInterface
 protected:
     /// @brief Clears the current display before showing the updated view
     bool m_clearBeforeUpdate = true;
+    virtual bool getClearBeforeUpdate() const;
 
     /// @brief Minimum time (in ms) to wait before the display will redraw
     uint32_t m_refreshRate = DISPLAY_REFRESH_RATE;

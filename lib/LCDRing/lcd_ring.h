@@ -20,6 +20,7 @@ protected:
   uint8_t getRingOffset() const override;
 
   bool m_clearBeforeUpdate = false;
+  bool getClearBeforeUpdate() const override;
 
 private:
   void drawPixel(const uint8_t i);

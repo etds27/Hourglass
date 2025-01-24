@@ -31,7 +31,7 @@ void LCDRing::clear()
     {
         m_leds[i] = 0x000000;
     }
-    // show();
+    show();
 }
 
 void LCDRing::show()

@@ -34,7 +34,7 @@ void HGDisplayInterface::update(bool force)
   }
   // logger.info("Updating Ring Light Color");
 
-  if (m_clearBeforeUpdate) {
+  if (getClearBeforeUpdate()) {
     clear();
   }
 
@@ -84,4 +84,9 @@ void HGDisplayInterface::updateTurnSequenceData(struct TurnSequenceData data)
 void HGDisplayInterface::updateAwaitingGameStartData(struct GameStartData data)
 {
   m_gameStartData = data;
+}
+
+bool HGDisplayInterface::getClearBeforeUpdate() const
+{
+    return m_clearBeforeUpdate;
 }
