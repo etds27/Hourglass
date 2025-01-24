@@ -1,6 +1,7 @@
 #pragma once
 #include "device_state.h"
 #include "constants.h"
+#include <stdint.h>
 
 // All required data for any display interface to show the Awaiting Game Start state
 struct GameStartData
