@@ -16,7 +16,6 @@ DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
   // Allows the main device button to wake the device from sleep state
   esp_sleep_enable_ext0_wakeup(BUTTON_GPIO_PIN, HIGH);
   m_interface = new BLEInterface(m_deviceName);
-
 }
 
 void DeviceManager::start()
@@ -82,7 +81,8 @@ void DeviceManager::sendEndTurn()
   m_interface->endTurn();
 }
 
-void DeviceManager::endTurn() {
+void DeviceManager::endTurn()
+{
   setTurnSequenceMode();
 }
 
@@ -327,10 +327,14 @@ void DeviceManager::processGameState()
     }
   }
 
-  if (isSkipped != interfaceSkipped) {
-    if (isSkipped) {
+  if (isSkipped != interfaceSkipped)
+  {
+    if (isSkipped)
+    {
       unsetSkipped();
-    } else {
+    }
+    else
+    {
       setSkipped();
     }
     return;
@@ -350,11 +354,14 @@ void DeviceManager::processGameState()
   {
     uint32_t timeSinceTurnStart = millis() - m_lastTurnStart;
     logger.debug("Time since turn start: " + String(timeSinceTurnStart) + " = " + String(millis()) + " + " + String(m_lastTurnStart));
-    if ( timeSinceTurnStart > MIN_TURN_LENGTH) {
+    if (timeSinceTurnStart > MIN_TURN_LENGTH)
+    {
       // If a button was pressed and it is the person's turn
       sendEndTurn();
       return;
-    } else {
+    }
+    else
+    {
       logger.debug("Attempted to end turn too quickly");
     }
   }
@@ -364,15 +371,18 @@ void DeviceManager::processGameState()
     // Both the Bluetooth interface and device state believe it is our turn
     updateTimer();
   }
-  else if (interfaceTurn != isTurn)  
+  else if (interfaceTurn != isTurn)
   {
     logger.debug("Interface turn does not match device turn");
-    if (!isTurn) {
+    if (!isTurn)
+    {
       logger.debug("Device does not have turn set. Starting new turn");
       // If the Bluetooth interface thinks it is our turn but the device state doesnt
       // If the turn just started
       startTurn();
-    } else {
+    }
+    else
+    {
       logger.debug("Device has turn set. Ending current turn");
       // If the device thinks it is our turn but the but bluetooth doesnt
       // If the turn just ended

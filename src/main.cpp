@@ -7,19 +7,24 @@
 #include "device_state.h"
 #include "fast_led_light.h"
 #include "hg_display_manager.h"
+#include "lcd_ring.h"
+#include "lcd_timer.h"
+#include <TFT_eSPI.h>
 
 // SevenSegmentDisplay* sevenSegment;
 // DeviceManager* deviceManager;
 // RingLight* m_ring;
-FastLEDLight* fastLEDLight;
+TFT_eSPI tft = TFT_eSPI();
+FastLEDLight *fastLEDLight;
 DeviceManager *deviceManager;
 HourglassDisplayManager *displayManager;
 // ButtonInputMonitor* buttonInputMonitor;
-
+LCDRing *lRing;
+LCDTimer *lTimer;
 void setup()
 {
-  loggerLevel = LoggerLevel::OFF;
-  Serial.begin(9600);
+  loggerLevel = LoggerLevel::DEBUG;
+  Serial.begin(115200);
   // while (!Serial)
   //   ;
   delay(2000);
@@ -28,9 +33,18 @@ void setup()
 
   EEPROM.begin(8);
 
-  fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
+  // fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
+  lRing = new LCDRing(16, &tft);
+  lTimer = new LCDTimer(&tft);
   displayManager = new HourglassDisplayManager();
-  displayManager->addDisplayInterface(fastLEDLight);
+  // displayManager->addDisplayInterface(fastLEDLight);
+  displayManager->addDisplayInterface(lRing);
+  // displayManager->addDisplayInterface(lTimer);
+
+  tft.init();
+  tft.setRotation(0); // Adjust rotation (0-3)
+
+  tft.fillScreen(TFT_BLACK);
 
   deviceManager = new DeviceManager(displayManager);
   // deviceManager->writeDeviceName("HG4     ", 8);

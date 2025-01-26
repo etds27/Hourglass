@@ -15,8 +15,11 @@ struct GameDebugData
 class LightInterface : public HGDisplayInterface
 {
 protected:
+  uint8_t m_ringOffset = TOP_RING_OFFSET;
   uint8_t m_ledCount;
   uint8_t m_diPin;
+
+  virtual uint8_t getRingOffset() const;
 
   void updateLightModeActiveTurn();
   void updateLightModeActiveTurnTimer();
