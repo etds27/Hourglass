@@ -49,6 +49,7 @@ void LCDTimer::updateLightModeActiveTurnTimer()
     uint32_t minor = 0;
     // Unit of the left value
     char unit = 's';
+    char separator = ':';
 
     uint32_t ms = remainingTime % 1000 / 10;
     remainingTime = remainingTime / 1000;
@@ -70,11 +71,12 @@ void LCDTimer::updateLightModeActiveTurnTimer()
         major = s;
         minor = ms;
         unit = 's';
+        separator = '.';
     }
 
     /// logger.info("Displaying text");
     char displayBuffer[7];
-    sprintf(displayBuffer, "%02d:%02d %c", major, minor, unit);
+    sprintf(displayBuffer, "%02d%c%02d %c", major, separator, minor, unit);
 
     uint16_t textWidth = m_tft->textWidth(displayBuffer);
     uint16_t fontHeight = m_tft->fontHeight();
