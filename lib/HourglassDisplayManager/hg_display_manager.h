@@ -17,7 +17,7 @@ class HourglassDisplayManager {
     void setColorBlindMode(bool colorBlindMode);
 
     // Sets the ring light to the appropriate lighting mode associated with the provided device state
-    virtual void setDisplayMode(DeviceState state);
+    virtual void setDisplayMode(DeviceState::State state);
 
     // Updates the current light display according to the known device state and state properties
     // params:

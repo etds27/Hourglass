@@ -152,7 +152,7 @@ void DeviceManager::updateRing(bool force)
 void DeviceManager::updateAwaitingGameStartData()
 {
   gameStartData->totalPlayers = m_interface->getTotalPlayers();
-  m_displayInterface->updateAwaitingGameStartData(*gameStartData);
+  m_displayManager->updateAwaitingGameStartData(*gameStartData);
 }
 
 void DeviceManager::updateTurnSequence()
@@ -246,7 +246,7 @@ void DeviceManager::processGameState()
   }
 
   if (updateDeviceState) {
-    m_displayInterface->setDisplayMode(m_deviceState);
+    m_displayManager->setDisplayMode(m_deviceState);
   }
 
   // *** INPUT PROCESSING ***

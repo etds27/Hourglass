@@ -17,7 +17,7 @@ void HourglassDisplayManager::setColorBlindMode(bool colorBlindMode)
                          { interface->setColorBlindMode(colorBlindMode); });
 }
 
-void HourglassDisplayManager::setDisplayMode(DeviceState state)
+void HourglassDisplayManager::setDisplayMode(DeviceState::State state)
 {
     applyToAllInterfaces([state](HGDisplayInterface *interface)
                          { interface->setDisplayMode(state); });
