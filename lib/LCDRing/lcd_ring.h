@@ -9,14 +9,14 @@ public:
     LCDRing(const uint8_t ledCount, TFT_eSPI *tft);
     ~LCDRing();
 
-    void begin();
-    void clear();
-    void show();
-    void setBrightness(uint8_t brightness);
-    void setPixelColor(uint8_t i, uint32_t color);
+    void begin() override;
+    void clear() override;
+    void show() override;
+    void setBrightness(uint8_t brightness) override;
+    void setPixelColor(uint8_t i, uint32_t color) override;
 
 protected:
-  uint8_t m_ringOffset = 12;
+  uint8_t m_ringOffset = 4;
   uint8_t getRingOffset() const override;
 
   bool m_clearBeforeUpdate = false;

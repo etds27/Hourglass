@@ -72,7 +72,7 @@ bool LCDRing::getClearBeforeUpdate() const
 
 void LCDRing::drawPixel(const uint8_t i)
 {
-    double theta = (i  + 0.5) / 16.0 * 2 * PI;
+    double theta = (m_ledCount - i - 1 + 0.5) / 16.0 * 2 * PI;
     int centerX = (int)(RING_RADIUS * cos(theta)) + TFT_WIDTH / 2;
     int centerY = (int)(RING_RADIUS * sin(theta)) + TFT_HEIGHT / 2;
     m_tft->fillSmoothCircle(centerX, centerY, PIXEL_RADIUS, m_leds[i]);

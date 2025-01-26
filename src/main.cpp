@@ -7,15 +7,20 @@
 #include "device_state.h"
 #include "fast_led_light.h"
 #include "hg_display_manager.h"
+#include "lcd_ring.h"
+#include "lcd_timer.h"
+#include <TFT_eSPI.h>
 
 // SevenSegmentDisplay* sevenSegment;
 // DeviceManager* deviceManager;
 // RingLight* m_ring;
+TFT_eSPI tft = TFT_eSPI();
 FastLEDLight* fastLEDLight;
 DeviceManager *deviceManager;
 HourglassDisplayManager *displayManager;
 // ButtonInputMonitor* buttonInputMonitor;
-
+  LCDRing *lRing;
+  LCDTimer *lTimer;
 void setup()
 {
   loggerLevel = LoggerLevel::OFF;
@@ -29,8 +34,12 @@ void setup()
   EEPROM.begin(8);
 
   fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
+  lRing = new LCDRing(16, &tft);
+  lTimer = new LCDTimer(&tft);
   displayManager = new HourglassDisplayManager();
   displayManager->addDisplayInterface(fastLEDLight);
+  displayManager->addDisplayInterface(lRing);
+  displayManager->addDisplayInterface(lTimer);
 
   deviceManager = new DeviceManager(displayManager);
   // deviceManager->writeDeviceName("HG4     ", 8);
