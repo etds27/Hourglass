@@ -43,7 +43,7 @@ void setup() {
 
     Serial.begin(115200);
  
-    data->totalTime = 10000;
+    data->totalTime = 70000;
     data->elapsedTime = 0;
     data->isTurnTimeEnforced = true;
 
@@ -54,26 +54,16 @@ void setup() {
 
     deviceManager = new DeviceManager(displayManager);
     tft.init();
-    tft.setRotation(1); // Adjust rotation (0-3)
+    tft.setRotation(0); // Adjust rotation (0-3)
 
     tft.fillScreen(TFT_BLACK);
-    //tft.setTextColor(TFT_WHITE, TFT_BLACK); // Set the font colour AND the background colour
-                                               // so the anti-aliasing works
-    //tft.setTextSize(2);  // Set text size (1 = small, 2 = medium, etc.)
 
-    // Display text at position (x, y)
-    //tft.setCursor(tft.width() / 2, tft.height() / 2); // Set cursor at top left of screen
-    //tft.println("Hello, TFT!");
-
-    //tft.setCursor(TFT_WIDTH / 2, TFT_HEIGHT / 2);
-    //tft.println("ESP32 + TFT_eSPI");
-    // deviceManager->start();
     displayManager->updateTimerData(*data);
     displayManager->setDisplayMode(DeviceState::ActiveTurn);
 }
 
 void loop() {
-    uint32_t elapsedTime = millis() % 10000;
+    uint32_t elapsedTime = millis() % 70000;
     data->elapsedTime = elapsedTime;
     displayManager->updateTimerData(*data);
     displayManager->update();
