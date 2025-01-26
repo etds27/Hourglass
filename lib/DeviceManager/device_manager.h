@@ -57,8 +57,6 @@ private:
   /// Used to display AwaitingConnection state after connection has been made
   unsigned long m_lastDisconnection;
 
-  GameStartData* gameStartData;
-
   // Interface for retrieving information from the central device
   HGCentralInterface *m_interface;
 

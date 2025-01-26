@@ -13,7 +13,6 @@ DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
   logger.info("Device name: " + String(m_deviceName));
 
   logger.info("Initializing Display Data Structs");
-  gameStartData = new GameStartData;
 
   m_buttonMonitor = new ButtonInputMonitor(BUTTON_INPUT_PIN);
   // Allows the main device button to wake the device from sleep state
@@ -23,7 +22,6 @@ DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
 
 DeviceManager::~DeviceManager()
 {
-  delete gameStartData;
 }
 
 void DeviceManager::start()
@@ -93,7 +91,8 @@ bool DeviceManager::updateCommandedDeviceState()
 {
   DeviceState::State newDeviceState = m_interface->getCommandedDeviceState();
   bool diff = m_deviceState != newDeviceState;
-  if (diff) {
+  if (diff)
+  {
     char message[50];
     sprintf(message, "Device State transition: %i -> %i", static_cast<int>(m_deviceState), static_cast<int>(newDeviceState));
     logger.info(message);
@@ -151,8 +150,9 @@ void DeviceManager::updateRing(bool force)
 
 void DeviceManager::updateAwaitingGameStartData()
 {
-  gameStartData->totalPlayers = m_interface->getTotalPlayers();
-  m_displayManager->updateAwaitingGameStartData(*gameStartData);
+  GameStartData data{
+      .totalPlayers = m_interface->getTotalPlayers()};
+  m_displayManager->updateAwaitingGameStartData(data);
 }
 
 void DeviceManager::updateTurnSequence()
@@ -223,10 +223,10 @@ void DeviceManager::processGameState()
   // This prolongs the Awaiting Connection state for EXPECTED_CHARACTERISTIC_DISCOVERY ms after the initial device connection is initiated by the central device
   // During this time, the central device will discover and populate all characteristics so when the commanded state is first shown, all data is available
   // If this check is not made, the display will have undefined behavior between initial connection and service discovery
-  if (m_lastUpdate - m_lastDisconnection < EXPECTED_CHARACTERISTIC_DISCOVERY) {
+  if (m_lastUpdate - m_lastDisconnection < EXPECTED_CHARACTERISTIC_DISCOVERY)
+  {
     return;
   }
-
 
   // *** DISPLAY FOR ACTIVE GAME ***
   // Determine is a device state change was made. If it was, we will update the state after getting display specific data
@@ -245,7 +245,8 @@ void DeviceManager::processGameState()
     break;
   }
 
-  if (updateDeviceState) {
+  if (updateDeviceState)
+  {
     m_displayManager->setDisplayMode(m_deviceState);
   }
 
@@ -255,7 +256,8 @@ void DeviceManager::processGameState()
     m_interface->toggleSkippedState();
   }
 
-  if (isActiveTurn() && buttonAction == ButtonInputType::ButtonPress) {
+  if (isActiveTurn() && buttonAction == ButtonInputType::ButtonPress)
+  {
     sendEndTurn();
   }
 }

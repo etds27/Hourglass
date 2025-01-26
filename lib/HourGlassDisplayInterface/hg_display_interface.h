@@ -12,8 +12,8 @@ struct GameStartData
 // All required data for any display interface to show the Active Turn state
 struct TimerData
 {
-    uint32_t totalTime;
-    uint32_t elapsedTime;
+    int totalTime;
+    int elapsedTime;
     bool isTurnTimeEnforced;
 };
 
