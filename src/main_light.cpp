@@ -32,7 +32,7 @@ void setup()
     };
 
     fastLEDLight->updateTimerData(data);
-    fastLEDLight->setDisplayMode(DeviceState::AwaitingConnecion);
+    fastLEDLight->setDisplayMode(DeviceState::State::AwaitingConnection);
 }
 
 void loop()
