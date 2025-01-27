@@ -2,7 +2,6 @@
 #include "logger.h"
 #include "constants.h"
 
-
 HGDisplayInterface::~HGDisplayInterface() {}
 
 void HGDisplayInterface::setUp()
@@ -32,9 +31,9 @@ void HGDisplayInterface::update(bool force)
   {
     return;
   }
-  // logger.info("Updating Ring Light Color");
 
-  if (getClearBeforeUpdate()) {
+  if (getClearBeforeUpdate())
+  {
     clear();
   }
 
@@ -50,8 +49,8 @@ void HGDisplayInterface::update(bool force)
     updateLightModeActiveTurnTimer();
     break;
   case DeviceState::State::ActiveTurnNotEnforced:
-  updateLightModeActiveTurnNoTimer();
-  break;
+    updateLightModeActiveTurnNoTimer();
+    break;
   case DeviceState::State::Skipped:
     updateLightModeSkipped();
     break;
@@ -91,5 +90,5 @@ void HGDisplayInterface::updateAwaitingGameStartData(const struct GameStartData 
 
 bool HGDisplayInterface::getClearBeforeUpdate() const
 {
-    return m_clearBeforeUpdate;
+  return m_clearBeforeUpdate;
 }

@@ -17,7 +17,6 @@ struct TimerData
     bool isTurnTimeEnforced;
 };
 
-
 // All required data for any display interface to show the Awaiting Turn state
 struct TurnSequenceData
 {
@@ -47,7 +46,6 @@ protected:
     unsigned long m_lastUpdate;
 
     // MARK: Light Modes
-    virtual void updateLightModeActiveTurn() = 0;
     virtual void updateLightModeActiveTurnTimer() = 0;
     virtual void updateLightModeActiveTurnNoTimer() = 0;
     virtual void updateLightModeSkipped() = 0;
