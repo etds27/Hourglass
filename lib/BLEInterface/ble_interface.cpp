@@ -106,7 +106,8 @@ bool BLEInterface::isGamePaused()
 
 bool BLEInterface::isTurnTimerEnforced()
 {
-  return m_enforceTurnTimer->value();
+  getCommandedDeviceState();
+  return m_deviceState == DeviceState::State::ActiveTurnEnforced;
 }
 
 void BLEInterface::poll()

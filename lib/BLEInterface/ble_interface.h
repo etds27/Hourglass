@@ -48,7 +48,6 @@ private:
   BLEIntCharacteristic *m_timer;
   BLEIntCharacteristic *m_elapsedTime;
   BLEIntCharacteristic *m_myPlayerNumber;
-  BLEBoolCharacteristic *m_enforceTurnTimer;
   BLEIntCharacteristic *m_gameState;
   BLEBoolCharacteristic *m_endTurn;
   BLEBoolCharacteristic *m_toggleSkip;
