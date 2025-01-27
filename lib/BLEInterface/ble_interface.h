@@ -16,7 +16,8 @@ public:
 
 
     int getTimer();
-    int getElapsedTime();
+    int getElapsedTime() override;
+
     int getCurrentPlayer();
     int getTotalPlayers();
 

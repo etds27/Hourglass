@@ -104,7 +104,7 @@ bool DeviceManager::updateCommandedDeviceState()
 void DeviceManager::updateTimer()
 {
   int timer = m_interface->getTimer();
-  int elapsedTime = m_interface->getElapsedTime();
+  int elapsedTime = m_interface->getExpectedElapsedTime();
   bool isTurnTimeEnforced = m_interface->isTurnTimerEnforced();
   struct TimerData data = {
       .totalTime = timer,

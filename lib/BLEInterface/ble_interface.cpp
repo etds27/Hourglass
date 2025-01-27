@@ -70,6 +70,9 @@ int BLEInterface::getTimer()
 
 int BLEInterface::getElapsedTime()
 {
+  if (m_elapsedTime->written()) {
+    m_lastElapsedTimePoll = millis();
+  }
   m_lastElapsedTime = m_elapsedTime->value();
   return m_lastElapsedTime;
 }

@@ -47,7 +47,7 @@ void setup()
   tft.fillScreen(TFT_BACKGROUND_COLOR);
 
   deviceManager = new DeviceManager(displayManager);
-  // deviceManager->writeDeviceName("HG4     ", 8);
+  // deviceManager->writeDeviceName("HG7     ", 8);
   // logger.info(String(deviceManager->getDeviceName()));
   deviceManager->start();
 

@@ -12,7 +12,11 @@ public:
 
 
     virtual int getTimer() = 0;
-    virtual int getElapsedTime() = 0;
+    virtual int getElapsedTime();
+
+    /// @brief Get the expected elapsed time using the last elapsed time report and the time difference between that report and now
+    /// @return Expected elapsed time
+    unsigned long getExpectedElapsedTime();
     virtual int getCurrentPlayer() = 0;
     virtual int getTotalPlayers() = 0;
 
@@ -50,5 +54,6 @@ protected:
     bool m_lastGameActive;
     bool m_lastGamePaused;
     bool m_lastEnforceTurnTimer;
+    unsigned long m_lastElapsedTimePoll;
     DeviceState::State m_deviceState;
 };
