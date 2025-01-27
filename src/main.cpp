@@ -39,12 +39,12 @@ void setup()
   displayManager = new HourglassDisplayManager();
   // displayManager->addDisplayInterface(fastLEDLight);
   displayManager->addDisplayInterface(lRing);
-  // displayManager->addDisplayInterface(lTimer);
+  displayManager->addDisplayInterface(lTimer);
 
   tft.init();
   tft.setRotation(0); // Adjust rotation (0-3)
 
-  tft.fillScreen(TFT_BLACK);
+  tft.fillScreen(TFT_BACKGROUND_COLOR);
 
   deviceManager = new DeviceManager(displayManager);
   // deviceManager->writeDeviceName("HG4     ", 8);
