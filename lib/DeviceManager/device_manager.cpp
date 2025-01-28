@@ -20,12 +20,12 @@ DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
   logger.info("Initializing Device Manager");
   m_deviceName = new char[8];
   readDeviceName(m_deviceName);
-  //logger.info("Device name: " + std::string(m_deviceName));
+  // logger.info("Device name: " + std::string(m_deviceName));
 
- #ifdef SIMULATOR
+#ifdef SIMULATOR
   m_inputInterface = new GLInputInterface();
   m_interface = new SimulatorCentralInterface(m_deviceName);
-  #else
+#else
 
   logger.info("Creating Input Interface");
   m_inputInterface = new ButtonInputInterface(BUTTON_INPUT_PIN);
@@ -34,7 +34,7 @@ DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
 
   // Allows the main device button to wake the device from sleep state
   esp_sleep_enable_ext0_wakeup(BUTTON_GPIO_PIN, HIGH);
-  #endif
+#endif
 
   logger.info("Creating Input Monitor");
   m_buttonMonitor = new ButtonInputMonitor(m_inputInterface);
@@ -66,21 +66,19 @@ char *DeviceManager::getDeviceName()
 char *DeviceManager::readDeviceName(char *out)
 {
   char arduinoID[8] = {};
-  #ifdef SIMULATOR
-  out = new char[10] {
-    'S', 'I', 'M', 'U', 'L', 'A', 'T', 'O', 'R', '\0'
-  };
-  #else
+#ifdef SIMULATOR
+  out = new char[10]{
+      'S', 'I', 'M', 'U', 'L', 'A', 'T', 'O', 'R', '\0'};
+#else
   int i;
   // Read the arduinos ID
-
 
   for (i = 0; i < 7; i++)
   {
     arduinoID[i] = EEPROM.read(i);
   }
   arduinoID[i] = '\0';
-  #endif
+#endif
   // logger.info(arduinoID);
   strcpy(out, arduinoID);
   return out;
@@ -169,10 +167,10 @@ void DeviceManager::enterDeepSleep()
   updateRingMode();
   updateRing(true);
 
-  #ifndef SIMULATOR
+#ifndef SIMULATOR
   delay(1000);
   esp_deep_sleep_start();
-  #endif
+#endif
 }
 
 void DeviceManager::updateRing(bool force)
@@ -213,14 +211,15 @@ void DeviceManager::update()
   {
     logger.info("Update Period: " + std::to_string(deltaTime));
 
-    if (ENABLE_DEBUG) {
+    if (ENABLE_DEBUG)
+    {
       m_interface->readData();
     }
     m_lastReadOut = currentTime;
   }
-  #ifndef SIMULATOR
+#ifndef SIMULATOR
   BLE.poll();
-  #endif
+#endif
   processGameState();
   updateRing();
 }
