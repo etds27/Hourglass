@@ -1,4 +1,3 @@
-#if 0
 #ifdef SIMULATOR
 #include "simulator_tools.h"
 #include "gl_ring_interface.h"
@@ -27,7 +26,8 @@ DeviceManager *deviceManager;
 
 void setup()
 {
-    loggerLevel = LoggerLevel::DEBUG;
+    loggerLevel = Logging::LoggerLevel::DEBUG;
+    #ifndef SIMULATOR
     Serial.begin(115200);
     // while (!Serial)
     //   ;
@@ -48,13 +48,11 @@ void setup()
         .buffer = buffer
     };
 
-    fastLEDLight->updateTimerData(data);
-    fastLEDLight->setDisplayMode(DeviceState::State::AwaitingConnection);
+    fastLEDLight->updateGameDebugData(data);
+    fastLEDLight->setDisplayMode(DeviceState::State::Debug);
 }
 
 void loop()
 {
     fastLEDLight->update();
 }
-
-#endif
