@@ -1,5 +1,6 @@
 #ifdef SIMULATOR
 #include "simulator_tools.h"
+#include "gl_ring_interface.h"
 #else
 #include <Arduino.h>
 #include <EEPROM.h>
@@ -23,13 +24,18 @@ unsigned long lastMemoryUpdate = millis();
 // SevenSegmentDisplay* sevenSegment;
 // DeviceManager* deviceManager;
 // RingLight* m_ring;
+
+#ifdef SIMULATOR
+GLRingInterface *gRing; 
+#else
 TFT_eSPI tft = TFT_eSPI();
 FastLEDLight *fastLEDLight;
-DeviceManager *deviceManager;
-HourglassDisplayManager *displayManager;
-// ButtonInputMonitor* buttonInputMonitor;
 LCDRing *lRing;
 LCDTimer *lTimer;
+#endif
+DeviceManager *deviceManager;
+HourglassDisplayManager *displayManager;
+
 void setup()
 {
 
@@ -55,7 +61,6 @@ void setup()
     break;
   }
 
-  #ifndef SIMULATOR
   Serial.begin(115200);
   // while (!Serial)
   //   ;
@@ -64,11 +69,14 @@ void setup()
   // Start the BLE peripheral
 
   EEPROM.begin(8);
+  displayManager = new HourglassDisplayManager();
 
+  #ifdef SIMULATOR
+  gRing = new GLRingInterface(16);
+  #else
   // fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
   lRing = new LCDRing(16, &tft);
   lTimer = new LCDTimer(&tft);
-  displayManager = new HourglassDisplayManager();
   // displayManager->addDisplayInterface(fastLEDLight);
   displayManager->addDisplayInterface(lRing);
   displayManager->addDisplayInterface(lTimer);
@@ -77,6 +85,8 @@ void setup()
   tft.setRotation(0); // Adjust rotation (0-3)
 
   tft.fillScreen(TFT_BACKGROUND_COLOR);
+
+  #endif
 
   deviceManager = new DeviceManager(displayManager);
   // deviceManager->writeDeviceName("HG7     ", 8);
@@ -91,7 +101,7 @@ void loop()
 {
 
   if (ENABLE_DEBUG) {
-    #ifndef SIMULATOR
+    #ifdef SIMULATOR
     if (millis() - lastMemoryUpdate > 1000) {
       size_t freeMemory = esp_get_free_heap_size();
       logger.info("Free Memory: " + freeMemory);

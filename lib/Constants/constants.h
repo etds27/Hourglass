@@ -3,7 +3,6 @@
 
 #define ENABLE_DEBUG 0
 
-
 // Display Type Enumeration
 // Adafruit: 0
 // FastLED:  1

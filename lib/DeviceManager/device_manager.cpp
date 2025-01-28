@@ -20,16 +20,24 @@ DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
   logger.info("Initializing Device Manager");
   m_deviceName = new char[8];
   readDeviceName(m_deviceName);
-  logger.info("Device name: " + std::string(m_deviceName));
+  //logger.info("Device name: " + std::string(m_deviceName));
 
+ #ifdef SIMULATOR
+  m_inputInterface = new GLInputInterface();
+  m_interface = new SimulatorCentralInterface(m_deviceName);
+  #else
 
-  m_buttonMonitor = new ButtonInputMonitor(BUTTON_INPUT_PIN);
+  logger.info("Creating Input Interface");
+  m_inputInterface = new ButtonInputInterface(BUTTON_INPUT_PIN);
+  logger.info("Creating Central Interface");
+  m_interface = new BLEInterface(m_deviceName);
+
   // Allows the main device button to wake the device from sleep state
-  // esp_sleep_enable_ext0_wakeup(BUTTON_GPIO_PIN, HIGH);
-}
+  esp_sleep_enable_ext0_wakeup(BUTTON_GPIO_PIN, HIGH);
+  #endif
 
-DeviceManager::~DeviceManager()
-{
+  logger.info("Creating Input Monitor");
+  m_buttonMonitor = new ButtonInputMonitor(m_inputInterface);
 }
 
 DeviceManager::~DeviceManager()
@@ -67,14 +75,13 @@ char *DeviceManager::readDeviceName(char *out)
   // Read the arduinos ID
 
 
-  for (i = 0; i < 8; i++)
+  for (i = 0; i < 7; i++)
   {
     arduinoID[i] = EEPROM.read(i);
   }
   arduinoID[i] = '\0';
   #endif
-  logger.info("Read arduino name");
-  logger.info(arduinoID);
+  // logger.info(arduinoID);
   strcpy(out, arduinoID);
   return out;
 }
@@ -204,14 +211,13 @@ void DeviceManager::update()
   // Log data from the interface
   if (currentTime - m_lastReadOut > 2000)
   {
-    logger.info("Update Period: " + deltaTime);
-    
+    logger.info("Update Period: " + std::to_string(deltaTime));
+
     if (ENABLE_DEBUG) {
       m_interface->readData();
     }
     m_lastReadOut = currentTime;
   }
-  // logger.info("Running " + String(deltaTime));
   #ifndef SIMULATOR
   BLE.poll();
   #endif
