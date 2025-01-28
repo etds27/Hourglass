@@ -94,6 +94,14 @@ void SimulatorCentralInterface::poll()
 {
 }
 
+void SimulatorCentralInterface::toggleSkippedState() {
+    m_skipped = !m_skipped;
+}
+
+DeviceState::State SimulatorCentralInterface::getCommandedDeviceState() {
+    return DeviceState::State::Debug;
+}
+
 void SimulatorCentralInterface::readData()
 {
     if (!isConnected())
