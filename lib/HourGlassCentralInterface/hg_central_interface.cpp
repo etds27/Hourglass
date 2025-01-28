@@ -1,5 +1,9 @@
 #include "hg_central_interface.h"
+#ifdef SIMULATOR
+#include "simulator_tools.h"
+#else
 #include <Arduino.h>
+#endif
 
 HGCentralInterface::~HGCentralInterface() {}
 
