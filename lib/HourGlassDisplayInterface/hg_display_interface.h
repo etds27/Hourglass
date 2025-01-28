@@ -12,11 +12,10 @@ struct GameStartData
 // All required data for any display interface to show the Active Turn state
 struct TimerData
 {
-    uint32_t totalTime;
-    uint32_t elapsedTime;
+    int totalTime;
+    int elapsedTime;
     bool isTurnTimeEnforced;
 };
-
 
 // All required data for any display interface to show the Awaiting Turn state
 struct TurnSequenceData
@@ -36,7 +35,7 @@ protected:
     /// @brief Minimum time (in ms) to wait before the display will redraw
     uint32_t m_refreshRate = DISPLAY_REFRESH_RATE;
 
-    DeviceState m_state = DeviceState::Off;
+    DeviceState::State m_state = DeviceState::State::Off;
     bool m_colorBlindMode = false;
 
     unsigned long m_startTime;
@@ -47,7 +46,6 @@ protected:
     unsigned long m_lastUpdate;
 
     // MARK: Light Modes
-    virtual void updateLightModeActiveTurn() = 0;
     virtual void updateLightModeActiveTurnTimer() = 0;
     virtual void updateLightModeActiveTurnNoTimer() = 0;
     virtual void updateLightModeSkipped() = 0;
@@ -65,7 +63,7 @@ public:
     void setColorBlindMode(bool colorBlindMode);
 
     // Sets the ring light to the appropriate lighting mode associated with the provided device state
-    virtual void setDisplayMode(DeviceState state);
+    virtual void setDisplayMode(DeviceState::State state);
 
     // Updates the current light display according to the known device state and state properties
     // params:

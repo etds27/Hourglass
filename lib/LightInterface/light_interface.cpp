@@ -50,7 +50,7 @@ LightInterface::LightInterface(const uint8_t ledCount, const uint8_t diPin)
 
 LightInterface::~LightInterface() {}
 
-void LightInterface::setDisplayMode(DeviceState state)
+void LightInterface::setDisplayMode(DeviceState::State state)
 {
   setBrightness(DEFAULT_BRIGHTNESS);
   HGDisplayInterface::setDisplayMode(state);

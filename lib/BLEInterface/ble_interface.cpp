@@ -2,17 +2,15 @@
 #include "logger.h"
 
 const char *SERVICE_UUID = "d7560343-51d4-4c24-a0fe-118fd9078144";
-const char *DUMMY_UUID = "22a80d5a-0c4f-4019-8515-1708df13747d";
+const char *DEVICE_STATE_UUID = "3f29c2e5-3837-4498-bcc1-cb33f1c10c3c";
 const char *TOTAL_PLAYERS_UUID = "d776071e-9584-42db-b095-798a90049ee0";
 const char *CURRENT_PLAYER_UUID = "6efe0bd2-ad04-49bb-8436-b7e1d1902fea";
 const char *MY_PLAYER_UUID = "f1223124-c708-4b98-a486-48515fa59d3d";
-const char *MY_TURN_UUID = "c27802ab-425e-4b15-8296-4a937da7125f";
+const char *END_TURN_UUID = "c27802ab-425e-4b15-8296-4a937da7125f";
+const char *TOGGLE_SKIP_UUID = "9b4fa66f-20cf-4a7b-ba6a-fc3890cbc0c7";
+const char *SKIPPED_PLAYERS_UUID = "3e35aa50-3594-4b32-9684-dbacb5ba91ee";
 const char *REMAINING_TIME_UUID = "4e1c05f6-c128-4bca-96c3-29c014e00eb6";
-const char *SKIPPED_UUID = "c1ed8823-7eb1-44b2-ac01-351e8c6a693c";
 const char *TIMER_UUID = "4661b4c1-093d-4db7-bb80-5b5fe3eae519";
-const char *GAME_ACTIVE_UUID = "33280653-4d71-4714-a03c-83111b886aa7";
-const char *GAME_PAUSED_UUID = "643fda83-0c6b-4e8e-9829-cbeb20b70b8d";
-const char *TURN_TIMER_ENFORCED_UUID = "8b732784-8a53-4a25-9436-99b9a5b9b73a";
 
 const char *DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb";
 
@@ -36,15 +34,32 @@ bool BLEInterface::isConnected()
   return BLE.connected();
 }
 
+DeviceState::State BLEInterface::getCommandedDeviceState()
+{
+  int rawState = m_gameState->value();
+  m_deviceState = static_cast<DeviceState::State>(rawState);
+  return m_deviceState;
+}
+
 bool BLEInterface::isTurn()
 {
-  m_lastMyTurn = m_myTurn->value();
-  return m_lastMyTurn;
+  getCommandedDeviceState();
+  return DeviceState::isStateActiveTurn(m_deviceState);
 }
 
 void BLEInterface::endTurn()
 {
-  m_myTurn->writeValue(false);
+  // Write an end turn notification by setting the value to true first to initiate the end turn
+  // Then a false is written to ensure that the next `endTurn` action will write correctly
+  logger.debug("Sending End Turn Notification");
+  m_endTurn->writeValue(true);
+  m_endTurn->writeValue(false);
+}
+
+void BLEInterface::toggleSkippedState() {
+  logger.debug("Sending Skipped State Toggle Notification");
+  m_toggleSkip->writeValue(true);
+  m_toggleSkip->writeValue(false);
 }
 
 int BLEInterface::getTimer()
@@ -55,6 +70,9 @@ int BLEInterface::getTimer()
 
 int BLEInterface::getElapsedTime()
 {
+  if (m_elapsedTime->written()) {
+    m_lastElapsedTimePoll = millis();
+  }
   m_lastElapsedTime = m_elapsedTime->value();
   return m_lastElapsedTime;
 }
@@ -77,34 +95,22 @@ int BLEInterface::getTotalPlayers()
   return m_lastTotalPlayers;
 }
 
-bool BLEInterface::isSkipped()
-{
-  return m_skipped->value();
-}
-
-void BLEInterface::setSkipped()
-{
-  m_skipped->writeValue(true);
-}
-
-void BLEInterface::unsetSkipped()
-{
-  m_skipped->writeValue(false);
-}
-
 bool BLEInterface::isGameActive()
 {
-  return m_gameActive->value();
+  getCommandedDeviceState();
+  return DeviceState::isStateActiveGame(m_deviceState);
 }
 
 bool BLEInterface::isGamePaused()
 {
-  return m_gamePaused->value();
+  getCommandedDeviceState();
+  return m_deviceState == DeviceState::State::Paused;
 }
 
 bool BLEInterface::isTurnTimerEnforced()
 {
-  return m_enforceTurnTimer->value();
+  getCommandedDeviceState();
+  return m_deviceState == DeviceState::State::ActiveTurnEnforced;
 }
 
 void BLEInterface::poll()
@@ -148,30 +154,21 @@ void BLEInterface::setService()
   m_myPlayerNumber = new BLEIntCharacteristic(MY_PLAYER_UUID, BLEWrite | BLERead);
   m_service->addCharacteristic(*m_myPlayerNumber);
 
-  // My turn bool
-  m_myTurn = new BLEBoolCharacteristic(MY_TURN_UUID, BLEWrite | BLENotify | BLERead);
-  m_activeTurnDescriptor = new BLEDescriptor(DESCRIPTOR_UUID, "Active Turn Descriptor");
-  m_myTurn->addDescriptor(*m_activeTurnDescriptor);
-  m_service->addCharacteristic(*m_myTurn);
+  // Game State Characteristic
+  m_gameState = new BLEIntCharacteristic(DEVICE_STATE_UUID, BLEWrite | BLENotify | BLERead);
+  m_service->addCharacteristic(*m_gameState);
 
-  // Device is skipped bool
-  m_skipped = new BLEBoolCharacteristic(SKIPPED_UUID, BLERead | BLEWrite | BLENotify);
-  m_skippedDescriptor = new BLEDescriptor(DESCRIPTOR_UUID, "Skip Turn Descriptor");
-  m_skipped->addDescriptor(*m_skippedDescriptor);
-  m_service->addCharacteristic(*m_skipped);
-  m_skipped->writeValue(false);
+  // End turn
+  m_endTurn = new BLEBoolCharacteristic(END_TURN_UUID, BLEWrite | BLENotify | BLERead);
+  m_service->addCharacteristic(*m_endTurn);
 
-  // Game is currently active
-  m_gameActive = new BLEBoolCharacteristic(GAME_ACTIVE_UUID, BLEWrite | BLERead);
-  m_service->addCharacteristic(*m_gameActive);
+  // Skip action Characteristic
+  m_toggleSkip = new BLEBoolCharacteristic(TOGGLE_SKIP_UUID, BLEWrite | BLENotify | BLERead);
+  m_service->addCharacteristic(*m_toggleSkip);
 
   // Game is currently paused
-  m_gamePaused = new BLEBoolCharacteristic(GAME_PAUSED_UUID, BLEWrite | BLERead);
-  m_service->addCharacteristic(*m_gamePaused);
-
-  // Turn timer is enforced
-  m_enforceTurnTimer = new BLEBoolCharacteristic(TURN_TIMER_ENFORCED_UUID, BLEWrite | BLERead);
-  m_service->addCharacteristic(*m_enforceTurnTimer);
+  m_skippedPlayers = new BLEByteCharacteristic(SKIPPED_PLAYERS_UUID, BLEWrite | BLERead);
+  m_service->addCharacteristic(*m_skippedPlayers);
 
   logger.info("Advertising with name: " + String(m_deviceName));
   BLE.setLocalName(m_deviceName);
@@ -194,10 +191,6 @@ void BLEInterface::readData()
   logger.info("Current Player: " + String(getCurrentPlayer()) + " " + String(m_currentPlayer->valueLength()));
   logger.info("Timer:          " + String(getTimer()) + " " + String(m_timer->valueLength()));
   logger.info("Elapsed Time:   " + String(getElapsedTime()) + " " + String(m_elapsedTime->valueLength()));
-  logger.info("My Turn:        " + String(isTurn()) + " " + String(m_myTurn->valueLength()));
   logger.info("My number:      " + String(getMyPlayer()) + " " + String(m_myPlayerNumber->valueLength()));
-  logger.info("Skipped:        " + String(isSkipped()) + " " + String(m_skipped->valueLength()));
-  logger.info("Game Active:    " + String(isGameActive()) + " " + String(m_skipped->valueLength()));
-  logger.info("Game Paused:    " + String(isGamePaused()) + " " + String(m_gamePaused->valueLength()));
   logger.info("\n");
 }

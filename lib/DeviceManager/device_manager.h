@@ -11,6 +11,7 @@ class DeviceManager
 {
 public:
   DeviceManager(HourglassDisplayManager *displayManager);
+  ~DeviceManager();
   // Device Name
   char *getDeviceName();
 
@@ -29,9 +30,11 @@ public:
 
 private:
   HourglassDisplayManager *m_displayManager;
-  DeviceState m_deviceState;
+  DeviceState::State m_deviceState;
 
   unsigned long m_lastTurnStart;
+
+  bool updateCommandedDeviceState();
 
   // Flag indicating that the `start()` has been called
   bool m_started = false;
@@ -49,6 +52,10 @@ private:
   // Last time the device was connected to the central
   // Used to determine deep sleep eligibility
   unsigned long m_lastConnection;
+
+  /// @brief Last time the device was disconnected from the central
+  /// Used to display AwaitingConnection state after connection has been made
+  unsigned long m_lastDisconnection;
 
   // Interface for retrieving information from the central device
   HGCentralInterface *m_interface;
@@ -77,25 +84,16 @@ private:
   // Update the display interface with the current game state
   void updateRing(bool force = false);
   
-  void setWaitingForConnection();
-  void setGamePaused();
-  void setAwaitGameStart();
+  void setWaitingForConnection();;
   void updateAwaitingGameStartData();
-
-  void setSkipped();
-  void unsetSkipped();
 
   void updateTimer();
   void updateRingMode();
 
   bool isActiveTurn();
 
-  void startTurn();
 
   // Send the end of the turn to the central device
   void sendEndTurn();
-  void endTurn();
-
-  void setTurnSequenceMode();
   void updateTurnSequence();
 };

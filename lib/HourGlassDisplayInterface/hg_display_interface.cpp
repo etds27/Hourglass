@@ -2,7 +2,6 @@
 #include "logger.h"
 #include "constants.h"
 
-
 HGDisplayInterface::~HGDisplayInterface() {}
 
 void HGDisplayInterface::setUp()
@@ -16,7 +15,7 @@ void HGDisplayInterface::setColorBlindMode(bool colorBlindMode)
   m_colorBlindMode = colorBlindMode;
 }
 
-void HGDisplayInterface::setDisplayMode(DeviceState state)
+void HGDisplayInterface::setDisplayMode(DeviceState::State state)
 {
   logger.debug("Setting Light Mode");
   m_startTime = millis();
@@ -32,36 +31,39 @@ void HGDisplayInterface::update(bool force)
   {
     return;
   }
-  // logger.info("Updating Ring Light Color");
 
-  if (getClearBeforeUpdate()) {
+  if (getClearBeforeUpdate())
+  {
     clear();
   }
 
   switch (m_state)
   {
-  case DeviceState::Off:
+  case DeviceState::State::Off:
     clear();
     break;
-  case DeviceState::AwaitingConnecion:
+  case DeviceState::State::AwaitingConnection:
     updateLightModeAwaitConnection();
     break;
-  case DeviceState::ActiveTurn:
-    updateLightModeActiveTurn();
+  case DeviceState::State::ActiveTurnEnforced:
+    updateLightModeActiveTurnTimer();
     break;
-  case DeviceState::Skipped:
+  case DeviceState::State::ActiveTurnNotEnforced:
+    updateLightModeActiveTurnNoTimer();
+    break;
+  case DeviceState::State::Skipped:
     updateLightModeSkipped();
     break;
-  case DeviceState::AwaitingTurn:
+  case DeviceState::State::AwaitingTurn:
     updateLightModeTurnSequence();
     break;
-  case DeviceState::AwaitingGameStart:
+  case DeviceState::State::AwaitingGameStart:
     updateLightModeAwaitGameStart();
     break;
-  case DeviceState::Paused:
+  case DeviceState::State::Paused:
     updateGamePaused();
     break;
-  case DeviceState::Debug:
+  case DeviceState::State::Debug:
     updateGameDebug();
     break;
   };
@@ -81,12 +83,12 @@ void HGDisplayInterface::updateTurnSequenceData(struct TurnSequenceData data)
   m_turnSequenceData = data;
 }
 
-void HGDisplayInterface::updateAwaitingGameStartData(struct GameStartData data)
+void HGDisplayInterface::updateAwaitingGameStartData(const struct GameStartData data)
 {
   m_gameStartData = data;
 }
 
 bool HGDisplayInterface::getClearBeforeUpdate() const
 {
-    return m_clearBeforeUpdate;
+  return m_clearBeforeUpdate;
 }

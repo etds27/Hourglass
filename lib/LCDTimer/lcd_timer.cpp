@@ -9,38 +9,14 @@ LCDTimer::~LCDTimer()
 {
 }
 
-
-
-void LCDTimer::updateLightModeActiveTurn()
-{
-if (m_timerData.isTurnTimeEnforced)
-  {
-    updateLightModeActiveTurnTimer();
-  }
-  else
-  {
-    updateLightModeActiveTurnNoTimer();
-  }
-}
-
 void LCDTimer::updateLightModeActiveTurnTimer()
 {
     m_tft->setTextColor(TFT_WHITE, TFT_BLACK); // Set the font colour AND the background colour
                                                // so the anti-aliasing works
 
     
-    m_tft->setTextSize(3);  // Set text size (1 = small, 2 = medium, etc.)
+    setTextSize();
 
-    /*
-    // Display text at position (x, y)
-    m_tft->setCursor(m_tft->width() / 2, m_tft->height() / 2); // Set cursor at top left of screen
-    m_tft->println("Hello, TFT!");
-
-    m_tft->setCursor(10, 60);
-    m_tft->println("ESP32 + TFT_eSPI");
-    logger.info("Displaying");
-    m_tft->setCursor(TFT_WIDTH / 2, TFT_HEIGHT / 2); // Set cursor at top left of screen
-    */
     uint32_t remainingTime = m_timerData.totalTime - m_timerData.elapsedTime; 
 
     // The left value of the displayed time
@@ -74,9 +50,8 @@ void LCDTimer::updateLightModeActiveTurnTimer()
         separator = '.';
     }
 
-    /// logger.info("Displaying text");
-    char displayBuffer[7];
-    sprintf(displayBuffer, "%02d%c%02d %c", major, separator, minor, unit);
+    char displayBuffer[8];
+    sprintf(displayBuffer, "%02d%c%02d %c\0", major, separator, minor, unit);
 
     uint16_t textWidth = m_tft->textWidth(displayBuffer);
     uint16_t fontHeight = m_tft->fontHeight();
@@ -122,14 +97,31 @@ void LCDTimer::updateGamePaused()
     // No display in mode
 }
 
+bool LCDTimer::getClearBeforeUpdate() const
+{
+    return m_clearBeforeUpdate;
+}
+
 void LCDTimer::begin()
 {
 }
 
 void LCDTimer::clear()
 {
+    setTextSize();
+    // Get the width and height of text that is of the same size as what can be rendered
+    uint16_t boxWidth = m_tft->textWidth("       ") + 4;  // +4 to cover just more than text size;
+    uint16_t boxHeight = m_tft->fontHeight() + 4;  // +4 to cover just more than text size;
+    uint16_t boxX = m_tft->width() / 2 - boxWidth / 2;
+    uint16_t boxY = m_tft->height() / 2 - boxHeight / 2;
+    m_tft->fillRect(boxX, boxY, boxWidth, boxHeight, TFT_BACKGROUND_COLOR);
 }
 
 void LCDTimer::show()
 {
+}
+
+void LCDTimer::setTextSize()
+{
+    m_tft->setTextSize(3);  // Set text size (1 = small, 2 = medium, etc.)
 }

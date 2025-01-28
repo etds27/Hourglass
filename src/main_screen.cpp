@@ -59,7 +59,7 @@ void setup() {
     tft.fillScreen(TFT_BLACK);
 
     displayManager->updateTimerData(*data);
-    displayManager->setDisplayMode(DeviceState::ActiveTurn);
+    displayManager->setDisplayMode(DeviceState::State::ActiveTurnEnforced);
 }
 
 void loop() {

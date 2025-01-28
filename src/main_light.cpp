@@ -16,7 +16,7 @@ DeviceManager *deviceManager;
 void setup()
 {
     loggerLevel = LoggerLevel::DEBUG;
-    Serial.begin(9600);
+    Serial.begin(115200);
     // while (!Serial)
     //   ;
     delay(2000);
@@ -32,7 +32,7 @@ void setup()
     };
 
     fastLEDLight->updateTimerData(data);
-    fastLEDLight->setDisplayMode(DeviceState::AwaitingConnecion);
+    fastLEDLight->setDisplayMode(DeviceState::State::AwaitingConnection);
 }
 
 void loop()

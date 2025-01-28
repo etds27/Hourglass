@@ -23,7 +23,7 @@ LCDRing *lRing;
 LCDTimer *lTimer;
 void setup()
 {
-  loggerLevel = LoggerLevel::DEBUG;
+  loggerLevel = LoggerLevel::INFO;
   Serial.begin(115200);
   // while (!Serial)
   //   ;
@@ -39,15 +39,15 @@ void setup()
   displayManager = new HourglassDisplayManager();
   // displayManager->addDisplayInterface(fastLEDLight);
   displayManager->addDisplayInterface(lRing);
-  // displayManager->addDisplayInterface(lTimer);
+  displayManager->addDisplayInterface(lTimer);
 
   tft.init();
   tft.setRotation(0); // Adjust rotation (0-3)
 
-  tft.fillScreen(TFT_BLACK);
+  tft.fillScreen(TFT_BACKGROUND_COLOR);
 
   deviceManager = new DeviceManager(displayManager);
-  // deviceManager->writeDeviceName("HG4     ", 8);
+  // deviceManager->writeDeviceName("HG7     ", 8);
   // logger.info(String(deviceManager->getDeviceName()));
   deviceManager->start();
 
