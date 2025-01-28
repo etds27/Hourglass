@@ -1,3 +1,5 @@
+
+#ifndef SIMULATOR
 #include "ble_interface.h"
 #include "logger.h"
 
@@ -123,7 +125,7 @@ void BLEInterface::poll()
 
 void BLEInterface::setService()
 {
-  logger.info(String(SERVICE_UUID));
+  logger.info(SERVICE_UUID);
   m_service = new BLEService(SERVICE_UUID);
 
   // Number of players
@@ -170,7 +172,7 @@ void BLEInterface::setService()
   m_skippedPlayers = new BLEByteCharacteristic(SKIPPED_PLAYERS_UUID, BLEWrite | BLERead);
   m_service->addCharacteristic(*m_skippedPlayers);
 
-  logger.info("Advertising with name: " + String(m_deviceName));
+  logger.info("Advertising with name: " + LogString(m_deviceName));
   BLE.setLocalName(m_deviceName);
   BLE.setAdvertisedService(*m_service);
   BLE.addService(*m_service);
@@ -186,11 +188,12 @@ void BLEInterface::readData()
     logger.warning("BLE interface not connected");
     return;
   }
-  // logger.info("Dummy: " + String(m_dummy->valueLength()));
-  logger.info("Num Players:    " + String(getTotalPlayers()) + " " + String(m_numberOfPlayers->valueLength()));
-  logger.info("Current Player: " + String(getCurrentPlayer()) + " " + String(m_currentPlayer->valueLength()));
-  logger.info("Timer:          " + String(getTimer()) + " " + String(m_timer->valueLength()));
-  logger.info("Elapsed Time:   " + String(getElapsedTime()) + " " + String(m_elapsedTime->valueLength()));
-  logger.info("My number:      " + String(getMyPlayer()) + " " + String(m_myPlayerNumber->valueLength()));
+  logger.info("Num Players:    " + getTotalPlayers());
+  logger.info("Current Player: " + getCurrentPlayer());
+  logger.info("Timer:          " + getTimer());
+  logger.info("Elapsed Time:   " + getElapsedTime());
+  logger.info("My number:      " + getMyPlayer());
   logger.info("\n");
 }
+
+#endif

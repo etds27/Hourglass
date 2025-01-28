@@ -51,7 +51,6 @@ void LCDRing::show()
 void LCDRing::setBrightness(uint8_t brightness)
 {
     m_brightness = brightness;
-    logger.debug("Setting brightness to: " + brightness);
 }
 
 void LCDRing::setPixelColor(uint8_t i, uint32_t color)

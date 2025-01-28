@@ -1,28 +1,77 @@
-#include "Arduino.h"
 #include "logger.h"
 
-Logger logger = Logger();
-LoggerLevel loggerLevel = LoggerLevel::INFO;
+// Fully qualified names
+Logging::Logger logger;
+Logging::LoggerLevel loggerLevel = Logging::LoggerLevel::INFO;
 
-void Logger::debug(String message) {
-  Logger::log(String(millis(), DEC) + ": (DEBUG)   " + message, LoggerLevel::DEBUG);
+#ifdef SIMULATOR
+#include "simulator_tools.h"
+
+void Logging::Logger::debug(const LogString& message) {
+  log(message, Logging::LoggerLevel::DEBUG);
 }
 
-void Logger::info(String message) {
-  Logger::log(String(millis(), DEC) + ": (INFO)    " + message, LoggerLevel::INFO);
+void Logging::Logger::info(const LogString& message) {
+  log(message, Logging::LoggerLevel::INFO);
 }
 
-void Logger::warning(String message) {
-  Logger::log(String(millis(), DEC) + ": (WARNING) " + message, LoggerLevel::WARNING);
+void Logging::Logger::warning(const LogString& message) {
+  log(message, Logging::LoggerLevel::WARNING);
 }
 
-void Logger::error(String message) {
-  Logger::log(String(millis(), DEC) + ": (ERROR)   " + message, LoggerLevel::ERROR);
+void Logging::Logger::error(const LogString& message) {
+  log(message, Logging::LoggerLevel::FAILURE);
 }
 
-void Logger::log(String message, LoggerLevel level) {
+void Logging::Logger::log(const LogString& message, Logging::LoggerLevel level) {
   if (level >= loggerLevel) {
-    Serial.println(message);
+    std::cout << millis();
+    switch (level) {
+      case Logging::LoggerLevel::DEBUG: std::cout << ": (DEBUG)   "; break;
+      case Logging::LoggerLevel::INFO: std::cout << ": (INFO)    "; break;
+      case Logging::LoggerLevel::WARNING: std::cout << ": (WARNING) "; break;
+      case Logging::LoggerLevel::FAILURE: std::cout << ": (ERROR)   "; break;
+      default: break;
+    }
+    std::cout << message << std::endl;
   }
 }
 
+#else // Arduino
+
+void Logging::Logger::debug(const LogString& message) {
+  log(message, Logging::LoggerLevel::DEBUG);
+}
+
+void Logging::Logger::info(const LogString& message) {
+  log(message, Logging::LoggerLevel::INFO);
+}
+
+void Logging::Logger::warning(const LogString& message) {
+  log(message, Logging::LoggerLevel::WARNING);
+}
+
+void Logging::Logger::error(const LogString& message) {
+  log(message, Logging::LoggerLevel::FAILURE);
+}
+
+void Logging::Logger::log(const LogString& message, Logging::LoggerLevel level) {
+  if (level >= loggerLevel) {
+    String messageBuffer = String(millis(), DEC);
+    switch (level) {
+      case Logging::LoggerLevel::DEBUG: 
+      messageBuffer += ": (DEBUG)    "; break;
+      case Logging::LoggerLevel::INFO: 
+      messageBuffer += ": (INFO)     "; break;
+      case Logging::LoggerLevel::WARNING:
+       messageBuffer += ": (WARNING) "; break;
+      case Logging::LoggerLevel::FAILURE: 
+      messageBuffer += ": (FAILURE)  "; break;
+      default: break;
+    }
+    messageBuffer += String(message.c_str());
+    Serial.println(messageBuffer);
+  }
+}
+
+#endif

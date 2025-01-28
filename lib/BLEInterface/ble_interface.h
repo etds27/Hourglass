@@ -1,4 +1,6 @@
 #pragma once
+
+#ifndef SIMULATOR
 #include <ArduinoBLE.h>
 #include "hg_central_interface.h"
 #include "device_state.h"
@@ -57,3 +59,5 @@ private:
   BLEDescriptor *m_activeTurnDescriptor;
   BLEDescriptor *m_skippedDescriptor;
 };
+
+#endif

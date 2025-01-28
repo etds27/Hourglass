@@ -1,3 +1,5 @@
+#ifndef SIMULATOR
+
 #include "FastLED.h"
 #include "fast_led_light.h"
 #include "logger.h"
@@ -33,3 +35,5 @@ FastLEDLight::FastLEDLight(const uint8_t ledCount, const uint8_t diPin)
 FastLEDLight::~FastLEDLight() {
   delete[] leds;
 }
+
+#endif

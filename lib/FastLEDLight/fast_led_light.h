@@ -1,5 +1,7 @@
 #pragma once
 #include "light_interface.h"
+
+#ifndef SIMULATOR
 #include <FastLED.h>
 
 class FastLEDLight : public LightInterface {
@@ -16,3 +18,5 @@ public:
 private:
   CRGB* leds;
 };
+
+#endif
