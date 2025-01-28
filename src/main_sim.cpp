@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
     // deviceManager = new DeviceManager();
     /// deviceManager->start();
     m_ring = new GLRingInterface(RING_LED_COUNT);
-    m_ring->setDisplayMode(DeviceState::AwaitingConnecion);
+    m_ring->setDisplayMode(DeviceState::State::AwaitingConnection);
     glutInit(&argc, argv); 
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB); 
     glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT); 
