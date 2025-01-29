@@ -86,13 +86,13 @@ private:
   void processGameState();
 
   // Update the display interface with the current game state
-  void updateRing(bool force = false);
+  void updateDisplay(bool force = false);
   
   void setWaitingForConnection();;
   void updateAwaitingGameStartData();
 
   void updateTimer();
-  void updateRingMode();
+  void updateDisplayMode();
 
   bool isActiveTurn();
 

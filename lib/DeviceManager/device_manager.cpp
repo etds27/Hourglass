@@ -158,15 +158,15 @@ void DeviceManager::toggleColorBlindMode()
   m_colorBlindMode = !m_colorBlindMode;
   logger.info("Setting Color Blind Mode to: ", m_colorBlindMode);
   m_displayManager->setColorBlindMode(m_colorBlindMode);
-  updateRing();
+  updateDisplay();
 }
 
 void DeviceManager::enterDeepSleep()
 {
   logger.info("Entering Deep Sleep");
   m_deviceState = DeviceState::State::Off;
-  updateRingMode();
-  updateRing(true);
+  updateDisplayMode();
+  updateDisplay(true);
 
 #ifndef SIMULATOR
   delay(1000);
@@ -174,7 +174,7 @@ void DeviceManager::enterDeepSleep()
 #endif
 }
 
-void DeviceManager::updateRing(bool force)
+void DeviceManager::updateDisplay(bool force)
 {
   m_displayManager->update(force);
 }
@@ -196,7 +196,7 @@ void DeviceManager::updateTurnSequence()
   m_displayManager->updateTurnSequenceData(data);
 }
 
-void DeviceManager::updateRingMode()
+void DeviceManager::updateDisplayMode()
 {
   m_displayManager->setDisplayMode(m_deviceState);
 }
@@ -222,7 +222,7 @@ void DeviceManager::update()
   BLE.poll();
 #endif
   processGameState();
-  updateRing();
+  updateDisplay();
 }
 
 void DeviceManager::processGameState()
