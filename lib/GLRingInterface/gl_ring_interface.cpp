@@ -47,7 +47,7 @@ void GLRingInterface::show()
 void GLRingInterface::setBrightness(uint8_t brightness)
 {
     m_brightness = brightness;
-    logger.debug("Setting brightness to: " + brightness);
+    logger.debug("Setting brightness to: ", brightness);
 }
 
 void GLRingInterface::drawPixel(const uint8_t i) {

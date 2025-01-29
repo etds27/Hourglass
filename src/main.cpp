@@ -18,7 +18,6 @@
 #include "lcd_timer.h"
 #include <TFT_eSPI.h>
 
-
 unsigned long lastMemoryUpdate = millis();
 
 // SevenSegmentDisplay* sevenSegment;
@@ -26,7 +25,7 @@ unsigned long lastMemoryUpdate = millis();
 // RingLight* m_ring;
 
 #ifdef SIMULATOR
-GLRingInterface *gRing; 
+GLRingInterface *gRing;
 #else
 TFT_eSPI tft = TFT_eSPI();
 FastLEDLight *fastLEDLight;
@@ -61,6 +60,7 @@ void setup()
     break;
   }
 
+#ifndef SIMULATOR
   Serial.begin(115200);
   // while (!Serial)
   //   ;
@@ -69,11 +69,12 @@ void setup()
   // Start the BLE peripheral
 
   EEPROM.begin(8);
+#endif
   displayManager = new HourglassDisplayManager();
 
-  #ifdef SIMULATOR
+#ifdef SIMULATOR
   gRing = new GLRingInterface(16);
-  #else
+#else
   // fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
   lRing = new LCDRing(16, &tft);
   lTimer = new LCDTimer(&tft);
@@ -86,13 +87,12 @@ void setup()
 
   tft.fillScreen(TFT_BACKGROUND_COLOR);
 
-  #endif
+#endif
 
   deviceManager = new DeviceManager(displayManager);
   // deviceManager->writeDeviceName("HG7     ", 8);
   // logger.info(String(deviceManager->getDeviceName()));
   deviceManager->start();
-
 }
 
 // unsigned long start = millis();
@@ -100,21 +100,25 @@ void setup()
 void loop()
 {
 
-  if (ENABLE_DEBUG) {
-    #ifdef SIMULATOR
-    if (millis() - lastMemoryUpdate > 1000) {
+  if (ENABLE_DEBUG)
+  {
+#ifdef SIMULATOR
+    if (millis() - lastMemoryUpdate > 1000)
+    {
       size_t freeMemory = esp_get_free_heap_size();
-      logger.info("Free Memory: " + freeMemory);
+      logger.info("Free Memory: ", freeMemory);
       lastMemoryUpdate = millis();
     }
-    #endif
+#endif
   }
   deviceManager->update();
 }
 
-int main() {
+int main()
+{
   setup();
-  while (true) {
+  while (true)
+  {
     loop();
   }
 

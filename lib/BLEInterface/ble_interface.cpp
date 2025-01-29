@@ -172,7 +172,7 @@ void BLEInterface::setService()
   m_skippedPlayers = new BLEByteCharacteristic(SKIPPED_PLAYERS_UUID, BLEWrite | BLERead);
   m_service->addCharacteristic(*m_skippedPlayers);
 
-  logger.info("Advertising with name: " + LogString(m_deviceName));
+  logger.info("Advertising with name: ", m_deviceName);
   BLE.setLocalName(m_deviceName);
   BLE.setAdvertisedService(*m_service);
   BLE.addService(*m_service);
@@ -188,11 +188,11 @@ void BLEInterface::readData()
     logger.warning("BLE interface not connected");
     return;
   }
-  logger.info("Num Players:    " + getTotalPlayers());
-  logger.info("Current Player: " + getCurrentPlayer());
-  logger.info("Timer:          " + getTimer());
-  logger.info("Elapsed Time:   " + getElapsedTime());
-  logger.info("My number:      " + getMyPlayer());
+  logger.info("Num Players:    ", getTotalPlayers());
+  logger.info("Current Player: ", getCurrentPlayer());
+  logger.info("Timer:          ", getTimer());
+  logger.info("Elapsed Time:   ", getElapsedTime());
+  logger.info("My number:      ", getMyPlayer());
   logger.info("\n");
 }
 

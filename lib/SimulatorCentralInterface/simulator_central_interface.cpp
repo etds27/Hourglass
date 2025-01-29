@@ -109,16 +109,15 @@ void SimulatorCentralInterface::readData()
         logger.warning("BLE interface not connected");
         return;
     }
-    // logger.info("Dummy: " + String(m_dummy->valueLength()));
-    logger.info("Num Players:    " + std::to_string(getTotalPlayers()));
-    logger.info("Current Player: " + std::to_string(getCurrentPlayer()));
-    logger.info("Timer:          " + std::to_string(getTimer()));
-    logger.info("Elapsed Time:   " + std::to_string(getElapsedTime()));
-    logger.info("My Turn:        " + std::to_string(isTurn()));
-    logger.info("My number:      " + std::to_string(getMyPlayer()));
-    logger.info("Skipped:        " + std::to_string(isSkipped()));
-    logger.info("Game Active:    " + std::to_string(isGameActive()));
-    logger.info("Game Paused:    " + std::to_string(isGamePaused()));
+    logger.info("Num Players:    ", getTotalPlayers());
+    logger.info("Current Player: ", getCurrentPlayer());
+    logger.info("Timer:          ", getTimer());
+    logger.info("Elapsed Time:   ", getElapsedTime());
+    logger.info("My Turn:        ", isTurn());
+    logger.info("My number:      ", getMyPlayer());
+    logger.info("Skipped:        ", isSkipped());
+    logger.info("Game Active:    ", isGameActive());
+    logger.info("Game Paused:    ", isGamePaused());
     logger.info("\n");
 }
 

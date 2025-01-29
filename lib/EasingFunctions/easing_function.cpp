@@ -106,10 +106,10 @@ double EasingFunction::EasingFunction::ease(double value, double start, double e
         return adjustedValue * (end - start) + start;
     }
     /*
-    logger.debug("Value:    " + String(value));
-    logger.debug("Start:    " + String(start));
-    logger.debug("End:      " + String(end));
-    logger.debug("Adjusted: " + String(adjustedValue));
+    logger.debug("Value:    ", value);
+    logger.debug("Start:    ", start);
+    logger.debug("End:      ", end);
+    logger.debug("Adjusted: ", adjustedValue);
     */
     switch (m_mode)
     {

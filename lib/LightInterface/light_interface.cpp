@@ -3,6 +3,7 @@
 #include <cmath>
 #include <algorithm>
 #include <cstring>
+#include "color_converter.h"
 
 #ifdef SIMULATOR
 #include <random>
@@ -57,6 +58,14 @@ LightInterface::LightInterface(const uint8_t ledCount, const uint8_t diPin)
 }
 
 LightInterface::~LightInterface() {}
+
+void LightInterface::transformBufferColor(uint32_t *buffer, uint8_t bufferSize, ColorTransform::ColorTransform *transform)
+{
+  for (int i = 0; i < bufferSize; i++)
+  {
+    buffer[i] = transform->applyTransform(buffer[i]);
+  }
+}
 
 void LightInterface::setDisplayMode(DeviceState::State state)
 {
@@ -125,12 +134,12 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
   uint8_t subcycle = currentSegment % (totalCycleSteps / 2);
 
 #if ENABLE_DEBUG
-  logger.debug("Adjusted Time: " + String(adjustedTime));
-  logger.debug("Segment Length: " + String(segmentLength));
-  logger.debug("Cycle length: " + String(totalCycleSteps));
-  logger.debug("Current Segment: " + String(currentSegment));
-  logger.debug("Growing: " + String(growing));
-  logger.debug("Subcycle: " + String(subcycle));
+  logger.debug("Adjusted Time: ", adjustedTime);
+  logger.debug("Segment Length: ", segmentLength);
+  logger.debug("Cycle length: ", totalCycleSteps);
+  logger.debug("Current Segment: ", currentSegment);
+  logger.debug("Growing: ", growing));
+  logger.debug("Subcycle: ", subcycle);
 #endif
 
   if (growing)
@@ -255,9 +264,9 @@ void LightInterface::updateLightModeTurnSequence()
   //    Skipped player lights will be calculated and then dimmed with a dynamic local brightness setting that is calculated based on time
   //    A local brightness function for color will need to be implemented to acheive localized dimming
 
-  // logger.debug("Total Players:  " + String(m_turnSequenceData.totalPlayers));
-  // logger.debug("My Player:      " + String(m_turnSequenceData.myPlayerIndex));
-  // logger.debug("Current Player: " + String(m_turnSequenceData.currentPlayerIndex));
+  // logger.debug("Total Players:  ", m_turnSequenceData.totalPlayers);
+  // logger.debug("My Player:      ", m_turnSequenceData.myPlayerIndex);
+  // logger.debug("Current Player: ", m_turnSequenceData.currentPlayerIndex);
   // logger.debug("");
   uint32_t *colorBuffer = new uint32_t[m_ledCount];
   uint32_t *modifiedColorBuffer = new uint32_t[m_ledCount];
@@ -385,7 +394,7 @@ void LightInterface::updateGamePaused()
     m_lastColorChange = currentTime;
     m_previousColor = m_targetColor;
 
-    #ifdef SIMULATOR
+#ifdef SIMULATOR
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(0, 0xFF);
@@ -393,11 +402,11 @@ void LightInterface::updateGamePaused()
     uint32_t r = dis(gen) << 16;
     uint32_t g = dis(gen) << 8;
     uint32_t b = dis(gen);
-    #else
+#else
     uint32_t r = random(0xFF) << 16;
     uint32_t g = random(0xFF) << 8;
     uint32_t b = random(0xFF);
-    #endif
+#endif
     m_targetColor = r | g | b;
   }
 
@@ -421,10 +430,10 @@ void LightInterface::updateGamePaused()
   }
 
   /*
-  logger.info("PCT: " + String(pct));
-  logger.info("Prev: " + String(m_previousColor));
-  logger.info("Target: " + String(m_targetColor));
-  logger.info("Color: " + String(color));
+  logger.info("PCT: ", pct);
+  logger.info("Prev: ", m_previousColor);
+  logger.info("Target: ", m_targetColor);
+  logger.info("Color: ", color);
   logger.info("");
   */
 
@@ -465,6 +474,14 @@ void LightInterface::extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuf
       fullBuffer[currentIndex] = smallBuffer[j];
       currentIndex += 1;
     }
+  }
+}
+
+void LightInterface::copyBuffer(const uint32_t *sourceBuffer, uint32_t *targetBuffer, uint8_t size)
+{
+  for (int i = 0; i < size; i++)
+  {
+    targetBuffer[i] = sourceBuffer[i];
   }
 }
 
@@ -525,6 +542,16 @@ void LightInterface::overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlay
     {
       baseBuffer[i] = overlayBuffer[i];
     }
+  }
+}
+
+void LightInterface::printBuffer(uint32_t *buffer)
+{
+  char bufferString[256];
+  for (int i = 0; i < m_ledCount; i++)
+  {
+    sprintf(bufferString, "printBuffer: Buffer[%d]: %d", i, buffer[i]);
+    logger.info(bufferString);
   }
 }
 

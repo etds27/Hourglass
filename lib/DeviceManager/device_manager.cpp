@@ -20,7 +20,8 @@ DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
   logger.info("Initializing Device Manager");
   m_deviceName = new char[8];
   readDeviceName(m_deviceName);
-  // logger.info("Device name: " + std::string(m_deviceName));
+  logger.info("Device name: ", m_deviceName);
+
 
 #ifdef SIMULATOR
   m_inputInterface = new GLInputInterface();
@@ -89,7 +90,7 @@ void DeviceManager::writeDeviceName(const char *deviceName, uint8_t length)
 {
   // Write unique ID to EEPROM
   int i;
-  logger.info("Writing Device Name: " + LogString(deviceName));
+  logger.info("Writing Device Name: ", deviceName);
   for (i = 0; i < length; i++)
   {
     EEPROM.write(i, deviceName[i]);
@@ -155,7 +156,7 @@ void DeviceManager::setWaitingForConnection()
 void DeviceManager::toggleColorBlindMode()
 {
   m_colorBlindMode = !m_colorBlindMode;
-  logger.info("Setting Color Blind Mode to: " + m_colorBlindMode);
+  logger.info("Setting Color Blind Mode to: ", m_colorBlindMode);
   m_displayManager->setColorBlindMode(m_colorBlindMode);
   updateRing();
 }
@@ -209,7 +210,7 @@ void DeviceManager::update()
   // Log data from the interface
   if (currentTime - m_lastReadOut > 2000)
   {
-    logger.info("Update Period: " + std::to_string(deltaTime));
+    logger.info("Update Period: ", deltaTime);
 
     if (ENABLE_DEBUG)
     {
