@@ -5,7 +5,6 @@ void HourglassDisplayManager::addDisplayInterface(HGDisplayInterface *interface)
     interfaces.push_back(interface);
 }
 
-
 uint8_t HourglassDisplayManager::count()
 {
     return interfaces.size();
@@ -15,6 +14,12 @@ void HourglassDisplayManager::setColorBlindMode(bool colorBlindMode)
 {
     applyToAllInterfaces([colorBlindMode](HGDisplayInterface *interface)
                          { interface->setColorBlindMode(colorBlindMode); });
+}
+
+void HourglassDisplayManager::setAbsoluteOrientation(bool orientation)
+{
+    applyToAllInterfaces([orientation](HGDisplayInterface *interface)
+                         { interface->setAbsoluteOrientation(orientation); });
 }
 
 void HourglassDisplayManager::setDisplayMode(DeviceState::State state)

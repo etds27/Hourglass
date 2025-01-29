@@ -76,6 +76,14 @@ private:
   // Flag indicating the current color blind status
   bool m_colorBlindMode = false;
 
+  /// @brief Flag indicating if the turn sequence should be oriented by the turn order, or by the device's player
+  /// If true, the 1st player in the player order will be represented in the top right
+  /// If false, the device's player will be represented in the top right
+  bool m_absoluteOrientation = true;
+
+  /// @brief Toggle the device display orientation
+  void toggleDeviceOrientation();
+
   // Toggle the current colorblind state of the output
   void toggleColorBlindMode();
 

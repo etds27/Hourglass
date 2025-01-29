@@ -150,7 +150,15 @@ void DeviceManager::setWaitingForConnection()
   }
   logger.info("Setting device state to: AwaitingConnection");
   m_deviceState = DeviceState::State::AwaitingConnection;
-  updateRingMode();
+  updateDisplayMode();
+}
+
+void DeviceManager::toggleDeviceOrientation()
+{
+  m_absoluteOrientation = !m_absoluteOrientation;
+  logger.info("Updated absolute orientation to: ", m_absoluteOrientation);
+  m_displayManager->setAbsoluteOrientation(m_absoluteOrientation);
+  updateDisplay();
 }
 
 void DeviceManager::toggleColorBlindMode()
