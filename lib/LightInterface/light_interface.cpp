@@ -67,14 +67,6 @@ void LightInterface::transformBufferColor(uint32_t *buffer, uint8_t bufferSize, 
   }
 }
 
-void LightInterface::transformBufferColor(uint32_t *buffer, uint8_t bufferSize, ColorTransform::ColorTransform *transform)
-{
-  for (int i = 0; i < bufferSize; i++)
-  {
-    buffer[i] = transform->applyTransform(buffer[i]);
-  }
-}
-
 void LightInterface::setDisplayMode(DeviceState::State state)
 {
   setBrightness(DEFAULT_BRIGHTNESS);
@@ -142,12 +134,12 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
   uint8_t subcycle = currentSegment % (totalCycleSteps / 2);
 
 #if ENABLE_DEBUG
-  logger.debug("Adjusted Time: " + String(adjustedTime));
-  logger.debug("Segment Length: " + String(segmentLength));
-  logger.debug("Cycle length: " + String(totalCycleSteps));
-  logger.debug("Current Segment: " + String(currentSegment));
-  logger.debug("Growing: " + String(growing));
-  logger.debug("Subcycle: " + String(subcycle));
+  logger.debug("Adjusted Time: ", adjustedTime);
+  logger.debug("Segment Length: ", segmentLength);
+  logger.debug("Cycle length: ", totalCycleSteps);
+  logger.debug("Current Segment: ", currentSegment);
+  logger.debug("Growing: ", growing));
+  logger.debug("Subcycle: ", subcycle);
 #endif
 
   if (growing)
@@ -272,9 +264,9 @@ void LightInterface::updateLightModeTurnSequence()
   //    Skipped player lights will be calculated and then dimmed with a dynamic local brightness setting that is calculated based on time
   //    A local brightness function for color will need to be implemented to acheive localized dimming
 
-  // logger.debug("Total Players:  " + String(m_turnSequenceData.totalPlayers));
-  // logger.debug("My Player:      " + String(m_turnSequenceData.myPlayerIndex));
-  // logger.debug("Current Player: " + String(m_turnSequenceData.currentPlayerIndex));
+  // logger.debug("Total Players:  ", m_turnSequenceData.totalPlayers);
+  // logger.debug("My Player:      ", m_turnSequenceData.myPlayerIndex);
+  // logger.debug("Current Player: ", m_turnSequenceData.currentPlayerIndex);
   // logger.debug("");
   uint32_t *colorBuffer = new uint32_t[m_ledCount];
   uint32_t *modifiedColorBuffer = new uint32_t[m_ledCount];
@@ -438,10 +430,10 @@ void LightInterface::updateGamePaused()
   }
 
   /*
-  logger.info("PCT: " + String(pct));
-  logger.info("Prev: " + String(m_previousColor));
-  logger.info("Target: " + String(m_targetColor));
-  logger.info("Color: " + String(color));
+  logger.info("PCT: ", pct);
+  logger.info("Prev: ", m_previousColor);
+  logger.info("Target: ", m_targetColor);
+  logger.info("Color: ", color);
   logger.info("");
   */
 

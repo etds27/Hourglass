@@ -7,6 +7,7 @@ Logging::LoggerLevel loggerLevel = Logging::LoggerLevel::INFO;
 #ifdef SIMULATOR
 #include "simulator_tools.h"
 
+/*
 void Logging::Logger::debug(const LogString& message) {
   log(message, Logging::LoggerLevel::DEBUG);
 }
@@ -22,6 +23,7 @@ void Logging::Logger::warning(const LogString& message) {
 void Logging::Logger::error(const LogString& message) {
   log(message, Logging::LoggerLevel::FAILURE);
 }
+*/
 
 void Logging::Logger::log(const LogString& message, Logging::LoggerLevel level) {
   if (level >= loggerLevel) {
@@ -38,7 +40,7 @@ void Logging::Logger::log(const LogString& message, Logging::LoggerLevel level) 
 }
 
 #else // Arduino
-
+/*
 void Logging::Logger::debug(const LogString& message) {
   log(message, Logging::LoggerLevel::DEBUG);
 }
@@ -54,7 +56,7 @@ void Logging::Logger::warning(const LogString& message) {
 void Logging::Logger::error(const LogString& message) {
   log(message, Logging::LoggerLevel::FAILURE);
 }
-
+*/
 void Logging::Logger::log(const LogString& message, Logging::LoggerLevel level) {
   if (level >= loggerLevel) {
     String messageBuffer = String(millis(), DEC);
