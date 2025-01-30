@@ -4,7 +4,9 @@
 #include "constants.h"
 #include "logger.h"
 #include "gl_ring_interface.h"
+#include "gl_input_interface.h"
 #include "device_manager.h"
+#include "hg_display_manager.h"
 #include "device_state.h"
 #include "color_converter.h"
 #include <GL/gl.h>
@@ -20,6 +22,7 @@ const int SIMULATOR_REFRESH_DELAY = 10;
 const float BUTTON_CENTER_X = 0.85f;
 const float BUTTON_CENTER_Y = 0.0f;
 
+HourglassDisplayManager *displayManager;
 DeviceManager *deviceManager;
 GLRingInterface *m_ring;
 uint32_t *buffer = new uint32_t[16]{};
@@ -34,11 +37,13 @@ void mouseEventHandler(int button, int state, int x, int y)
   float relX = (float)x / WINDOW_WIDTH;
   if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
   {
-    // std::cout << "Mouse clicked at (" << x << ", " << y << ")" << std::endl;
+    logger.debug("Pressing button");
+    glPressValue = true;
   }
   else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP)
   {
-    // std::cout << "Mouse released at (" << x << ", " << y << ")" << std::endl;
+    logger.debug("Releasing button");
+    glPressValue = false;
   }
 }
 
@@ -103,7 +108,7 @@ void displayCallback()
   m_ring->updateGameDebugData(data);
   */
   // Draw the ring
-  m_ring->update();
+  deviceManager->update();
   // Draw the button
   glTranslatef(BUTTON_CENTER_X, BUTTON_CENTER_Y, 0.0f); // Translate left and up
   gl_tools::drawCircle(0.0, 0.0, 0.1, 0xAAAAAA);
@@ -146,9 +151,16 @@ int main(int argc, char **argv)
     .myPlayerIndex = 2,
     .currentPlayerIndex = 4};
 
+  /*
   m_ring->setAbsoluteOrientation(false);
   m_ring->updateTurnSequenceData(data);
   m_ring->setDisplayMode(DeviceState::State::AwaitingTurn);
+  */
+  displayManager = new HourglassDisplayManager();
+  displayManager->addDisplayInterface(m_ring);
+
+  deviceManager = new DeviceManager(displayManager);
+  deviceManager->start();
 
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
