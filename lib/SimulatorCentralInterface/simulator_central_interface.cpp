@@ -1,3 +1,4 @@
+#pragma once
 #ifdef SIMULATOR
 #include "simulator_central_interface.h"
 #include "simulator_tools.h"
@@ -9,6 +10,10 @@ SimulatorCentralInterface::SimulatorCentralInterface(char *deviceName)
 {
     m_deviceName = deviceName;
     lastPoll = millis();
+
+    m_currentPlayer = 4;
+    m_myPlayerNumber = 2;
+    m_numberOfPlayers = 8;
 };
 
 bool SimulatorCentralInterface::isConnected()
@@ -99,7 +104,7 @@ void SimulatorCentralInterface::toggleSkippedState() {
 }
 
 DeviceState::State SimulatorCentralInterface::getCommandedDeviceState() {
-    return DeviceState::State::Debug;
+    return DeviceState::State::AwaitingTurn;
 }
 
 void SimulatorCentralInterface::readData()
