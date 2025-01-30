@@ -300,6 +300,10 @@ void LightInterface::updateLightModeTurnSequence()
 
   if ((m_ledCount % m_turnSequenceData.totalPlayers == 0 && UNIFORM_SEQUENCES_REQUIRED && EXPAND_TURN_SEQUENCE_BUFFER) || (EXPAND_TURN_SEQUENCE_BUFFER && !UNIFORM_SEQUENCES_REQUIRED))
   {
+    if (!m_absoluteOrientation) {
+      // If the orientation should be absolute, offset the buffer to put the device's player in the first index
+      offsetBuffer(colorBuffer, m_turnSequenceData.myPlayerIndex, m_turnSequenceData.totalPlayers);
+    }
     expandBuffer(colorBuffer, modifiedColorBuffer, m_turnSequenceData.totalPlayers);
     displayBuffer(modifiedColorBuffer);
   }
