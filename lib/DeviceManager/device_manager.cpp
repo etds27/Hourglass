@@ -57,6 +57,7 @@ void DeviceManager::start()
   m_lastReadOut = now;
   m_lastConnection = now;
   m_lastTurnStart = now;
+  m_lastDisconnection = now;
 }
 
 char *DeviceManager::getDeviceName()
@@ -250,6 +251,10 @@ void DeviceManager::processGameState()
   {
     logger.debug("Entering deep sleep");
     // enterDeepSleep();
+  }
+
+  if (buttonAction == ButtonInputType::LongPress) {
+    toggleDeviceOrientation();
   }
 
   if (buttonAction == ButtonInputType::TripleButtonPress)
