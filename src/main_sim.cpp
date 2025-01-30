@@ -52,53 +52,56 @@ void displayCallback()
   uint32_t color = 0x000000;
   uint32_t color2 = 0x000000;
 
-    if (step == 0)
-    {
-      color = 0xFF0000;
-      color2 = 0x00FF00;
-      logger.info("Red");
-    }
-    if (step == 1)
-    {
-      color = 0x00FF00;
-      color2 = 0x0000FF;
-      logger.info("Green");
-    }
-    if (step == 2)
-    {
-      color = 0x0000FF;
-      color2 = 0xFF0000;
-      logger.info("Blue");
-    }
+  /*
+  if (step == 0)
+  {
+    color = 0xFF0000;
+    color2 = 0x00FF00;
+    logger.info("Red");
+  }
+  if (step == 1)
+  {
+    color = 0x00FF00;
+    color2 = 0x0000FF;
+    logger.info("Green");
+  }
+  if (step == 2)
+  {
+    color = 0x0000FF;
+    color2 = 0xFF0000;
+    logger.info("Blue");
+  }
 
-    for (int i = 0; i < 16; i++)
+  for (int i = 0; i < 16; i++)
+  {
+    if (i <= 6)
     {
-      if (i <= 6) {
-        ColorTransform::DimColor* dimColor = new ColorTransform::DimColor((6 - i) / 6.0f * 255);
-        buffer[i] = dimColor->applyTransform(color);
-        delete dimColor;
-      } else {
-        buffer[i] = 0x000000;
-      }
+      ColorTransform::DimColor *dimColor = new ColorTransform::DimColor((6 - i) / 6.0f * 255);
+      buffer[i] = dimColor->applyTransform(color);
+      delete dimColor;
     }
-    uint32_t* secondBuffer = new uint32_t[16]{};
-    m_ring->copyBuffer(buffer, secondBuffer, 16);
-    ColorTransform::SwapRedBlue* swapRedBlue = new ColorTransform::SwapRedBlue();
-    m_ring->transformBufferColor(secondBuffer, 16, swapRedBlue);
-    delete swapRedBlue;
-    m_ring->offsetBuffer(secondBuffer, 8);
-    m_ring->printBuffer(secondBuffer);
-    m_ring->overlayBuffer(buffer, secondBuffer, 16);
-        m_ring->printBuffer(buffer);
+    else
+    {
+      buffer[i] = 0x000000;
+    }
+  }
+  uint32_t *secondBuffer = new uint32_t[16]{};
+  m_ring->copyBuffer(buffer, secondBuffer, 16);
+  ColorTransform::SwapRedBlue *swapRedBlue = new ColorTransform::SwapRedBlue();
+  m_ring->transformBufferColor(secondBuffer, 16, swapRedBlue);
+  delete swapRedBlue;
+  m_ring->offsetBuffer(secondBuffer, 8);
+  m_ring->printBuffer(secondBuffer);
+  m_ring->overlayBuffer(buffer, secondBuffer, 16);
+  m_ring->printBuffer(buffer);
 
-    m_ring->offsetBuffer(buffer, rotate);
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    struct GameDebugData data{
-        .buffer = buffer
-    };
-    m_ring->updateGameDebugData(data);
-
+  m_ring->offsetBuffer(buffer, rotate);
+  glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  struct GameDebugData data{
+      .buffer = buffer};
+  m_ring->updateGameDebugData(data);
+  */
   // Draw the ring
   m_ring->update();
   // Draw the button
@@ -106,7 +109,6 @@ void displayCallback()
   gl_tools::drawCircle(0.0, 0.0, 0.1, 0xAAAAAA);
 
   glutSwapBuffers();
-
 }
 
 void timer(int value)
@@ -139,10 +141,14 @@ int main(int argc, char **argv)
   // deviceManager = new DeviceManager();
   /// deviceManager->start();
   m_ring = new GLRingInterface(RING_LED_COUNT);
-  struct GameDebugData data{
-      .buffer = buffer};
-  m_ring->updateGameDebugData(data);
-  m_ring->setDisplayMode(DeviceState::State::Debug);
+  struct TurnSequenceData data{
+    .totalPlayers = 8,
+    .myPlayerIndex = 2,
+    .currentPlayerIndex = 4};
+
+  m_ring->setAbsoluteOrientation(false);
+  m_ring->updateTurnSequenceData(data);
+  m_ring->setDisplayMode(DeviceState::State::AwaitingTurn);
 
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
