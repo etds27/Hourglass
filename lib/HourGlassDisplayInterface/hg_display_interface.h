@@ -37,6 +37,7 @@ protected:
 
     DeviceState::State m_state = DeviceState::State::Off;
     bool m_colorBlindMode = false;
+    bool m_absoluteOrientation = true;
 
     unsigned long m_startTime;
     struct TimerData m_timerData;
@@ -61,6 +62,10 @@ public:
 
     // Sets the current colorblind mode for the ringlight
     void setColorBlindMode(bool colorBlindMode);
+
+    /// @brief Sets the current absolute/player orientation for the display
+    /// @param orientation Set to `true` for absolute orientation and `false` for player orientation
+    void setAbsoluteOrientation(bool orientation);
 
     // Sets the ring light to the appropriate lighting mode associated with the provided device state
     virtual void setDisplayMode(DeviceState::State state);

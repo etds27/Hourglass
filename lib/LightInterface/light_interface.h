@@ -40,7 +40,7 @@ protected:
 
 
   // Reverse the full sized color buffer
-  void reverseBuffer(uint32_t *buffer, uint8_t offset);
+  void reverseBuffer(uint32_t *buffer, uint8_t size);
 
   /// @brief Set the provided buffer to a single solid color
   /// @param buffer Buffer to modify in-place
@@ -116,7 +116,7 @@ public:
   virtual void setPixelColor(uint8_t i, uint32_t color) = 0;
 
   // Rotate the full sized color buffer by some offset
-  void offsetBuffer(uint32_t *buffer, uint8_t offset);
+  void offsetBuffer(uint32_t *buffer, int8_t offset, uint8_t size = RING_LED_COUNT);
 
   // Replicate the smaller buffer to fit into the full buffer
   void extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size);
@@ -131,7 +131,7 @@ public:
   /// @param inverse If set, the overlay only blank leds for negative light designs
   void overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, uint8_t bufferSize, bool inverse = false);
 
-  void printBuffer(uint32_t *buffer);
+  void printBuffer(uint32_t *buffer, int8_t size = RING_LED_COUNT);
 
   // Non enforced turn timer
   unsigned long m_lastColorChange;

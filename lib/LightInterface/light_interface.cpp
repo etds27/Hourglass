@@ -300,6 +300,10 @@ void LightInterface::updateLightModeTurnSequence()
 
   if ((m_ledCount % m_turnSequenceData.totalPlayers == 0 && UNIFORM_SEQUENCES_REQUIRED && EXPAND_TURN_SEQUENCE_BUFFER) || (EXPAND_TURN_SEQUENCE_BUFFER && !UNIFORM_SEQUENCES_REQUIRED))
   {
+    if (!m_absoluteOrientation) {
+      // If the orientation should be absolute, offset the buffer to put the device's player in the first index
+      offsetBuffer(colorBuffer, m_turnSequenceData.myPlayerIndex, m_turnSequenceData.totalPlayers);
+    }
     expandBuffer(colorBuffer, modifiedColorBuffer, m_turnSequenceData.totalPlayers);
     displayBuffer(modifiedColorBuffer);
   }
@@ -510,25 +514,29 @@ void LightInterface::expandBuffer(const uint32_t *smallBuffer, uint32_t *fullBuf
   }
 }
 
-void LightInterface::offsetBuffer(uint32_t *buffer, uint8_t offset)
+void LightInterface::offsetBuffer(uint32_t *buffer, int8_t offset, uint8_t size)
 {
-  uint32_t *originalBuffer = new uint32_t[m_ledCount];
-  memcpy(originalBuffer, buffer, sizeof(uint32_t) * m_ledCount);
-  for (int i = 0; i < m_ledCount; i++)
+  // Correct negative offsets
+  while(offset < 0) {
+    offset += size;
+  }
+  uint32_t *originalBuffer = new uint32_t[size];
+  memcpy(originalBuffer, buffer, sizeof(uint32_t) * size);
+  for (int i = 0; i < size; i++)
   {
-    uint8_t newIndex = (i + offset) % m_ledCount;
+    uint8_t newIndex = (i + offset) % size;
     buffer[i] = originalBuffer[newIndex];
   }
   delete originalBuffer;
 }
 
-void LightInterface::reverseBuffer(uint32_t *buffer, uint8_t offset)
+void LightInterface::reverseBuffer(uint32_t *buffer, uint8_t size)
 {
-  uint32_t *originalBuffer = new uint32_t[m_ledCount];
-  memcpy(originalBuffer, buffer, sizeof(uint32_t) * m_ledCount);
-  for (int i = 0; i < m_ledCount; i++)
+  uint32_t *originalBuffer = new uint32_t[size];
+  memcpy(originalBuffer, buffer, sizeof(uint32_t) * size);
+  for (int i = 0; i < size; i++)
   {
-    uint8_t newIndex = m_ledCount - i - 1;
+    uint8_t newIndex = size - i - 1;
     buffer[i] = originalBuffer[newIndex];
   }
   delete originalBuffer;
@@ -545,12 +553,12 @@ void LightInterface::overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlay
   }
 }
 
-void LightInterface::printBuffer(uint32_t *buffer)
+void LightInterface::printBuffer(uint32_t *buffer, int8_t size)
 {
   char bufferString[256];
-  for (int i = 0; i < m_ledCount; i++)
+  for (int i = 0; i < size; i++)
   {
-    sprintf(bufferString, "printBuffer: Buffer[%d]: %d", i, buffer[i]);
+    sprintf(bufferString, "printBuffer: Buffer[%d/%d]: %d", i, size, buffer[i]);
     logger.info(bufferString);
   }
 }

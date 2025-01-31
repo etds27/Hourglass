@@ -57,6 +57,7 @@ void DeviceManager::start()
   m_lastReadOut = now;
   m_lastConnection = now;
   m_lastTurnStart = now;
+  m_lastDisconnection = now;
 }
 
 char *DeviceManager::getDeviceName()
@@ -150,7 +151,15 @@ void DeviceManager::setWaitingForConnection()
   }
   logger.info("Setting device state to: AwaitingConnection");
   m_deviceState = DeviceState::State::AwaitingConnection;
-  updateRingMode();
+  updateDisplayMode();
+}
+
+void DeviceManager::toggleDeviceOrientation()
+{
+  m_absoluteOrientation = !m_absoluteOrientation;
+  logger.info("Updated absolute orientation to: ", m_absoluteOrientation);
+  m_displayManager->setAbsoluteOrientation(m_absoluteOrientation);
+  updateDisplay();
 }
 
 void DeviceManager::toggleColorBlindMode()
@@ -158,15 +167,15 @@ void DeviceManager::toggleColorBlindMode()
   m_colorBlindMode = !m_colorBlindMode;
   logger.info("Setting Color Blind Mode to: ", m_colorBlindMode);
   m_displayManager->setColorBlindMode(m_colorBlindMode);
-  updateRing();
+  updateDisplay();
 }
 
 void DeviceManager::enterDeepSleep()
 {
   logger.info("Entering Deep Sleep");
   m_deviceState = DeviceState::State::Off;
-  updateRingMode();
-  updateRing(true);
+  updateDisplayMode();
+  updateDisplay(true);
 
 #ifndef SIMULATOR
   delay(1000);
@@ -174,7 +183,7 @@ void DeviceManager::enterDeepSleep()
 #endif
 }
 
-void DeviceManager::updateRing(bool force)
+void DeviceManager::updateDisplay(bool force)
 {
   m_displayManager->update(force);
 }
@@ -196,7 +205,7 @@ void DeviceManager::updateTurnSequence()
   m_displayManager->updateTurnSequenceData(data);
 }
 
-void DeviceManager::updateRingMode()
+void DeviceManager::updateDisplayMode()
 {
   m_displayManager->setDisplayMode(m_deviceState);
 }
@@ -222,7 +231,7 @@ void DeviceManager::update()
   BLE.poll();
 #endif
   processGameState();
-  updateRing();
+  updateDisplay();
 }
 
 void DeviceManager::processGameState()
@@ -242,6 +251,10 @@ void DeviceManager::processGameState()
   {
     logger.debug("Entering deep sleep");
     // enterDeepSleep();
+  }
+
+  if (buttonAction == ButtonInputType::LongPress) {
+    toggleDeviceOrientation();
   }
 
   if (buttonAction == ButtonInputType::TripleButtonPress)

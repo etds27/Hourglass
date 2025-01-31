@@ -19,6 +19,11 @@ void HGDisplayInterface::setColorBlindMode(bool colorBlindMode)
   m_colorBlindMode = colorBlindMode;
 }
 
+void HGDisplayInterface::setAbsoluteOrientation(bool orientation)
+{
+  m_absoluteOrientation = orientation;
+}
+
 void HGDisplayInterface::setDisplayMode(DeviceState::State state)
 {
   logger.debug("Setting Light Mode");
