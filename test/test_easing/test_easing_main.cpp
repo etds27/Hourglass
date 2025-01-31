@@ -1,7 +1,8 @@
-#include <Arduino.h>
-#include <unity.h>
+
+#include <gtest/gtest.h>
 #include "easing_function.h"
 #include "logger.h"
+#include <cmath>
 void setUp(void)
 {
     // set stuff up here
@@ -51,13 +52,13 @@ void easing_function_verification(EasingFunction::EasingFunction *function, uint
     {
         double input = i * interval;
         double val = function->ease(input);
-        uint8_t adjustedVal = round(val * 100);
-        TEST_ASSERT_TRUE(adjustedVal >= expectedValues[i] - 1);
-        TEST_ASSERT_TRUE(adjustedVal <= expectedValues[i] + 1);
+        uint8_t adjustedVal = std::round(val * 100);
+        ASSERT_GE(adjustedVal, expectedValues[i] - 1) << "Value is less than expected value";
+        ASSERT_LE(adjustedVal, expectedValues[i] + 1) << "Value is greater than expected value";
     }
 }
 
-void test_linear_easing_in()
+TEST(EasingTest, LinearEaseIn)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Linear(EasingMode::EaseIn);
     uint8_t expectedValues[] = {
@@ -86,7 +87,7 @@ void test_linear_easing_in()
     easing_function_verification(function, expectedValues, 20);
 }
 
-void test_linear_easing_out()
+TEST(EasingTest, LinearEaseOut)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Linear(EasingMode::EaseOut);
     uint8_t expectedValues[] = {
@@ -115,7 +116,7 @@ void test_linear_easing_out()
     easing_function_verification(function, expectedValues, 20);
 }
 
-void test_linear_easing_in_and_out()
+TEST(EasingTest, LinearEaseInOut)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Linear(EasingMode::EaseInAndOut);
     uint8_t expectedValues[] = {
@@ -144,7 +145,7 @@ void test_linear_easing_in_and_out()
     easing_function_verification(function, expectedValues, 20);
 }
 
-void test_linear_easing_out_and_in()
+TEST(EasingTest, LinearEaseOutIn)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Linear(EasingMode::EaseOutAndIn);
     uint8_t expectedValues[] = {
@@ -173,7 +174,7 @@ void test_linear_easing_out_and_in()
     easing_function_verification(function, expectedValues, 20);
 }
 
-void test_quadratic_easing_in()
+TEST(EasingTest, QuadraticEaseIn)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Quadratic(EasingMode::EaseIn);
     uint8_t expectedValues[] = {
@@ -202,7 +203,7 @@ void test_quadratic_easing_in()
     easing_function_verification(function, expectedValues, 20);
 }
 
-void test_quadratic_easing_out()
+TEST(EasingTest, QuadraticEaseOut)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Quadratic(EasingMode::EaseOut);
     uint8_t expectedValues[] = {
@@ -231,7 +232,7 @@ void test_quadratic_easing_out()
     easing_function_verification(function, expectedValues, 20);
 }
 
-void test_quadratic_easing_in_and_out()
+TEST(EasingTest, QuadraticEaseInOut)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Quadratic(EasingMode::EaseInAndOut);
     uint8_t expectedValues[] = {
@@ -259,7 +260,7 @@ void test_quadratic_easing_in_and_out()
     easing_function_verification(function, expectedValues, 20);
 }
 
-void test_quadratic_easing_out_and_in()
+TEST(EasingTest, QuadraticEaseOutIn)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Quadratic(EasingMode::EaseOutAndIn);
     uint8_t expectedValues[] = {
@@ -288,7 +289,7 @@ void test_quadratic_easing_out_and_in()
     easing_function_verification(function, expectedValues, 20);
 }
 
-void test_cubic_easing_in()
+TEST(EasingTest, CubicEaseIn)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Cubic(EasingMode::EaseIn);
     uint8_t expectedValues[] = {
@@ -317,7 +318,7 @@ void test_cubic_easing_in()
     easing_function_verification(function, expectedValues, 20);
 }
 
-void test_cubic_easing_out()
+TEST(EasingTest, CubicEaseOut)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Cubic(EasingMode::EaseOut);
     uint8_t expectedValues[] = {
@@ -346,7 +347,7 @@ void test_cubic_easing_out()
     easing_function_verification(function, expectedValues, 20);
 }
 
-void test_cubic_easing_in_and_out()
+TEST(EasingTest, CubicEaseInOut)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Cubic(EasingMode::EaseInAndOut);
     uint8_t expectedValues[] = {
@@ -375,7 +376,7 @@ void test_cubic_easing_in_and_out()
     easing_function_verification(function, expectedValues, 20);
 }
 
-void test_cubic_easing_out_and_in()
+TEST(EasingTest, CubicEaseOutIn)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Cubic(EasingMode::EaseOutAndIn);
     uint8_t expectedValues[] = {
@@ -404,7 +405,7 @@ void test_cubic_easing_out_and_in()
     easing_function_verification(function, expectedValues, 20);
 }
 
-void test_poly_easing_in()
+TEST(EasingTest, PolyEaseIn)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Poly(4, EasingMode::EaseIn);
     uint8_t expectedValues[] = {
@@ -433,7 +434,7 @@ void test_poly_easing_in()
     easing_function_verification(function, expectedValues, 20);
 }
 
-void test_poly_easing_out()
+TEST(EasingTest, PolyEaseOut)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Poly(4, EasingMode::EaseOut);
     uint8_t expectedValues[] = {
@@ -462,7 +463,7 @@ void test_poly_easing_out()
     easing_function_verification(function, expectedValues, 20);
 }
 
-void test_poly_easing_in_and_out()
+TEST(EasingTest, PolyEaseInOut)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Poly(4, EasingMode::EaseInAndOut);
     uint8_t expectedValues[] = {
@@ -491,7 +492,7 @@ void test_poly_easing_in_and_out()
     easing_function_verification(function, expectedValues, 20);
 }
 
-void test_poly_easing_out_and_in()
+TEST(EasingTest, PolyEaseOutIn)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Poly(4, EasingMode::EaseOutAndIn);
     uint8_t expectedValues[] = {
@@ -520,7 +521,7 @@ void test_poly_easing_out_and_in()
     easing_function_verification(function, expectedValues, 20);
 }
 
-void test_sine_easing_in()
+TEST(EasingTest, SineEaseIn)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Sine(EasingMode::EaseIn);
     uint8_t expectedValues[] = {
@@ -550,7 +551,7 @@ void test_sine_easing_in()
     delete function;
 }
 
-void test_sine_easing_out()
+TEST(EasingTest, SineEaseOut)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Sine(EasingMode::EaseOut);
     uint8_t expectedValues[] = {
@@ -580,7 +581,7 @@ void test_sine_easing_out()
     delete function;
 }
 
-void test_sine_easing_in_and_out()
+TEST(EasingTest, SineEaseInOut)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Sine(EasingMode::EaseInAndOut);
     uint8_t expectedValues[] = {
@@ -610,7 +611,7 @@ void test_sine_easing_in_and_out()
     delete function;
 }
 
-void test_sine_easing_out_and_in()
+TEST(EasingTest, SineEaseOutIn)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Sine(EasingMode::EaseOutAndIn);
     uint8_t expectedValues[] = {
@@ -640,7 +641,7 @@ void test_sine_easing_out_and_in()
     delete function;
 }
 
-void test_circular_easing_in()
+TEST(EasingTest, CircularEaseIn)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Circular(EasingMode::EaseIn);
     uint8_t expectedValues[] = {
@@ -670,7 +671,7 @@ void test_circular_easing_in()
     delete function;
 }
 
-void test_circular_easing_out()
+TEST(EasingTest, CircularEaseOut)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Circular(EasingMode::EaseOut);
     uint8_t expectedValues[] = {
@@ -700,7 +701,7 @@ void test_circular_easing_out()
     delete function;
 }
 
-void test_circular_easing_in_and_out()
+TEST(EasingTest, CircularEaseInOut)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Circular(EasingMode::EaseInAndOut);
     uint8_t expectedValues[] = {
@@ -730,7 +731,7 @@ void test_circular_easing_in_and_out()
     delete function;
 }
 
-void test_circular_easing_out_and_in()
+TEST(EasingTest, CircularEaseOutIn)
 {
     EasingFunction::EasingFunction *function = new EasingFunction::Circular(EasingMode::EaseOutAndIn);
     uint8_t expectedValues[] = {
@@ -760,42 +761,33 @@ void test_circular_easing_out_and_in()
     delete function;
 }
 
+#ifndef SIMULATOR
 void setup()
 {
-    delay(2000);
-    UNITY_BEGIN(); // IMPORTANT LINE!
-    RUN_TEST(test_linear_easing_in);
-    RUN_TEST(test_linear_easing_out);
-    RUN_TEST(test_linear_easing_in_and_out);
-    RUN_TEST(test_linear_easing_out_and_in);
+    // should be the same value as for the `test_speed` option in "platformio.ini"
+    // default value is test_speed=115200
+    Serial.begin(115200);
 
-    RUN_TEST(test_quadratic_easing_in);
-    RUN_TEST(test_quadratic_easing_out);
-    RUN_TEST(test_quadratic_easing_in_and_out);
-    RUN_TEST(test_quadratic_easing_out_and_in);
-
-    RUN_TEST(test_cubic_easing_in);
-    RUN_TEST(test_cubic_easing_out);
-    RUN_TEST(test_cubic_easing_in_and_out);
-    RUN_TEST(test_cubic_easing_out_and_in);
-
-    RUN_TEST(test_poly_easing_in);
-    RUN_TEST(test_poly_easing_out);
-    RUN_TEST(test_poly_easing_in_and_out);
-    RUN_TEST(test_poly_easing_out_and_in);
-
-    RUN_TEST(test_sine_easing_in);
-    RUN_TEST(test_sine_easing_out);
-    RUN_TEST(test_sine_easing_in_and_out);
-    RUN_TEST(test_sine_easing_out_and_in);
-
-    RUN_TEST(test_circular_easing_in);
-    RUN_TEST(test_circular_easing_out);
-    RUN_TEST(test_circular_easing_in_and_out);
-    RUN_TEST(test_circular_easing_out_and_in);
+    ::testing::InitGoogleTest();
 }
 
 void loop()
 {
-    UNITY_END();
+	// Run tests
+	if (RUN_ALL_TESTS())
+	;
+
+	// sleep 1 sec
+	delay(1000);
 }
+
+#else
+int main(int argc, char **argv)
+{
+    ::testing::InitGoogleTest(&argc, argv);
+	if (RUN_ALL_TESTS())
+	;
+	// Always return zero-code and allow PlatformIO to parse results
+	return 0;
+}
+#endif
