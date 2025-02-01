@@ -302,9 +302,9 @@ void LightInterface::updateLightModeTurnSequence()
   {
     if (!m_absoluteOrientation) {
       // If the orientation should be absolute, offset the buffer to put the device's player in the first index
-      offsetBuffer(colorBuffer, m_turnSequenceData.myPlayerIndex, m_turnSequenceData.totalPlayers);
+      offsetBuffer(colorBuffer, -m_turnSequenceData.myPlayerIndex, m_turnSequenceData.totalPlayers);
     }
-    expandBuffer(colorBuffer, modifiedColorBuffer, m_turnSequenceData.totalPlayers);
+    expandBuffer(colorBuffer, modifiedColorBuffer, m_turnSequenceData.totalPlayers, m_ledCount);
     displayBuffer(modifiedColorBuffer);
   }
   else
@@ -323,7 +323,7 @@ void LightInterface::updateLightModeAwaitGameStart()
 
   int segments = std::max(m_gameStartData.totalPlayers, 1);
 
-  expandBuffer(colors, colorBuffer, segments);
+  expandBuffer(colors, colorBuffer, segments, m_ledCount);
 
   unsigned long currentSecond = (int)(millis() - m_startTime) / AWAIT_GAME_START_SPEED;
   uint8_t offset = currentSecond % m_ledCount;
@@ -460,20 +460,20 @@ void LightInterface::updateGameDebugData(GameDebugData data)
   m_gameDebugData = data;
 }
 
-void LightInterface::extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size)
+void LightInterface::extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t smallBufferSize, uint8_t fullBufferSize)
 {
-  if (m_ledCount % size)
+  if (fullBufferSize % smallBufferSize)
   {
-    logger.error("LightInterface::extendBuffer: Smaller buffer size must divide evenly into LED count");
+    logger.error("LightInterface::extendBuffer: Smaller buffer size must divide evenly into Full Buffer Size");
     return;
   }
 
-  uint8_t repeat = m_ledCount / size;
+  uint8_t repeat = fullBufferSize / smallBufferSize;
 
   uint8_t currentIndex = 0;
   for (int i = 0; i < repeat; i++)
   {
-    for (int j = 0; j < size; j++)
+    for (int j = 0; j < smallBufferSize; j++)
     {
       fullBuffer[currentIndex] = smallBuffer[j];
       currentIndex += 1;
@@ -489,26 +489,23 @@ void LightInterface::copyBuffer(const uint32_t *sourceBuffer, uint32_t *targetBu
   }
 }
 
-void LightInterface::expandBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size, bool fill)
+void LightInterface::expandBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t smallBufferSize, uint8_t fullBufferSize, bool fill)
 {
-  int lengthSegment = m_ledCount / size;
-  int remainder = m_ledCount % size;
+  int lengthSegment = fullBufferSize / smallBufferSize;
+  int remainder = fullBufferSize % smallBufferSize;
 
   int currentIndex = 0;
-  for (int currentSegment = 0; currentSegment < size; currentSegment++)
+  for (int currentSegment = 0; currentSegment < smallBufferSize; currentSegment++)
   {
-    fullBuffer[currentIndex] = smallBuffer[currentSegment];
-    for (int j = 0; j < lengthSegment; j++)
-    {
-      if (fill)
-      {
+    int adjustedSegmentLength = lengthSegment;
+    if (currentSegment < remainder) {
+      adjustedSegmentLength += 1;
+    }
+
+    for (int subIndex = 0; subIndex < adjustedSegmentLength; subIndex++) {
+      if (subIndex == 0 || fill) {
         fullBuffer[currentIndex] = smallBuffer[currentSegment];
       }
-      currentIndex += 1;
-    }
-    if (currentSegment < remainder && fill)
-    {
-      fullBuffer[currentIndex] = smallBuffer[currentSegment];
       currentIndex += 1;
     }
   }
@@ -525,7 +522,7 @@ void LightInterface::offsetBuffer(uint32_t *buffer, int8_t offset, uint8_t size)
   for (int i = 0; i < size; i++)
   {
     uint8_t newIndex = (i + offset) % size;
-    buffer[i] = originalBuffer[newIndex];
+    buffer[newIndex] = originalBuffer[i];
   }
   delete originalBuffer;
 }

@@ -1,4 +1,3 @@
-#pragma once
 #ifdef SIMULATOR
 #include "simulator_central_interface.h"
 #include "simulator_tools.h"

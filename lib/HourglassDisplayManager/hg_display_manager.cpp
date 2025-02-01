@@ -1,8 +1,8 @@
 #include "hg_display_manager.h"
 
-void HourglassDisplayManager::addDisplayInterface(HGDisplayInterface *interface)
+void HourglassDisplayManager::addDisplayInterface(HGDisplayInterface *displayInterface)
 {
-    interfaces.push_back(interface);
+    interfaces.push_back(displayInterface);
 }
 
 uint8_t HourglassDisplayManager::count()

@@ -7,7 +7,7 @@
 class HourglassDisplayManager {
     public:
     /// @brief Add a display interface to the collection
-    void addDisplayInterface(HGDisplayInterface *interface);
+    void addDisplayInterface(HGDisplayInterface *displayInterface);
 
     /// @brief Get the number of display interfaces managed
     /// @return Number of display interfaces
