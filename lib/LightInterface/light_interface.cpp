@@ -302,7 +302,7 @@ void LightInterface::updateLightModeTurnSequence()
   {
     if (!m_absoluteOrientation) {
       // If the orientation should be absolute, offset the buffer to put the device's player in the first index
-      offsetBuffer(colorBuffer, m_turnSequenceData.myPlayerIndex, m_turnSequenceData.totalPlayers);
+      offsetBuffer(colorBuffer, -m_turnSequenceData.myPlayerIndex, m_turnSequenceData.totalPlayers);
     }
     expandBuffer(colorBuffer, modifiedColorBuffer, m_turnSequenceData.totalPlayers, m_ledCount);
     displayBuffer(modifiedColorBuffer);
@@ -506,7 +506,6 @@ void LightInterface::expandBuffer(const uint32_t *smallBuffer, uint32_t *fullBuf
       if (subIndex == 0 || fill) {
         fullBuffer[currentIndex] = smallBuffer[currentSegment];
       }
-      logger.info("");
       currentIndex += 1;
     }
   }
