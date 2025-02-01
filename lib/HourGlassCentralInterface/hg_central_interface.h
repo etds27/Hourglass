@@ -1,5 +1,6 @@
 #pragma once
 #include "device_state.h"
+#include <stdint.h>
 
 class HGCentralInterface
 {
@@ -30,6 +31,13 @@ public:
     virtual bool isGamePaused() = 0;
 
     virtual DeviceState::State getCommandedDeviceState() = 0;
+
+
+    /// @brief Get the current skipped players in the turn sequence
+    /// Each bit represents the skipped status of each player
+    /// The first player in the sequence is the LSB
+    /// @return A 16-bit integer representing all skipped players in the game
+    virtual uint16_t getSkippedPlayers() = 0;
 
 
     // Check if the turn timer should be enforced
