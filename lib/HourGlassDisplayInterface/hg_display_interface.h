@@ -23,6 +23,7 @@ struct TurnSequenceData
     int totalPlayers;
     int myPlayerIndex;
     int currentPlayerIndex;
+    uint16_t skippedPlayers;
 };
 
 class HGDisplayInterface
