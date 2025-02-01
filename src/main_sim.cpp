@@ -21,6 +21,8 @@ const int SIMULATOR_REFRESH_DELAY = 10;
 
 const float BUTTON_CENTER_X = 0.85f;
 const float BUTTON_CENTER_Y = 0.0f;
+const uint32_t PRESSED_BUTTON_COLOR = 0x777777;
+const uint32_t UNPRESSED_BUTTON_COLOR = 0xAAAAAA;
 
 HourglassDisplayManager *displayManager;
 DeviceManager *deviceManager;
@@ -111,7 +113,9 @@ void displayCallback()
   deviceManager->update();
   // Draw the button
   glTranslatef(BUTTON_CENTER_X, BUTTON_CENTER_Y, 0.0f); // Translate left and up
-  gl_tools::drawCircle(0.0, 0.0, 0.1, 0xAAAAAA);
+
+  uint32_t buttonColor = glPressValue ? PRESSED_BUTTON_COLOR : UNPRESSED_BUTTON_COLOR;
+  gl_tools::drawCircle(0.0, 0.0, 0.1, buttonColor);
 
   glutSwapBuffers();
 }
