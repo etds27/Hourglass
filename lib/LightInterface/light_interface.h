@@ -32,31 +32,9 @@ protected:
   void updateGamePaused();
   void updateGameDebug();
 
-
-  // Take a buffer of size (2, 4, 8) and populate a full 16 item buffer using the condensed buffer
-  // The fill option will fill in the space between the
-  void expandBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size, bool fill = true);
-
-
-
-  // Reverse the full sized color buffer
-  void reverseBuffer(uint32_t *buffer, uint8_t size);
-
-  /// @brief Set the provided buffer to a single solid color
-  /// @param buffer Buffer to modify in-place
-  /// @param bufferSize Size of the provided buffer
-  /// @param color Color to set the buffer to
-  void solidBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t color);
-
   /// @brief Displays the full sized buffer to the light interface
   /// @param buffer
   void displayBuffer(const uint32_t *buffer, const bool clockwise = true);
-
-  /// @brief Set a buffer to a specific color for all non zero buffer values
-  /// @param buffer Buffer to update colors of in place
-  /// @param bufferSize Size of the provided buffer
-  /// @param color Color to change buffer to
-  void colorBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t color);
 
   /// @brief Obtain the current segment of the display cycle adjusted by the easing function
   /// @param cycleLength Length of a single cycle in milliseconds
@@ -65,8 +43,6 @@ protected:
   /// @param easingFunction Easing Function to adjust the cycle completion percentage to
   /// @return The current step in the cycle adjusted for the Easing Function
   uint8_t getAdjustedCycleSegment(unsigned long cycleDuration, unsigned long cycleStartTime, uint8_t totalCycleSteps, EasingFunction::EasingFunction *easingFunction);
-
-  // 
 
   /// @brief Linearly interpolate the colors provided by their RGB channels
   /// @param color1 Color to use for interpolation
@@ -119,7 +95,7 @@ public:
   void offsetBuffer(uint32_t *buffer, int8_t offset, uint8_t size = RING_LED_COUNT);
 
   // Replicate the smaller buffer to fit into the full buffer
-  void extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size);
+  void extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBufferr, uint8_t smallBufferSize, uint8_t fullBufferSize = RING_LED_COUNT);
   
   void copyBuffer(const uint32_t *sourceBuffer, uint32_t *targetBuffer, uint8_t size);
 
@@ -128,8 +104,28 @@ public:
   /// The base buffer will be updated with the new result
   /// @param baseBuffer Buffer to modify in place with overlayed content
   /// @param overlayBuffer Buffer to overlay on the base buffer
-  /// @param inverse If set, the overlay only blank leds for negative light designs
+  /// @param bufferSize Size of the buffer to overlay
+  /// @param inverse If set, only overrlay blank leds for negative light designs
   void overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, uint8_t bufferSize, bool inverse = false);
+
+  /// @brief Set a buffer to a specific color for all non zero buffer values
+  /// @param buffer Buffer to update colors of in place
+  /// @param bufferSize Size of the provided buffer
+  /// @param color Color to change buffer to
+  void colorBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t color);
+
+  // Take a buffer of size (2, 4, 8) and populate a full 16 item buffer using the condensed buffer
+  // The fill option will fill in the space between the LEDs
+  void expandBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t smallBufferSize, uint8_t fullBufferSize = RING_LED_COUNT, bool fill = true);
+
+  // Reverse the full sized color buffer
+  void reverseBuffer(uint32_t *buffer, uint8_t size);
+
+  /// @brief Set the provided buffer to a single solid color
+  /// @param buffer Buffer to modify in-place
+  /// @param bufferSize Size of the provided buffer
+  /// @param color Color to set the buffer to
+  void solidBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t color);
 
   void printBuffer(uint32_t *buffer, int8_t size = RING_LED_COUNT);
 
