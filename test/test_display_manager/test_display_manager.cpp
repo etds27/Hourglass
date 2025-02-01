@@ -54,7 +54,6 @@ void loop()
 #else
 int main(int argc, char **argv)
 {
-    std::cout << "HERE" << std::endl;
     ::testing::InitGoogleTest(&argc, argv);
 	if (RUN_ALL_TESTS())
 	;
