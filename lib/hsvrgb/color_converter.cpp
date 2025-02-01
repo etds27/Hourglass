@@ -6,9 +6,9 @@
 namespace ColorTransform
 {
     namespace {
-        void constructColor(uint32_t &color, uint8_t r, uint8_t g, uint8_t b)
+        void constructColor(uint32_t &color, uint8_t v1, uint8_t v2, uint8_t v3)
         {
-            color = (r << 16) | (g << 8) | b;
+            color = (v1 << 16) | (v2 << 8) | v3;
         }
     }
 
@@ -79,7 +79,10 @@ namespace ColorTransform
         uint8_t r = (color >> 16) & 0xFF;
         uint8_t g = (color >> 8) & 0xFF;
         uint8_t b = color & 0xFF;
-        return (g << 16) | (r << 8) | b;
+        
+        uint32_t newColor;
+        constructColor(newColor, g, r, b);
+        return newColor;
     }
 
     uint32_t SwapRedBlue::transformColor(const uint32_t color)
@@ -87,7 +90,10 @@ namespace ColorTransform
         uint8_t r = (color >> 16) & 0xFF;
         uint8_t g = (color >> 8) & 0xFF;
         uint8_t b = color & 0xFF;
-        return (b << 16) | g | r;
+
+        uint32_t newColor;
+        constructColor(newColor, b, g, r);
+        return newColor;
     }
 
     SwapGreenBlue::SwapGreenBlue()
@@ -99,7 +105,10 @@ namespace ColorTransform
         uint8_t r = (color >> 16) & 0xFF;
         uint8_t g = (color >> 8) & 0xFF;
         uint8_t b = color & 0xFF;
-        return r | (b << 8) | g;
+
+        uint32_t newColor;
+        constructColor(newColor, r, b, g);
+        return newColor;
     }
 
     InvertColor::InvertColor()
@@ -111,7 +120,10 @@ namespace ColorTransform
         uint8_t r = (color >> 16) & 0xFF;
         uint8_t g = (color >> 8) & 0xFF;
         uint8_t b = color & 0xFF;
-        return ((255 - r) << 16) | ((255 - g) << 8) | (255 - b);
+
+        uint32_t newColor;
+        constructColor(newColor, (255 - r), (255 - g), (255 - b));
+        return newColor;
     }
 
     ShiftLeft::ShiftLeft()
@@ -123,7 +135,9 @@ namespace ColorTransform
         uint8_t r = (color >> 16) & 0xFF;
         uint8_t g = (color >> 8) & 0xFF;
         uint8_t b = color & 0xFF;
-        return (g << 16) | (b << 8) | r;
+        uint32_t newColor;
+        constructColor(newColor, g, b, r);
+        return newColor;
     }
 
     ShiftRight::ShiftRight()
@@ -135,7 +149,9 @@ namespace ColorTransform
         uint8_t r = (color >> 16) & 0xFF;
         uint8_t g = (color >> 8) & 0xFF;
         uint8_t b = color & 0xFF;
-        return (b << 16) | (r << 8) | g;
+        uint32_t newColor;
+        constructColor(newColor, b, r, g);
+        return newColor;
     }
 
     Rgb2Hsv::Rgb2Hsv(const uint32_t color)
