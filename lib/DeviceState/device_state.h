@@ -4,6 +4,14 @@
 
 namespace DeviceState
 {
+  
+  /// @brief The current state of the device
+  ///
+  /// This enum represents all possible states the the peripheral device can be in
+  /// Of all the states, only the AwaitingConneciton and Off states can be entered from the peripheral only
+  /// All other states are commanded from the Central Device
+  /// These states also encode the current game type that is happening
+  /// 
   enum class State
   {
     Off = 0,
@@ -16,6 +24,12 @@ namespace DeviceState
     Paused = 7,
     Debug = 8
   };
+
+  /// @brief Array of all possible states the device can be in when in Sequential Turn Order mode
+  extern const std::array<State, 7> SEQUENTIAL_TURN_ORDER_MODE_STATES;
+
+  /// @brief Array of all possible states the device can be in when in Buzzer mode
+  extern const std::array<State, 6> BUZZER_MODE_STATES;
 
   extern const std::array<State, 2> ACTIVE_TURN_STATES;
 
