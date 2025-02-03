@@ -10,7 +10,7 @@
 // All required data for any display interface to show the Awaiting Game Start state
 struct GameDebugData
 {
-    uint32_t *buffer;
+  uint32_t *buffer;
 };
 
 class LightInterface : public HGDisplayInterface
@@ -22,15 +22,26 @@ protected:
 
   virtual uint8_t getRingOffset() const;
 
-  void updateLightModeActiveTurn();
-  void updateLightModeActiveTurnTimer();
-  void updateLightModeActiveTurnNoTimer();
-  void updateLightModeSkipped();
-  void updateLightModeTurnSequence();
-  void updateLightModeAwaitGameStart();
-  void updateLightModeAwaitConnection();
-  void updateGamePaused();
-  void updateGameDebug();
+  void updateLightModeActiveTurnTimer() override;
+  void updateLightModeActiveTurnNoTimer() override;
+  void updateLightModeSkipped() override;
+  void updateLightModeTurnSequence() override;
+  void updateLightModeAwaitGameStart() override;
+  void updateLightModeAwaitConnection() override;
+  void updateGamePaused() override;
+  void updateGameDebug() override;
+
+  void updateLightModeBuzzerAwaitingBuzz() override;
+  void updateLightModeBuzzerAwaitingBuzzTimed() override;
+  void updateLightModeWinnerPeriod() override;
+  void updateLightModeWinnerPeriodTimed() override;
+
+
+  // MARK: Canned display effects
+  void displayMarqueeBuzzer(uint32_t color);
+  void displayCounterClockwiseTimer(uint32_t elapsedTime, uint32_t totalTimerDuration);
+  void displaySymmetricFixedColorTimer(uint32_t elapsedTime, uint32_t totalTimerDuration);
+
 
   /// @brief Displays the full sized buffer to the light interface
   /// @param buffer
@@ -63,8 +74,8 @@ protected:
   uint32_t interpolateColors(uint32_t colorR1, uint32_t colorG1, uint32_t colorB1, uint32_t colorR2, uint32_t colorG2, uint32_t colorB2, double pct);
 
   /// @brief Interpolate the colors provided by their RGB channels using the provided easing function
-  /// @param color1 
-  /// @param color2 
+  /// @param color1
+  /// @param color2
   /// @param pct Percent color shifting between colors provided
   /// @param easingFunction Function to adjust percentage to expected curve
   /// @return Updated color
@@ -82,8 +93,8 @@ protected:
   /// @return Updated color
   uint32_t interpolateColors(uint32_t colorR1, uint32_t colorG1, uint32_t colorB1, uint32_t colorR2, uint32_t colorG2, uint32_t colorB2, double pct, EasingFunction::EasingFunction *easingFunction);
 
-
   struct GameDebugData m_gameDebugData;
+
 public:
   LightInterface(const uint8_t ledCount = 16, const uint8_t diPin = 0);
   virtual ~LightInterface();
@@ -96,7 +107,7 @@ public:
 
   // Replicate the smaller buffer to fit into the full buffer
   void extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBufferr, uint8_t smallBufferSize, uint8_t fullBufferSize = RING_LED_COUNT);
-  
+
   void copyBuffer(const uint32_t *sourceBuffer, uint32_t *targetBuffer, uint8_t size);
 
   /// @brief Overlays the overlay buffer on top of the base buffer
