@@ -89,18 +89,6 @@ uint8_t LightInterface::getRingOffset() const
   return m_ringOffset;
 }
 
-void LightInterface::updateLightModeActiveTurn()
-{
-  if (m_timerData.isTurnTimeEnforced)
-  {
-    updateLightModeActiveTurnTimer();
-  }
-  else
-  {
-    updateLightModeActiveTurnNoTimer();
-  }
-}
-
 void LightInterface::updateLightModeActiveTurnNoTimer()
 {
   // This lighting effect will be n (divides m_ledCount) equally spaced LEDs
