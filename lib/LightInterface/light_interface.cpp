@@ -73,7 +73,8 @@ void LightInterface::brightnessGradientBuffer(uint32_t *buffer, uint8_t bufferSi
   {
     uint8_t dimmingFactor = ((bufferSize - i) / (double)bufferSize * (255 - colorMinBrightness)) + colorMinBrightness;
     ColorTransform::DimColor *dimColor = new ColorTransform::DimColor(dimmingFactor);
-    buffer[i] = dimColor->applyTransform(color);
+    uint32_t transformedColor = dimColor->applyTransform(color);
+    buffer[i] = transformedColor;
     delete dimColor;
   }
 }
@@ -437,7 +438,7 @@ void LightInterface::updateGamePaused()
   */
 
   solidBuffer(colorBuffer, m_ledCount, color);
-  overlayBuffer(colorBuffer, blankBuffer, m_ledCount, true);
+  overlayBuffer(colorBuffer, blankBuffer, m_ledCount, m_ledCount, 0, true);
 
   displayBuffer(colorBuffer);
 
