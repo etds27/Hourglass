@@ -13,6 +13,7 @@ const char *TOGGLE_SKIP_UUID = "9b4fa66f-20cf-4a7b-ba6a-fc3890cbc0c7";
 const char *SKIPPED_PLAYERS_UUID = "3e35aa50-3594-4b32-9684-dbacb5ba91ee";
 const char *REMAINING_TIME_UUID = "4e1c05f6-c128-4bca-96c3-29c014e00eb6";
 const char *TIMER_UUID = "4661b4c1-093d-4db7-bb80-5b5fe3eae519";
+const char *SKIPPED_PLAYERS = "b31fa38e-a424-47ad-85d9-639cbab14e88";
 
 const char *DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb";
 
@@ -97,6 +98,11 @@ int BLEInterface::getTotalPlayers()
   return m_lastTotalPlayers;
 }
 
+uint16_t BLEInterface::getSkippedPlayers() 
+{
+  return (uint16_t)m_skippedPlayers->value();
+}
+
 bool BLEInterface::isGameActive()
 {
   getCommandedDeviceState();
@@ -169,7 +175,7 @@ void BLEInterface::setService()
   m_service->addCharacteristic(*m_toggleSkip);
 
   // Game is currently paused
-  m_skippedPlayers = new BLEByteCharacteristic(SKIPPED_PLAYERS_UUID, BLEWrite | BLERead);
+  m_skippedPlayers = new BLEIntCharacteristic(SKIPPED_PLAYERS, BLEWrite | BLERead);
   m_service->addCharacteristic(*m_skippedPlayers);
 
   logger.info("Advertising with name: ", m_deviceName);

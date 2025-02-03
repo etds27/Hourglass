@@ -75,7 +75,7 @@ void LightInterface::setDisplayMode(DeviceState::State state)
 
 uint8_t LightInterface::getRingOffset() const
 {
-    return m_ringOffset;
+  return m_ringOffset;
 }
 
 void LightInterface::updateLightModeActiveTurn()
@@ -275,6 +275,33 @@ void LightInterface::updateLightModeTurnSequence()
   uint32_t currentPlayerColor = (m_colorBlindMode) ? CURRENT_PLAYER_COLOR_ALT : CURRENT_PLAYER_COLOR;
   uint32_t otherPlayerColor = (m_colorBlindMode) ? OTHER_PLAYER_COLOR_ALT : OTHER_PLAYER_COLOR;
 
+
+
+  int deltaTime = (int)(millis() - m_startTime);
+  double pct = (deltaTime % SKIPPED_PULSE_DURATION) / (double)SKIPPED_PULSE_DURATION;
+
+  // Convert total percentage into percentage from midpoint
+  pct = fabs(pct - 0.5) * 2;
+
+  EasingFunction::EasingFunction *easingFunction = new EasingFunction::Sine(EasingMode::EaseIn);
+
+  // Fix the percentage to some range between 0 and 100. i.e 30 - 100
+  pct = pct * 0.5 + 0.4;
+
+  // Ease that percentage using the provided curve
+  pct = easingFunction->ease(pct);
+
+  delete easingFunction;
+
+  // Get that percentage as a absolute value from the 50% mark
+
+  // Covert the new percentage to a brightness value
+  uint8_t brightness = pct * 255;
+
+  ColorTransform::ColorTransform *transform = new ColorTransform::DimColor(brightness);
+  uint32_t skippedOtherPlayerColor = transform->applyTransform(otherPlayerColor);
+  delete transform;
+
   for (int i = 0; i < m_ledCount; i++)
   {
     if (i < m_turnSequenceData.totalPlayers)
@@ -289,7 +316,15 @@ void LightInterface::updateLightModeTurnSequence()
       }
       else
       {
-        colorBuffer[i] = otherPlayerColor;
+        // Check if player is skipped
+        if ((m_turnSequenceData.skippedPlayers >> i) & 1)
+        {
+          colorBuffer[i] = skippedOtherPlayerColor;
+        }
+        else
+        {
+          colorBuffer[i] = otherPlayerColor;
+        }
       }
     }
     else
@@ -300,7 +335,8 @@ void LightInterface::updateLightModeTurnSequence()
 
   if ((m_ledCount % m_turnSequenceData.totalPlayers == 0 && UNIFORM_SEQUENCES_REQUIRED && EXPAND_TURN_SEQUENCE_BUFFER) || (EXPAND_TURN_SEQUENCE_BUFFER && !UNIFORM_SEQUENCES_REQUIRED))
   {
-    if (!m_absoluteOrientation) {
+    if (!m_absoluteOrientation)
+    {
       // If the orientation should be absolute, offset the buffer to put the device's player in the first index
       offsetBuffer(colorBuffer, -m_turnSequenceData.myPlayerIndex, m_turnSequenceData.totalPlayers);
     }
@@ -498,12 +534,15 @@ void LightInterface::expandBuffer(const uint32_t *smallBuffer, uint32_t *fullBuf
   for (int currentSegment = 0; currentSegment < smallBufferSize; currentSegment++)
   {
     int adjustedSegmentLength = lengthSegment;
-    if (currentSegment < remainder) {
+    if (currentSegment < remainder)
+    {
       adjustedSegmentLength += 1;
     }
 
-    for (int subIndex = 0; subIndex < adjustedSegmentLength; subIndex++) {
-      if (subIndex == 0 || fill) {
+    for (int subIndex = 0; subIndex < adjustedSegmentLength; subIndex++)
+    {
+      if (subIndex == 0 || fill)
+      {
         fullBuffer[currentIndex] = smallBuffer[currentSegment];
       }
       currentIndex += 1;
@@ -514,7 +553,8 @@ void LightInterface::expandBuffer(const uint32_t *smallBuffer, uint32_t *fullBuf
 void LightInterface::offsetBuffer(uint32_t *buffer, int8_t offset, uint8_t size)
 {
   // Correct negative offsets
-  while(offset < 0) {
+  while (offset < 0)
+  {
     offset += size;
   }
   uint32_t *originalBuffer = new uint32_t[size];
@@ -564,9 +604,12 @@ void LightInterface::displayBuffer(const uint32_t *buffer, const bool clockwise)
 {
   for (int i = 0; i < m_ledCount; i++)
   {
-    if (clockwise) {
-      setPixelColor(((m_ledCount - i  - 1) + getRingOffset()) % m_ledCount, buffer[i]);
-    } else {
+    if (clockwise)
+    {
+      setPixelColor(((m_ledCount - i - 1) + getRingOffset()) % m_ledCount, buffer[i]);
+    }
+    else
+    {
       setPixelColor((i + getRingOffset()) % m_ledCount, buffer[i]);
     }
   }

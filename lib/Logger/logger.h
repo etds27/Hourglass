@@ -28,22 +28,22 @@ namespace Logging {
 
     template<typename... Args>
     void debug(Args&&... args) {
-      log(stringConcat(LogString(), args...), LoggerLevel::DEBUG);
+      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::DEBUG);
     }
 
     template<typename... Args>
     void info(Args&&... args) {
-      log(stringConcat(LogString(), args...), LoggerLevel::INFO);
+      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::INFO);
     }
 
     template<typename... Args>
     void warning(Args&&... args) {
-      log(stringConcat(LogString(), args...), LoggerLevel::WARNING);
+      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::WARNING);
     }
 
     template<typename... Args>
     void error(Args&&... args) {
-      log(stringConcat(LogString(), args...), LoggerLevel::FAILURE);
+      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::FAILURE);
     }
 
 
@@ -54,8 +54,7 @@ namespace Logging {
     template<typename T, typename... Args>
     LogString stringConcat(LogString blank, T&& next, Args&&... rest) {
       std::ostringstream str;
-      str << blank << std::forward<T>(next);
-      return stringConcatRecursive(str, rest...);
+      return stringConcatRecursive(str, std::forward<T>(next), std::forward<Args>(rest)...);
     }
 
     LogString stringConcat(LogString str) {
@@ -63,9 +62,9 @@ namespace Logging {
     }
 
     template<typename T, typename... Args>
-    LogString stringConcatRecursive(std::ostringstream& str, T next, Args... rest) {
-      str << next;
-      return stringConcatRecursive(str, rest...);
+    LogString stringConcatRecursive(std::ostringstream& str, T&& next, Args&&... rest) {
+      str << std::forward<T>(next);
+      return stringConcatRecursive(str, std::forward<Args>(rest)...);
     }
 
     LogString stringConcatRecursive(std::ostringstream& str) {

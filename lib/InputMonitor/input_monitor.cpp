@@ -49,7 +49,7 @@ ButtonInputType ButtonInputMonitor::getAction()
     last_press_start = currentTime;
     currentPresses += 1;
 
-    logger.info("Started press ", std::to_string(currentPresses));
+    logger.info("Started press ", (int)currentPresses);
   }
   else if (isPressed && !value)
   {

@@ -36,6 +36,8 @@ public:
   // Check if the turn timer should be enforced
   bool isTurnTimerEnforced();
 
+  uint16_t getSkippedPlayers();
+
   void setService();
 
   void poll();
@@ -49,6 +51,7 @@ private:
   uint8_t m_timer;
   uint8_t m_elapsedTime;
   uint8_t m_myPlayerNumber;
+  uint16_t m_skippedPlayers;
   bool m_myTurn;
   bool m_skipped;
   bool m_gameActive;

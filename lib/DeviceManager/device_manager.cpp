@@ -200,8 +200,9 @@ void DeviceManager::updateTurnSequence()
   int totalPlayers = m_interface->getTotalPlayers();
   int myPlayer = m_interface->getMyPlayer();
   int currentPlayer = m_interface->getCurrentPlayer();
+  uint16_t skippedPlayers = m_interface->getSkippedPlayers();
 
-  struct TurnSequenceData data = {.totalPlayers = totalPlayers, .myPlayerIndex = myPlayer, .currentPlayerIndex = currentPlayer};
+  struct TurnSequenceData data = {.totalPlayers = totalPlayers, .myPlayerIndex = myPlayer, .currentPlayerIndex = currentPlayer, .skippedPlayers = skippedPlayers};
   m_displayManager->updateTurnSequenceData(data);
 }
 

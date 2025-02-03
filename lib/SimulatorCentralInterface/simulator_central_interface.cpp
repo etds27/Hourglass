@@ -13,6 +13,9 @@ SimulatorCentralInterface::SimulatorCentralInterface(char *deviceName)
     m_currentPlayer = 4;
     m_myPlayerNumber = 2;
     m_numberOfPlayers = 8;
+    m_skippedPlayers = 2;
+    m_skippedPlayers = m_skippedPlayers | (1 << 7);
+    m_skippedPlayers = m_skippedPlayers | (1 << 5);
 };
 
 bool SimulatorCentralInterface::isConnected()
@@ -88,6 +91,11 @@ bool SimulatorCentralInterface::isGamePaused()
 bool SimulatorCentralInterface::isTurnTimerEnforced()
 {
     return m_enforceTurnTimer;
+}
+
+uint16_t SimulatorCentralInterface::getSkippedPlayers()
+{
+    return m_skippedPlayers;
 }
 
 void SimulatorCentralInterface::setService()

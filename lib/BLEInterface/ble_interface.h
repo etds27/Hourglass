@@ -4,6 +4,7 @@
 #include <ArduinoBLE.h>
 #include "hg_central_interface.h"
 #include "device_state.h"
+#include <stdint.h>
 
 class BLEInterface : public HGCentralInterface
 {
@@ -35,6 +36,8 @@ public:
     // Check if the turn timer should be enforced
     bool isTurnTimerEnforced();
 
+    uint16_t getSkippedPlayers();
+
     DeviceState::State getCommandedDeviceState();
 
 
@@ -54,7 +57,7 @@ private:
   BLEIntCharacteristic *m_gameState;
   BLEBoolCharacteristic *m_endTurn;
   BLEBoolCharacteristic *m_toggleSkip;
-  BLEByteCharacteristic *m_skippedPlayers;
+  BLEIntCharacteristic *m_skippedPlayers;
 
   BLEDescriptor *m_activeTurnDescriptor;
   BLEDescriptor *m_skippedDescriptor;
