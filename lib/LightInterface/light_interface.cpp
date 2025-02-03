@@ -578,17 +578,6 @@ void LightInterface::reverseBuffer(uint32_t *buffer, uint8_t size)
   delete originalBuffer;
 }
 
-void LightInterface::overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, uint8_t bufferSize, bool inverse)
-{
-  for (int i = 0; i < bufferSize; i++)
-  {
-    if (overlayBuffer[i] && !inverse || !overlayBuffer[i] && inverse)
-    {
-      baseBuffer[i] = overlayBuffer[i];
-    }
-  }
-}
-
 void LightInterface::printBuffer(uint32_t *buffer, int8_t size)
 {
   char bufferString[256];
@@ -619,6 +608,22 @@ void LightInterface::solidBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t 
   for (int i = 0; i < bufferSize; i++)
   {
     buffer[i] = color;
+  }
+}
+
+void LightInterface::overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, uint8_t baseBufferSize, uint8_t overlayBufferSize, uint8_t overlayBufferOffset, bool inverse)
+{
+  // Correct negative offsets
+  while (overlayBufferOffset < 0)
+  {
+    overlayBufferOffset += overlayBufferSize;
+  }
+  for (int i = 0; i < overlayBufferSize; i++)
+  {
+    if (overlayBuffer[i] && !inverse || !overlayBuffer[i] && inverse)
+    {
+      baseBuffer[(i + overlayBufferOffset) % baseBufferSize] = overlayBuffer[i];
+    }
   }
 }
 
