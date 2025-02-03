@@ -136,14 +136,16 @@ public:
 
   void transformBufferColor(uint32_t *buffer, uint8_t bufferSize, ColorTransform::ColorTransform *transform);
 
-  /// @brief Dim an RGB color by a specific value
-  ///
-  /// The color will be converted to HSV, then have the brightness value reduced, then converted back to RGB
-  /// @param color Color to dim
-  /// @param brightness Brightness adjustment factor between 0 and 255
-  /// @return Brightness adjusted color
-  uint32_t dimColor(uint32_t color, uint8_t brightness);
-
+  /// @brief Create a fading tail gradient buffer for a specified color
+  /// @param buffer Buffer to update to
+  /// @param bufferSize Size of buffer/tail to make
+  /// @param color Brightest color of the tail
+  /// @param colorMinBrightness The brightness value of the last value in the tail
+  void brightnessGradientBuffer(
+      uint32_t *buffer,
+      uint8_t bufferSize,
+      uint32_t tailColor,
+      uint32_t tailMinBrightness = 0.0);
 
   void setDisplayMode(DeviceState::State state);
 

@@ -67,6 +67,17 @@ void LightInterface::transformBufferColor(uint32_t *buffer, uint8_t bufferSize, 
   }
 }
 
+void LightInterface::brightnessGradientBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t color, uint32_t colorMinBrightness)
+{
+  for (int i = 0; i < bufferSize; i++)
+  {
+    uint8_t dimmingFactor = ((bufferSize - i) / (double)bufferSize * (255 - colorMinBrightness)) + colorMinBrightness;
+    ColorTransform::DimColor *dimColor = new ColorTransform::DimColor(dimmingFactor);
+    buffer[i] = dimColor->applyTransform(color);
+    delete dimColor;
+  }
+}
+
 void LightInterface::setDisplayMode(DeviceState::State state)
 {
   setBrightness(DEFAULT_BRIGHTNESS);
