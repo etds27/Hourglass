@@ -13,209 +13,211 @@ LightInterface *ring = new FastLEDLight(16, 16);
 #include "logger.h"
 #include "color_converter.h"
 
-
-void compareBuffer(uint32_t *actualBuffer, uint32_t *expectedBuffer, uint8_t size) {
-    for (int i = 0; i < size; i++) {
+void compareBuffer(uint32_t *actualBuffer, uint32_t *expectedBuffer, uint8_t size)
+{
+    for (int i = 0; i < size; i++)
+    {
         char message[50];
         sprintf(message, "Element (%d) %d != %d", i, actualBuffer[i], expectedBuffer[i]);
         ASSERT_EQ(actualBuffer[i], expectedBuffer[i]) << message;
     }
 }
 
-
-TEST(LightInterfaceTest, OffsetBufferPositive) {
+TEST(LightInterfaceTest, OffsetBufferPositive)
+{
     uint32_t buffer[8] = {};
     buffer[2] = 1;
 
     uint32_t expectedBuffer[8] = {
-        0, 0, 0, 0, 0, 1, 0, 0
-    };
+        0, 0, 0, 0, 0, 1, 0, 0};
 
     ring->offsetBuffer(buffer, 3, 8);
     compareBuffer(buffer, expectedBuffer, 8);
 }
 
-TEST(LightInterfaceTest, OffsetBufferNegative) {
+TEST(LightInterfaceTest, OffsetBufferNegative)
+{
     uint32_t buffer[8] = {};
     buffer[2] = 1;
 
     uint32_t expectedBuffer[8] = {
-        0, 0, 0, 0, 0, 0, 0, 1
-    };
+        0, 0, 0, 0, 0, 0, 0, 1};
 
     ring->offsetBuffer(buffer, -3, 8);
     compareBuffer(buffer, expectedBuffer, 8);
 }
 
-TEST(LightInterfaceTest, ReverseBuffer) {
+TEST(LightInterfaceTest, ReverseBuffer)
+{
     uint32_t buffer[8] = {
-        0, 1, 2, 3, 4, 5, 6, 7
-    };
+        0, 1, 2, 3, 4, 5, 6, 7};
     uint32_t expectedBuffer[8] = {
-        7, 6, 5, 4, 3, 2, 1, 0
-    };
+        7, 6, 5, 4, 3, 2, 1, 0};
 
     ring->reverseBuffer(buffer, 8);
     compareBuffer(buffer, expectedBuffer, 8);
 }
 
-TEST(LightInterfaceTest, SolidBuffer) {
+TEST(LightInterfaceTest, SolidBuffer)
+{
     uint32_t buffer[8] = {};
 
     uint32_t color = 1;
     uint32_t expectedBuffer[8] = {
-        color, color, color, color, color, color, color, color
-    };
+        color, color, color, color, color, color, color, color};
 
     ring->solidBuffer(buffer, 8, color);
     compareBuffer(buffer, expectedBuffer, 8);
 }
 
-TEST(LightInterfaceTest, ColorBuffer) {
+TEST(LightInterfaceTest, ColorBuffer)
+{
     uint32_t buffer[8] = {
-        0, 2, 0, 2, 0, 2, 0, 2
-    };
+        0, 2, 0, 2, 0, 2, 0, 2};
 
     uint32_t expectedBuffer[8] = {
-        0, 1, 0, 1, 0, 1, 0, 1
-    };
+        0, 1, 0, 1, 0, 1, 0, 1};
 
     ring->colorBuffer(buffer, 8, 1);
     compareBuffer(buffer, expectedBuffer, 8);
 }
 
-TEST(LightInterfaceTest, ExpandBufferCleanFill) {
+TEST(LightInterfaceTest, ExpandBufferCleanFill)
+{
     uint32_t buffer[4] = {
-        0, 1, 2, 3
-    };
+        0, 1, 2, 3};
 
     uint32_t fullBuffer[8] = {};
 
     uint32_t expectedBuffer[8] = {
-        0, 0, 1, 1, 2, 2, 3, 3
-    };
+        0, 0, 1, 1, 2, 2, 3, 3};
 
     ring->expandBuffer(buffer, fullBuffer, 4, 8, true);
     compareBuffer(fullBuffer, expectedBuffer, 8);
 }
 
-TEST(LightInterfaceTest, ExpandBufferCleanNoFill) {
+TEST(LightInterfaceTest, ExpandBufferCleanNoFill)
+{
     uint32_t buffer[4] = {
-        0, 1, 2, 3
-    };
+        0, 1, 2, 3};
 
     uint32_t fullBuffer[8] = {};
 
     uint32_t expectedBuffer[8] = {
-        0, 0, 1, 0, 2, 0, 3, 0
-    };
+        0, 0, 1, 0, 2, 0, 3, 0};
 
     ring->expandBuffer(buffer, fullBuffer, 4, 8, false);
     compareBuffer(fullBuffer, expectedBuffer, 8);
 }
 
-TEST(LightInterfaceTest, ExpandBufferNotCleanFill) {
+TEST(LightInterfaceTest, ExpandBufferNotCleanFill)
+{
     uint32_t buffer[4] = {
-        0, 1, 2, 3
-    };
+        0, 1, 2, 3};
 
     uint32_t fullBuffer[10] = {};
 
     uint32_t expectedBuffer[10] = {
-        0, 0, 0, 1, 1, 1, 2, 2, 3, 3
-    };
+        0, 0, 0, 1, 1, 1, 2, 2, 3, 3};
 
     ring->expandBuffer(buffer, fullBuffer, 4, 10, true);
     compareBuffer(fullBuffer, expectedBuffer, 10);
 }
 
-TEST(LightInterfaceTest, ExpandBufferNotCleanNoFill) {
+TEST(LightInterfaceTest, ExpandBufferNotCleanNoFill)
+{
     uint32_t buffer[4] = {
-        0, 1, 2, 3
-    };
+        0, 1, 2, 3};
 
     uint32_t fullBuffer[10] = {};
 
     uint32_t expectedBuffer[10] = {
-        0, 0, 0, 1, 0, 0, 2, 0, 3, 0
-    };
+        0, 0, 0, 1, 0, 0, 2, 0, 3, 0};
     ring->expandBuffer(buffer, fullBuffer, 4, 10, false);
 
     compareBuffer(fullBuffer, expectedBuffer, 10);
 }
 
-TEST(LightInterfaceTest, OverlayBuffer) {
+TEST(LightInterfaceTest, OverlayBuffer)
+{
     uint32_t buffer[8] = {
-        1, 0, 1, 0, 1, 0, 1, 0
-    };
+        1, 0, 1, 0, 1, 0, 1, 0};
 
     uint32_t overlayBuffer[8] = {
-        0, 2, 0, 2, 0, 2, 0, 2
-    };
+        0, 2, 0, 2, 0, 2, 0, 2};
 
     uint32_t expectedBuffer[8] = {
-        1, 2, 1, 2, 1, 2, 1, 2
-    };
+        1, 2, 1, 2, 1, 2, 1, 2};
 
-    ring->overlayBuffer(buffer, overlayBuffer, 8, false);
+    ring->overlayBuffer(buffer, overlayBuffer, 8, 8, 0, false);
     compareBuffer(buffer, expectedBuffer, 8);
 }
 
-TEST(LightInterfaceTest, OverlayBufferInverse) {
+TEST(LightInterfaceTest, OverlayBufferOffset)
+{
     uint32_t buffer[8] = {
-        2, 2, 2, 2, 2, 2, 2, 2
-    };
+        1, 0, 1, 0, 1, 0, 1, 0};
 
-    uint32_t overlayBuffer[8] = {
-        1, 1, 0, 1, 1, 0, 1, 1
-    };
+    uint32_t overlayBuffer[4] = {
+        0, 2, 0, 2};
 
     uint32_t expectedBuffer[8] = {
-        2, 2, 0, 2, 2, 0, 2, 2
-    };
+        1, 0, 1, 0, 1, 2, 1, 2};
 
-    ring->overlayBuffer(buffer, overlayBuffer, 8, true);
+    ring->overlayBuffer(buffer, overlayBuffer, 8, 4, 4, false);
     compareBuffer(buffer, expectedBuffer, 8);
 }
 
-TEST(LightInterfaceTest, ExtendBuffer) {
+TEST(LightInterfaceTest, OverlayBufferInverse)
+{
+    uint32_t buffer[8] = {
+        2, 2, 2, 2, 2, 2, 2, 2};
+
+    uint32_t overlayBuffer[8] = {
+        1, 1, 0, 1, 1, 0, 1, 1};
+
+    uint32_t expectedBuffer[8] = {
+        2, 2, 0, 2, 2, 0, 2, 2};
+
+    ring->overlayBuffer(buffer, overlayBuffer, 8, 8, 0, true);
+    compareBuffer(buffer, expectedBuffer, 8);
+}
+
+TEST(LightInterfaceTest, ExtendBuffer)
+{
     uint32_t buffer[2] = {
-        1, 2
-    };
+        1, 2};
 
     uint32_t fullBuffer[8] = {8};
 
     uint32_t expectedBuffer[8] = {
-        1, 2, 1, 2, 1, 2, 1, 2
-    };
+        1, 2, 1, 2, 1, 2, 1, 2};
 
     ring->extendBuffer(buffer, fullBuffer, 2, 8);
     compareBuffer(fullBuffer, expectedBuffer, 8);
 }
 
-TEST(LightInterfaceTest, ExtendBufferNegative) {
+TEST(LightInterfaceTest, ExtendBufferNegative)
+{
     uint32_t buffer[3] = {
-        1, 2, 3
-    };
+        1, 2, 3};
 
     uint32_t fullBuffer[8] = {};
 
     uint32_t expectedBuffer[8] = {
-        0, 0, 0, 0, 0, 0, 0, 0
-    };
+        0, 0, 0, 0, 0, 0, 0, 0};
 
     ring->extendBuffer(buffer, fullBuffer, 3, 8);
     compareBuffer(fullBuffer, expectedBuffer, 8);
 }
 
-TEST(LightInterfaceTest, TransformBufferColor) {
+TEST(LightInterfaceTest, TransformBufferColor)
+{
     uint32_t buffer[3] = {
-        RED, GREEN, BLUE
-    };
+        RED, GREEN, BLUE};
 
     uint32_t expectedBuffer[3] = {
-        BLUE, GREEN, RED
-    };
+        BLUE, GREEN, RED};
 
     ColorTransform::ColorTransform *transform = new ColorTransform::SwapRedBlue();
     ring->transformBufferColor(buffer, 3, transform);
@@ -227,19 +229,44 @@ TEST(LightInterfaceTest, TransformBufferColor) {
     compareBuffer(buffer, expectedBuffer, 3);
 }
 
-TEST(LightInterfaceTest, CopyBuffer) {
+TEST(LightInterfaceTest, CopyBuffer)
+{
     uint32_t buffer[2] = {
-        1, 2
-    };
+        1, 2};
 
     uint32_t fullBuffer[2] = {};
 
     uint32_t expectedBuffer[2] = {
-        1, 2
-    };
+        1, 2};
 
     ring->copyBuffer(buffer, fullBuffer, 2);
     compareBuffer(fullBuffer, expectedBuffer, 2);
+}
+
+TEST(LightInterfaceTest, BrightnessGradient)
+{
+    uint32_t buffer[4] = {
+        0, 0, 0, 0};
+
+    uint32_t expectedBuffer[4]{
+        0xFF0000, 0xBF0000, 0x7F0000, 0x3F0000
+    };
+
+    ring->brightnessGradientBuffer(buffer, 4, 0xFF0000);
+    compareBuffer(buffer, expectedBuffer, 4);
+}
+
+TEST(LightInterfaceTest, BrightnessGradientMinBrightness)
+{
+    uint32_t buffer[4] = {
+        0, 0, 0, 0};
+
+    uint32_t expectedBuffer[4]{
+        0xFF0000, 0xDF0000, 0xBF0000, 0x9F0000
+    };
+
+    ring->brightnessGradientBuffer(buffer, 4, 0xFF0000, 128);
+    compareBuffer(buffer, expectedBuffer, 4);
 }
 
 #ifndef SIMULATOR
@@ -254,21 +281,21 @@ void setup()
 
 void loop()
 {
-	// Run tests
-	if (RUN_ALL_TESTS())
-	;
+    // Run tests
+    if (RUN_ALL_TESTS())
+        ;
 
-	// sleep 1 sec
-	delay(1000);
+    // sleep 1 sec
+    delay(1000);
 }
 
 #else
 int main(int argc, char **argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-	if (RUN_ALL_TESTS())
-	;
-	// Always return zero-code and allow PlatformIO to parse results
-	return 0;
+    if (RUN_ALL_TESTS())
+        ;
+    // Always return zero-code and allow PlatformIO to parse results
+    return 0;
 }
 #endif

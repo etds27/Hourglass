@@ -172,7 +172,7 @@ int main(int argc, char **argv)
   */
   displayManager = new HourglassDisplayManager();
   displayManager->addDisplayInterface(m_ring);
-  displayManager->setDisplayMode(DeviceState::State::BuzzerWinnerPeriodTimed);
+  displayManager->setDisplayMode(DeviceState::State::Paused);
 
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);

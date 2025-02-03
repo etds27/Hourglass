@@ -40,7 +40,7 @@ namespace ColorTransform
         logger.debug(buffer);
 
         uint8_t v = hsvColor & 0xFF;
-        v = (v * m_brightness) / 255;
+        v = (double)(v * m_brightness) / 255.0;
 
         hsvColor = (hsvColor & 0xFFFF00) | v;
         sprintf(buffer, "HSV Color (Adjusted): %d", hsvColor);
