@@ -2,17 +2,24 @@
 
 namespace DeviceState
 {
-    const std::array<State, 2> ACTIVE_TURN_STATES = {
+    const std::array<State, 4> ACTIVE_TURN_STATES = {
         State::ActiveTurnEnforced,
         State::ActiveTurnNotEnforced,
+        State::BuzzerAwaitingBuzz,
+        State::BuzzerAwaitingBuzzTimed
     };
 
-    const std::array<State, 5> ACTIVE_GAME_STATES = {
+    const std::array<State, 10> ACTIVE_GAME_STATES = {
         State::ActiveTurnEnforced,
         State::ActiveTurnNotEnforced,
         State::AwaitingTurn,
         State::Skipped,
-        State::Paused};
+        State::Paused,
+        State::BuzzerAwaitingBuzz,
+        State::BuzzerAwaitingBuzzTimed,
+        State::BuzzerAwaitingTurnEnd,
+        State::BuzzerWinnerPeriod,
+        State::BuzzerWinnerPeriodTimed};
 
     const std::array<State, 4> SKIP_ELIGIBLE_STATES = {
         State::ActiveTurnEnforced,
@@ -29,10 +36,14 @@ namespace DeviceState
         State::Skipped,
         State::Paused};
 
-    const std::array<State, 6> BUZZER_MODE_STATES = {
+    const std::array<State, 9> BUZZER_MODE_STATES = {
         State::AwaitingConnection,
         State::AwaitingGameStart,
-        State::ActiveTurnEnforced,
+        State::BuzzerAwaitingBuzz,
+        State::BuzzerAwaitingBuzzTimed,
+        State::BuzzerWinnerPeriod,
+        State::BuzzerWinnerPeriodTimed,
+        State::BuzzerAwaitingTurnEnd,
         State::Skipped,
         State::Paused};
 
