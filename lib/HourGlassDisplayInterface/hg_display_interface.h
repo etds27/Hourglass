@@ -29,6 +29,16 @@ struct TurnSequenceData
     uint16_t skippedPlayers;
 };
 
+/// @brief All required data for any display interface to show the BuzzerTurnEnd state
+struct BuzzerResultsData
+{
+    /// @brief Device's index as known by the central device
+    uint8_t myPlayerIndex;
+    
+    /// @brief Index of the player who pressed the button first
+    uint8_t winningPlayerIndex;
+};
+
 class HGDisplayInterface
 {
 protected:
