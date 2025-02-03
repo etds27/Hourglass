@@ -104,9 +104,11 @@ public:
   /// The base buffer will be updated with the new result
   /// @param baseBuffer Buffer to modify in place with overlayed content
   /// @param overlayBuffer Buffer to overlay on the base buffer
-  /// @param bufferSize Size of the buffer to overlay
+  /// @param baseBufferSize Size of the base buffer to apply the overlay to
+  /// @param overlayBufferSize Size of the buffer to overlay
+  /// @param overlayBufferOffset Starting position of the base buffer to start the overlay at
   /// @param inverse If set, only overrlay blank leds for negative light designs
-  void overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, uint8_t bufferSize, bool inverse = false);
+  void overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, uint8_t baseBufferSize = RING_LED_COUNT, uint8_t overlayBufferSize = RING_LED_COUNT, uint8_t overlayBufferOffset = 0, bool inverse = false);
 
   /// @brief Set a buffer to a specific color for all non zero buffer values
   /// @param buffer Buffer to update colors of in place
