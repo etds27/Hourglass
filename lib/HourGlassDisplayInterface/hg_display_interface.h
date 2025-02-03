@@ -17,7 +17,7 @@ struct TimerData
     /// @brief Current time on the timer
     int elapsedTime;
     /// @brief Used to determine which Buzzer winner screen to show the winning player
-    bool isTurnTimeEnforced;
+   bool isTurnTimeEnforced;
 };
 
 /// @brief All required data for any display interface to show the Awaiting Turn state
@@ -57,19 +57,59 @@ protected:
     struct TimerData m_timerData;
     struct TurnSequenceData m_turnSequenceData;
     struct GameStartData m_gameStartData;
+    struct BuzzerResultsData m_buzzerResultsData;
 
     unsigned long m_lastUpdate;
 
     // MARK: Light Modes
-    virtual void updateLightModeActiveTurnTimer() = 0;
-    virtual void updateLightModeActiveTurnNoTimer() = 0;
-    virtual void updateLightModeSkipped() = 0;
-    virtual void updateLightModeTurnSequence() = 0;
+
+    /// @brief Display looping animation prior to game starting
+    /// Must have updated AwaitingGameStartData
     virtual void updateLightModeAwaitGameStart() = 0;
+
+    /// @brief Display looping animation before the central device has connected
     virtual void updateLightModeAwaitConnection() = 0;
+
+    /// @brief Display buffer provided from saved debug information
+    /// Must have updated Debug information
     virtual void updateGameDebug() = 0;
-    // Light ring mode for when the game is paused by the companion app
+
+    /// @brief Display looping animation while the central device has the game paused
     virtual void updateGamePaused() = 0;
+
+    // MARK: Sequential mode display functions
+    /// @brief Display the sequential mode turn timer
+    /// Must have updated TimerData
+    virtual void updateLightModeActiveTurnTimer() = 0;
+
+    /// @brief Display looping animation while the central device waits for the user to end their turn
+    virtual void updateLightModeActiveTurnNoTimer() = 0;
+
+    /// @brief Display looping animation while the user is skipped
+    virtual void updateLightModeSkipped() = 0;
+
+    /// @brief Display sequential turn sequence
+    /// Must have updated  TurnSequenceData
+    virtual void updateLightModeTurnSequence() = 0;
+
+
+    // MARK: Buzzer mode display functions
+    /// @brief Display the looping animation while the central device awaits a button press
+    virtual void updateLightModeBuzzerAwaitingBuzz() = 0;
+    
+    /// @brief Display count down timer while central device awaits a button press
+    /// Must have updated TimerData
+    virtual void updateLightModeBuzzerAwaitingBuzzTimed() = 0;
+
+    /// @brief Display looping animation while user uses won time
+    /// Must have updated BuzzerResults data
+    virtual void updateLightModeWinnerPeriod() = 0;
+
+    /// @brief Display count down timer while user uses won time
+    /// Must have updated TimerData and BuzzerResults Data
+    virtual void updateLightModeWinnerPeriodTimed() = 0;
+
+
 
 public:
     virtual ~HGDisplayInterface();
@@ -99,4 +139,5 @@ public:
     void updateTimerData(struct TimerData data);
     void updateTurnSequenceData(struct TurnSequenceData data);
     void updateAwaitingGameStartData(struct GameStartData data);
+    void updateBuzzerResultsData(struct BuzzerResultsData data);
 };
