@@ -3,21 +3,24 @@
 #include "constants.h"
 #include <stdint.h>
 
-// All required data for any display interface to show the Awaiting Game Start state
+/// @brief All required data for any display interface to show the Awaiting Game Start state
 struct GameStartData
 {
     int totalPlayers;
 };
 
-// All required data for any display interface to show the Active Turn state
+/// @brief All required data for any display interface to show the Active Turn state
 struct TimerData
 {
+    /// @brief Total duration of the timer
     int totalTime;
+    /// @brief Current time on the timer
     int elapsedTime;
+    /// @brief Used to determine which Buzzer winner screen to show the winning player
     bool isTurnTimeEnforced;
 };
 
-// All required data for any display interface to show the Awaiting Turn state
+/// @brief All required data for any display interface to show the Awaiting Turn state
 struct TurnSequenceData
 {
     int totalPlayers;
