@@ -1,24 +1,89 @@
+#pragma once
+#ifdef SIMULATOR
+#include <iostream>
+#include <string>
+#include <sstream>
+
+using LogString = std::string;
+#else
 #include <Arduino.h>
+using LogString = String;
+#endif
 
-enum LoggerLevel {
-  DEBUG = 0,
-  INFO = 1,
-  WARNING = 2,
-  ERROR = 3,
-  OFF = 4
-};
+namespace Logging {
+  enum LoggerLevel {
+    DEBUG = 0,
+    INFO = 1,
+    WARNING = 2,
+    FAILURE = 3,
+    OFF = 4
+  };
 
-// General purpose logging class to use within the project
-class Logger {
-public:
-  void debug(String message);
-  void info(String message);
-  void warning(String message);
-  void error(String message);
+  class Logger {
+  public:
+    // void debug(const LogString& message);
+    // void info(const LogString& message);
+    // void warning(const LogString& message);
+    // void error(const LogString& message);
 
-private:
-  void log(String message, LoggerLevel level);
-};
+    template<typename... Args>
+    void debug(Args&&... args) {
+      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::DEBUG);
+    }
 
-extern Logger logger;
-extern LoggerLevel loggerLevel;
+    template<typename... Args>
+    void info(Args&&... args) {
+      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::INFO);
+    }
+
+    template<typename... Args>
+    void warning(Args&&... args) {
+      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::WARNING);
+    }
+
+    template<typename... Args>
+    void error(Args&&... args) {
+      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::FAILURE);
+    }
+
+
+  private:
+    void log(const LogString& message, Logging::LoggerLevel level);
+
+    #ifdef SIMULATOR
+    template<typename T, typename... Args>
+    LogString stringConcat(LogString blank, T&& next, Args&&... rest) {
+      std::ostringstream str;
+      return stringConcatRecursive(str, std::forward<T>(next), std::forward<Args>(rest)...);
+    }
+
+    LogString stringConcat(LogString str) {
+      return str;
+    }
+
+    template<typename T, typename... Args>
+    LogString stringConcatRecursive(std::ostringstream& str, T&& next, Args&&... rest) {
+      str << std::forward<T>(next);
+      return stringConcatRecursive(str, std::forward<Args>(rest)...);
+    }
+
+    LogString stringConcatRecursive(std::ostringstream& str) {
+      return str.str();
+    }
+
+    #else
+    template<typename T, typename... Args>
+    LogString stringConcat(String str, T next, Args... rest)
+    {
+      return stringConcat(str + String(next), rest...);
+    }
+    LogString stringConcat(String str) {
+      return str;
+    }
+    #endif
+  };
+}
+
+// Fully qualify the types here
+extern Logging::Logger logger;
+extern Logging::LoggerLevel loggerLevel;

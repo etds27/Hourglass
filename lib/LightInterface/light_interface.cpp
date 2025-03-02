@@ -1,5 +1,14 @@
 #include "light_interface.h"
 #include "logger.h"
+#include <cmath>
+#include <algorithm>
+#include <cstring>
+#include "color_converter.h"
+
+#ifdef SIMULATOR
+#include <random>
+#include "simulator_tools.h"
+#endif
 
 // const int RING_REFRESH_RATE = 1;
 
@@ -50,10 +59,23 @@ LightInterface::LightInterface(const uint8_t ledCount, const uint8_t diPin)
 
 LightInterface::~LightInterface() {}
 
-void LightInterface::setDisplayMode(DeviceState state)
+void LightInterface::transformBufferColor(uint32_t *buffer, uint8_t bufferSize, ColorTransform::ColorTransform *transform)
+{
+  for (int i = 0; i < bufferSize; i++)
+  {
+    buffer[i] = transform->applyTransform(buffer[i]);
+  }
+}
+
+void LightInterface::setDisplayMode(DeviceState::State state)
 {
   setBrightness(DEFAULT_BRIGHTNESS);
   HGDisplayInterface::setDisplayMode(state);
+}
+
+uint8_t LightInterface::getRingOffset() const
+{
+  return m_ringOffset;
 }
 
 void LightInterface::updateLightModeActiveTurn()
@@ -112,12 +134,12 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
   uint8_t subcycle = currentSegment % (totalCycleSteps / 2);
 
 #if ENABLE_DEBUG
-  logger.debug("Adjusted Time: " + String(adjustedTime));
-  logger.debug("Segment Length: " + String(segmentLength));
-  logger.debug("Cycle length: " + String(totalCycleSteps));
-  logger.debug("Current Segment: " + String(currentSegment));
-  logger.debug("Growing: " + String(growing));
-  logger.debug("Subcycle: " + String(subcycle));
+  logger.debug("Adjusted Time: ", adjustedTime);
+  logger.debug("Segment Length: ", segmentLength);
+  logger.debug("Cycle length: ", totalCycleSteps);
+  logger.debug("Current Segment: ", currentSegment);
+  logger.debug("Growing: ", growing));
+  logger.debug("Subcycle: ", subcycle);
 #endif
 
   if (growing)
@@ -178,7 +200,7 @@ void LightInterface::updateLightModeActiveTurnTimer()
   double pct = (double)m_timerData.elapsedTime / m_timerData.totalTime;
   // Restrict pct to be between 0..1
   pct = std::max(0.0, std::min(pct, 1.0));
-  int filled = (int)(pct * m_ledCount);
+  int filled = std::min((int)(pct * m_ledCount) + 1, (int)m_ledCount);
   int deltaTime = ((int)(millis() - m_startTime)) / 200 - 60;
 
   solidBuffer(colorBuffer, m_ledCount, BLACK);
@@ -219,7 +241,7 @@ void LightInterface::updateLightModeSkipped()
 
   // Percentage through pulse sequence
   double pct = (deltaTime % SKIPPED_PULSE_DURATION) / (double)SKIPPED_PULSE_DURATION;
-  pct = abs(pct - 0.5);
+  pct = fabs(pct - 0.5);
   uint8_t brightness = 2 * pct * (SKIPPED_MAX_BRIGHTNESS - SKIPPED_MIN_BRIGHTNESS) + SKIPPED_MIN_BRIGHTNESS;
   uint32_t *colorBuffer = new uint32_t[m_ledCount];
 
@@ -242,9 +264,9 @@ void LightInterface::updateLightModeTurnSequence()
   //    Skipped player lights will be calculated and then dimmed with a dynamic local brightness setting that is calculated based on time
   //    A local brightness function for color will need to be implemented to acheive localized dimming
 
-  // logger.debug("Total Players:  " + String(m_turnSequenceData.totalPlayers));
-  // logger.debug("My Player:      " + String(m_turnSequenceData.myPlayerIndex));
-  // logger.debug("Current Player: " + String(m_turnSequenceData.currentPlayerIndex));
+  // logger.debug("Total Players:  ", m_turnSequenceData.totalPlayers);
+  // logger.debug("My Player:      ", m_turnSequenceData.myPlayerIndex);
+  // logger.debug("Current Player: ", m_turnSequenceData.currentPlayerIndex);
   // logger.debug("");
   uint32_t *colorBuffer = new uint32_t[m_ledCount];
   uint32_t *modifiedColorBuffer = new uint32_t[m_ledCount];
@@ -252,6 +274,33 @@ void LightInterface::updateLightModeTurnSequence()
   uint32_t myPlayerColor = (m_colorBlindMode) ? MY_PLAYER_COLOR_ALT : MY_PLAYER_COLOR;
   uint32_t currentPlayerColor = (m_colorBlindMode) ? CURRENT_PLAYER_COLOR_ALT : CURRENT_PLAYER_COLOR;
   uint32_t otherPlayerColor = (m_colorBlindMode) ? OTHER_PLAYER_COLOR_ALT : OTHER_PLAYER_COLOR;
+
+
+
+  int deltaTime = (int)(millis() - m_startTime);
+  double pct = (deltaTime % SKIPPED_PULSE_DURATION) / (double)SKIPPED_PULSE_DURATION;
+
+  // Convert total percentage into percentage from midpoint
+  pct = fabs(pct - 0.5) * 2;
+
+  EasingFunction::EasingFunction *easingFunction = new EasingFunction::Sine(EasingMode::EaseIn);
+
+  // Fix the percentage to some range between 0 and 100. i.e 30 - 100
+  pct = pct * 0.5 + 0.4;
+
+  // Ease that percentage using the provided curve
+  pct = easingFunction->ease(pct);
+
+  delete easingFunction;
+
+  // Get that percentage as a absolute value from the 50% mark
+
+  // Covert the new percentage to a brightness value
+  uint8_t brightness = pct * 255;
+
+  ColorTransform::ColorTransform *transform = new ColorTransform::DimColor(brightness);
+  uint32_t skippedOtherPlayerColor = transform->applyTransform(otherPlayerColor);
+  delete transform;
 
   for (int i = 0; i < m_ledCount; i++)
   {
@@ -267,7 +316,15 @@ void LightInterface::updateLightModeTurnSequence()
       }
       else
       {
-        colorBuffer[i] = otherPlayerColor;
+        // Check if player is skipped
+        if ((m_turnSequenceData.skippedPlayers >> i) & 1)
+        {
+          colorBuffer[i] = skippedOtherPlayerColor;
+        }
+        else
+        {
+          colorBuffer[i] = otherPlayerColor;
+        }
       }
     }
     else
@@ -278,7 +335,12 @@ void LightInterface::updateLightModeTurnSequence()
 
   if ((m_ledCount % m_turnSequenceData.totalPlayers == 0 && UNIFORM_SEQUENCES_REQUIRED && EXPAND_TURN_SEQUENCE_BUFFER) || (EXPAND_TURN_SEQUENCE_BUFFER && !UNIFORM_SEQUENCES_REQUIRED))
   {
-    expandBuffer(colorBuffer, modifiedColorBuffer, m_turnSequenceData.totalPlayers);
+    if (!m_absoluteOrientation)
+    {
+      // If the orientation should be absolute, offset the buffer to put the device's player in the first index
+      offsetBuffer(colorBuffer, -m_turnSequenceData.myPlayerIndex, m_turnSequenceData.totalPlayers);
+    }
+    expandBuffer(colorBuffer, modifiedColorBuffer, m_turnSequenceData.totalPlayers, m_ledCount);
     displayBuffer(modifiedColorBuffer);
   }
   else
@@ -295,9 +357,9 @@ void LightInterface::updateLightModeAwaitGameStart()
   uint32_t *colorBuffer = new uint32_t[m_ledCount];
   const uint32_t *colors = (m_colorBlindMode) ? AWAIT_GAME_COLORS_ALT : AWAIT_GAME_COLORS;
 
-  int segments = max(m_gameStartData.totalPlayers, 1);
+  int segments = std::max(m_gameStartData.totalPlayers, 1);
 
-  expandBuffer(colors, colorBuffer, segments);
+  expandBuffer(colors, colorBuffer, segments, m_ledCount);
 
   unsigned long currentSecond = (int)(millis() - m_startTime) / AWAIT_GAME_START_SPEED;
   uint8_t offset = currentSecond % m_ledCount;
@@ -371,9 +433,20 @@ void LightInterface::updateGamePaused()
   {
     m_lastColorChange = currentTime;
     m_previousColor = m_targetColor;
+
+#ifdef SIMULATOR
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 0xFF);
+
+    uint32_t r = dis(gen) << 16;
+    uint32_t g = dis(gen) << 8;
+    uint32_t b = dis(gen);
+#else
     uint32_t r = random(0xFF) << 16;
     uint32_t g = random(0xFF) << 8;
     uint32_t b = random(0xFF);
+#endif
     m_targetColor = r | g | b;
   }
 
@@ -397,10 +470,10 @@ void LightInterface::updateGamePaused()
   }
 
   /*
-  logger.info("PCT: " + String(pct));
-  logger.info("Prev: " + String(m_previousColor));
-  logger.info("Target: " + String(m_targetColor));
-  logger.info("Color: " + String(color));
+  logger.info("PCT: ", pct);
+  logger.info("Prev: ", m_previousColor);
+  logger.info("Target: ", m_targetColor);
+  logger.info("Color: ", color);
   logger.info("");
   */
 
@@ -423,20 +496,20 @@ void LightInterface::updateGameDebugData(GameDebugData data)
   m_gameDebugData = data;
 }
 
-void LightInterface::extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size)
+void LightInterface::extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t smallBufferSize, uint8_t fullBufferSize)
 {
-  if (m_ledCount % size)
+  if (fullBufferSize % smallBufferSize)
   {
-    logger.error("LightInterface::extendBuffer: Smaller buffer size must divide evenly into LED count");
+    logger.error("LightInterface::extendBuffer: Smaller buffer size must divide evenly into Full Buffer Size");
     return;
   }
 
-  uint8_t repeat = m_ledCount / size;
+  uint8_t repeat = fullBufferSize / smallBufferSize;
 
   uint8_t currentIndex = 0;
   for (int i = 0; i < repeat; i++)
   {
-    for (int j = 0; j < size; j++)
+    for (int j = 0; j < smallBufferSize; j++)
     {
       fullBuffer[currentIndex] = smallBuffer[j];
       currentIndex += 1;
@@ -444,50 +517,63 @@ void LightInterface::extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuf
   }
 }
 
-void LightInterface::expandBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size, bool fill)
+void LightInterface::copyBuffer(const uint32_t *sourceBuffer, uint32_t *targetBuffer, uint8_t size)
 {
-  int lengthSegment = m_ledCount / size;
-  int remainder = m_ledCount % size;
+  for (int i = 0; i < size; i++)
+  {
+    targetBuffer[i] = sourceBuffer[i];
+  }
+}
+
+void LightInterface::expandBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t smallBufferSize, uint8_t fullBufferSize, bool fill)
+{
+  int lengthSegment = fullBufferSize / smallBufferSize;
+  int remainder = fullBufferSize % smallBufferSize;
 
   int currentIndex = 0;
-  for (int currentSegment = 0; currentSegment < size; currentSegment++)
+  for (int currentSegment = 0; currentSegment < smallBufferSize; currentSegment++)
   {
-    fullBuffer[currentIndex] = smallBuffer[currentSegment];
-    for (int j = 0; j < lengthSegment; j++)
+    int adjustedSegmentLength = lengthSegment;
+    if (currentSegment < remainder)
     {
-      if (fill)
+      adjustedSegmentLength += 1;
+    }
+
+    for (int subIndex = 0; subIndex < adjustedSegmentLength; subIndex++)
+    {
+      if (subIndex == 0 || fill)
       {
         fullBuffer[currentIndex] = smallBuffer[currentSegment];
       }
       currentIndex += 1;
     }
-    if (currentSegment < remainder && fill)
-    {
-      fullBuffer[currentIndex] = smallBuffer[currentSegment];
-      currentIndex += 1;
-    }
   }
 }
 
-void LightInterface::offsetBuffer(uint32_t *buffer, uint8_t offset)
+void LightInterface::offsetBuffer(uint32_t *buffer, int8_t offset, uint8_t size)
 {
-  uint32_t *originalBuffer = new uint32_t[m_ledCount];
-  memcpy(originalBuffer, buffer, sizeof(uint32_t) * m_ledCount);
-  for (int i = 0; i < m_ledCount; i++)
+  // Correct negative offsets
+  while (offset < 0)
   {
-    uint8_t newIndex = (i + offset) % m_ledCount;
-    buffer[i] = originalBuffer[newIndex];
+    offset += size;
+  }
+  uint32_t *originalBuffer = new uint32_t[size];
+  memcpy(originalBuffer, buffer, sizeof(uint32_t) * size);
+  for (int i = 0; i < size; i++)
+  {
+    uint8_t newIndex = (i + offset) % size;
+    buffer[newIndex] = originalBuffer[i];
   }
   delete originalBuffer;
 }
 
-void LightInterface::reverseBuffer(uint32_t *buffer, uint8_t offset)
+void LightInterface::reverseBuffer(uint32_t *buffer, uint8_t size)
 {
-  uint32_t *originalBuffer = new uint32_t[m_ledCount];
-  memcpy(originalBuffer, buffer, sizeof(uint32_t) * m_ledCount);
-  for (int i = 0; i < m_ledCount; i++)
+  uint32_t *originalBuffer = new uint32_t[size];
+  memcpy(originalBuffer, buffer, sizeof(uint32_t) * size);
+  for (int i = 0; i < size; i++)
   {
-    uint8_t newIndex = m_ledCount - i - 1;
+    uint8_t newIndex = size - i - 1;
     buffer[i] = originalBuffer[newIndex];
   }
   delete originalBuffer;
@@ -504,14 +590,27 @@ void LightInterface::overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlay
   }
 }
 
+void LightInterface::printBuffer(uint32_t *buffer, int8_t size)
+{
+  char bufferString[256];
+  for (int i = 0; i < size; i++)
+  {
+    sprintf(bufferString, "printBuffer: Buffer[%d/%d]: %d", i, size, buffer[i]);
+    logger.info(bufferString);
+  }
+}
+
 void LightInterface::displayBuffer(const uint32_t *buffer, const bool clockwise)
 {
   for (int i = 0; i < m_ledCount; i++)
   {
-    if (clockwise) {
-      setPixelColor(((m_ledCount - i  - 1) + TOP_RING_OFFSET) % m_ledCount, buffer[i]);
-    } else {
-      setPixelColor((i + TOP_RING_OFFSET) % m_ledCount, buffer[i]);
+    if (clockwise)
+    {
+      setPixelColor(((m_ledCount - i - 1) + getRingOffset()) % m_ledCount, buffer[i]);
+    }
+    else
+    {
+      setPixelColor((i + getRingOffset()) % m_ledCount, buffer[i]);
     }
   }
 }

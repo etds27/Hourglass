@@ -3,12 +3,23 @@
 
 #define ENABLE_DEBUG 0
 
+// Display Type Enumeration
+// Adafruit: 0
+// FastLED:  1
+// LCD:      2
+#define DISPLAY_TYPE 2
+
+
+#ifndef M_PI
+#define M_PI 3.1415926
+#endif
+
 //  DEBUG = 0,
 //  INFO = 1,
 //  WARNING = 2,
 //  ERROR = 3,
 //  OFF = 4
-#define LOGGER_LEVEL 4
+#define LOGGER_LEVEL 0
 
 #define LED_ADAFRUIT 0
 
@@ -17,7 +28,11 @@
 #define BUTTON_INPUT_PIN 4
 #define BUTTON_GPIO_PIN GPIO_NUM_4
 
-#define CONNECTION_TIMEOUt 120000
+#define CONNECTION_TIMEOUT 120000
+
+
+/// Amount of time to wait after the BLE device has connected to allow Central device to discover all characteristics
+#define EXPECTED_CHARACTERISTIC_DISCOVERY 1500
 
 #define MIN_TURN_LENGTH 1000
 
@@ -26,9 +41,14 @@
 // All Hourglass devices have the ring LED installed in the same orientation. 
 // This orientation does not have the first LED at the top of the ring
 // This offset translates the display buffer to be displayed at the top of the ring.
+#ifdef SIMULATOR
+#define TOP_RING_OFFSET 4
+#else
 #define TOP_RING_OFFSET 14
+#endif
+
 #define DEFAULT_BRIGHTNESS 25
-#define RING_REFRESH_RATE 5  // ms
+#define DISPLAY_REFRESH_RATE 5  // ms
 
 #define TIMER_COLOR_1 GREEN
 #define TIMER_COLOR_ALT_1 0x33BBEE
@@ -101,3 +121,6 @@
 #define AWAIT_CONNECTION_SPEED 200
 #define AWAIT_CONNECTION_COLOR BLUE
 #define AWAIT_CONNECTION_COLOR_ALT CYAN
+
+// TFT Lighting Constants
+#define TFT_BACKGROUND_COLOR 0x0000

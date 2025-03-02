@@ -1,38 +1,54 @@
+#ifndef SIMULATOR
 #include <EEPROM.h>
-#include "device_manager.h"
 #include "ble_interface.h"
-#include "logger.h"
-
-#if LED_ADAFRUIT
-#include "ring_light.h"
+#include "button_input_interface.h"
 #else
-#include "fast_led_light.h"
+#include "gl_input_interface.h"
+#include "gl_ring_interface.h"
+#include "simulator_central_interface.h"
+#include "simulator_tools.h"
 #endif
 
-DeviceManager::DeviceManager()
+#include <cstring>
+#include "device_manager.h"
+#include "logger.h"
+
+DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
 {
+  m_displayManager = displayManager;
+
   logger.info("Initializing Device Manager");
   m_deviceName = new char[8];
   readDeviceName(m_deviceName);
-  logger.info("Device name: " + String(m_deviceName));
+  logger.info("Device name: ", m_deviceName);
 
-#if LED_ADAFRUIT
-  logger.info("Loading Adafruit RingLight");
-  m_ring = new RingLight(RING_LED_COUNT, RING_DI_PIN);
+
+#ifdef SIMULATOR
+  m_inputInterface = new GLInputInterface();
+  m_interface = new SimulatorCentralInterface(m_deviceName);
 #else
-  logger.info("Loading FastLED RingLight");
-  m_displayInterface = new FastLEDLight(RING_LED_COUNT, RING_DI_PIN);
-#endif
-  m_buttonMonitor = new ButtonInputMonitor(BUTTON_INPUT_PIN);
-  // Allows the main device button to wake the device from sleep state
-  // esp_sleep_enable_ext0_wakeup(BUTTON_GPIO_PIN, HIGH);
+
+  logger.info("Creating Input Interface");
+  m_inputInterface = new ButtonInputInterface(BUTTON_INPUT_PIN);
+  logger.info("Creating Central Interface");
   m_interface = new BLEInterface(m_deviceName);
+
+  // Allows the main device button to wake the device from sleep state
+  esp_sleep_enable_ext0_wakeup(BUTTON_GPIO_PIN, HIGH);
+#endif
+
+  logger.info("Creating Input Monitor");
+  m_buttonMonitor = new ButtonInputMonitor(m_inputInterface);
+}
+
+DeviceManager::~DeviceManager()
+{
 }
 
 void DeviceManager::start()
 {
   logger.info("Starting the device manager");
-  m_displayInterface->setDisplayMode(DeviceState::Off);
+  m_displayManager->setDisplayMode(DeviceState::State::Off);
 
   m_interface->setService();
   setWaitingForConnection();
@@ -41,6 +57,7 @@ void DeviceManager::start()
   m_lastReadOut = now;
   m_lastConnection = now;
   m_lastTurnStart = now;
+  m_lastDisconnection = now;
 }
 
 char *DeviceManager::getDeviceName()
@@ -50,40 +67,47 @@ char *DeviceManager::getDeviceName()
 
 char *DeviceManager::readDeviceName(char *out)
 {
+  char arduinoID[8] = {};
+#ifdef SIMULATOR
+  out = new char[10]{
+      'S', 'I', 'M', 'U', 'L', 'A', 'T', 'O', 'R', '\0'};
+#else
   int i;
   // Read the arduinos ID
 
-  char arduinoID[8] = {};
-
-  for (i = 0; i < 8; i++)
+  for (i = 0; i < 7; i++)
   {
     arduinoID[i] = EEPROM.read(i);
   }
   arduinoID[i] = '\0';
-  logger.info("Read arduino name");
-  logger.info(String(arduinoID));
+#endif
+  // logger.info(arduinoID);
   strcpy(out, arduinoID);
   return out;
 }
 
-void DeviceManager::writeDeviceName(char *deviceName, uint8_t length)
+#ifndef SIMULATOR
+void DeviceManager::writeDeviceName(const char *deviceName, uint8_t length)
 {
   // Write unique ID to EEPROM
   int i;
-  logger.info("Writing Device Name: " + String(deviceName));
+  logger.info("Writing Device Name: ", deviceName);
   for (i = 0; i < length; i++)
   {
     EEPROM.write(i, deviceName[i]);
   }
   EEPROM.write(i, '\0');
   EEPROM.commit();
-  logger.info("Wrote device name to EEPROM: " + String(deviceName));
-  m_deviceName = deviceName;
+  char message[100];
+  sprintf(message, "Wrote device name to EEPROM: %s", deviceName);
+  logger.info(message);
+  strcpy(m_deviceName, deviceName);
 }
+#endif
 
 bool DeviceManager::isActiveTurn()
 {
-  return m_deviceState == DeviceState::ActiveTurn;
+  return m_interface->isTurn();
 }
 
 // Transition from the active turn to 'turn sequence' mode
@@ -92,127 +116,83 @@ void DeviceManager::sendEndTurn()
   m_interface->endTurn();
 }
 
-void DeviceManager::endTurn() {
-  setTurnSequenceMode();
-}
-
-void DeviceManager::startTurn()
+bool DeviceManager::updateCommandedDeviceState()
 {
-  logger.info("Setting device state to: ActiveTurn");
-  m_deviceState = DeviceState::ActiveTurn;
-  m_lastTurnStart = millis();
-  updateTimer();
-  updateRingMode();
-}
-
-void DeviceManager::setSkipped()
-{
-  if (m_deviceState == DeviceState::Skipped)
+  DeviceState::State newDeviceState = m_interface->getCommandedDeviceState();
+  bool diff = m_deviceState != newDeviceState;
+  if (diff)
   {
-    return;
+    char message[50];
+    sprintf(message, "Device State transition: %i -> %i", static_cast<int>(m_deviceState), static_cast<int>(newDeviceState));
+    logger.info(message);
   }
-  logger.info("Setting device state to: Skipped");
-  m_deviceState = DeviceState::Skipped;
-  m_interface->setSkipped();
-  updateRingMode();
-}
-
-void DeviceManager::unsetSkipped()
-{
-  m_interface->unsetSkipped();
-  if (isActiveTurn())
-  {
-    startTurn();
-  }
-  else
-  {
-    setTurnSequenceMode();
-  }
-  updateRingMode();
+  m_deviceState = m_interface->getCommandedDeviceState();
+  return diff;
 }
 
 void DeviceManager::updateTimer()
 {
   int timer = m_interface->getTimer();
-  int elapsedTime = m_interface->getElapsedTime();
+  int elapsedTime = m_interface->getExpectedElapsedTime();
   bool isTurnTimeEnforced = m_interface->isTurnTimerEnforced();
   struct TimerData data = {
       .totalTime = timer,
       .elapsedTime = elapsedTime,
       .isTurnTimeEnforced = isTurnTimeEnforced};
 
-  m_displayInterface->updateTimerData(data);
-}
-
-void DeviceManager::setTurnSequenceMode()
-{
-  logger.info("Setting device state to: AwaitingTurn");
-  m_deviceState = DeviceState::AwaitingTurn;
-  updateTurnSequence();
-  updateRingMode();
-}
-
-void DeviceManager::setAwaitGameStart()
-{
-  if (m_deviceState == DeviceState::AwaitingGameStart)
-  {
-    return;
-  }
-  logger.info("Setting device state to: AwaitingGameStart");
-  m_deviceState = DeviceState::AwaitingGameStart;
-  updateRingMode();
+  m_displayManager->updateTimerData(data);
 }
 
 void DeviceManager::setWaitingForConnection()
 {
-  if (m_deviceState == DeviceState::AwaitingConnecion)
+  if (m_deviceState == DeviceState::State::AwaitingConnection)
   {
     return;
   }
-  logger.info("Setting device state to: AwaitingConnecion");
-  m_deviceState = DeviceState::AwaitingConnecion;
-  updateRingMode();
+  logger.info("Setting device state to: AwaitingConnection");
+  m_deviceState = DeviceState::State::AwaitingConnection;
+  updateDisplayMode();
 }
 
-void DeviceManager::setGamePaused()
+void DeviceManager::toggleDeviceOrientation()
 {
-  if (m_deviceState == DeviceState::Paused)
-  {
-    return;
-  }
-  logger.info("Setting device state to: Paused");
-  m_deviceState = DeviceState::Paused;
-  updateRingMode();
+  m_absoluteOrientation = !m_absoluteOrientation;
+  logger.info("Updated absolute orientation to: ", m_absoluteOrientation);
+  m_displayManager->setAbsoluteOrientation(m_absoluteOrientation);
+  updateDisplay();
 }
 
 void DeviceManager::toggleColorBlindMode()
 {
   m_colorBlindMode = !m_colorBlindMode;
-  logger.info("Setting Color Blind Mode to: " + String(m_colorBlindMode));
-  m_displayInterface->setColorBlindMode(m_colorBlindMode);
-  updateRing();
+  logger.info("Setting Color Blind Mode to: ", m_colorBlindMode);
+  m_displayManager->setColorBlindMode(m_colorBlindMode);
+  updateDisplay();
 }
 
 void DeviceManager::enterDeepSleep()
 {
   logger.info("Entering Deep Sleep");
-  m_deviceState = DeviceState::Off;
-  updateRingMode();
-  updateRing(true);
+  m_deviceState = DeviceState::State::Off;
+  updateDisplayMode();
+  updateDisplay(true);
+
+#ifndef SIMULATOR
   delay(1000);
   esp_deep_sleep_start();
+#endif
 }
 
-void DeviceManager::updateRing(bool force)
+void DeviceManager::updateDisplay(bool force)
 {
-  m_displayInterface->update(force);
+  m_displayManager->update(force);
 }
 
 void DeviceManager::updateAwaitingGameStartData()
 {
-  struct GameStartData data = {
+  GameStartData data{
       .totalPlayers = m_interface->getTotalPlayers()};
-  m_displayInterface->updateAwaitingGameStartData(data);
+  m_displayManager->updateAwaitingGameStartData(data);
 }
 
 void DeviceManager::updateTurnSequence()
@@ -220,14 +200,15 @@ void DeviceManager::updateTurnSequence()
   int totalPlayers = m_interface->getTotalPlayers();
   int myPlayer = m_interface->getMyPlayer();
   int currentPlayer = m_interface->getCurrentPlayer();
+  uint16_t skippedPlayers = m_interface->getSkippedPlayers();
 
-  struct TurnSequenceData data = {.totalPlayers = totalPlayers, .myPlayerIndex = myPlayer, .currentPlayerIndex = currentPlayer};
-  m_displayInterface->updateTurnSequenceData(data);
+  struct TurnSequenceData data = {.totalPlayers = totalPlayers, .myPlayerIndex = myPlayer, .currentPlayerIndex = currentPlayer, .skippedPlayers = skippedPlayers};
+  m_displayManager->updateTurnSequenceData(data);
 }
 
-void DeviceManager::updateRingMode()
+void DeviceManager::updateDisplayMode()
 {
-  m_displayInterface->setDisplayMode(m_deviceState);
+  m_displayManager->setDisplayMode(m_deviceState);
 }
 
 void DeviceManager::update()
@@ -239,17 +220,19 @@ void DeviceManager::update()
   // Log data from the interface
   if (currentTime - m_lastReadOut > 2000)
   {
-    logger.info("Update Period: " + String(deltaTime));
-    
-    if (ENABLE_DEBUG) {
+    logger.info("Update Period: ", deltaTime);
+
+    if (ENABLE_DEBUG)
+    {
       m_interface->readData();
     }
     m_lastReadOut = currentTime;
   }
-  // logger.info("Running " + String(deltaTime));
+#ifndef SIMULATOR
   BLE.poll();
+#endif
   processGameState();
-  updateRing();
+  updateDisplay();
 }
 
 void DeviceManager::processGameState()
@@ -265,10 +248,14 @@ void DeviceManager::processGameState()
 
   // Check how long we have been awaiting connection.
   // If it is longer than the no connection timeout, enter deep sleep
-  if (m_deviceState == DeviceState::AwaitingConnecion && m_lastUpdate - m_lastConnection > CONNECTION_TIMEOUt)
+  if (m_deviceState == DeviceState::State::AwaitingConnection && m_lastUpdate - m_lastConnection > CONNECTION_TIMEOUT)
   {
     logger.debug("Entering deep sleep");
     // enterDeepSleep();
+  }
+
+  if (buttonAction == ButtonInputType::LongPress) {
+    toggleDeviceOrientation();
   }
 
   if (buttonAction == ButtonInputType::TripleButtonPress)
@@ -278,124 +265,50 @@ void DeviceManager::processGameState()
 
   if (!m_interface->isConnected())
   {
+    m_lastDisconnection = m_lastUpdate;
     setWaitingForConnection();
     return;
   }
-
   m_lastConnection = m_lastUpdate;
 
-  if (!(m_interface->isGameActive()))
+  // This prolongs the Awaiting Connection state for EXPECTED_CHARACTERISTIC_DISCOVERY ms after the initial device connection is initiated by the central device
+  // During this time, the central device will discover and populate all characteristics so when the commanded state is first shown, all data is available
+  // If this check is not made, the display will have undefined behavior between initial connection and service discovery
+  if (m_lastUpdate - m_lastDisconnection < EXPECTED_CHARACTERISTIC_DISCOVERY)
   {
+    return;
+  }
+
+  // *** DISPLAY FOR ACTIVE GAME ***
+  // Determine is a device state change was made. If it was, we will update the state after getting display specific data
+  bool updateDeviceState = updateCommandedDeviceState();
+  // Retrieve state specific data for display modes
+  switch (m_deviceState)
+  {
+  case DeviceState::State::AwaitingGameStart:
     updateAwaitingGameStartData();
-    setAwaitGameStart();
-    return;
-  }
-
-  if (m_interface->isGamePaused())
-  {
-    updateTurnSequence();
-    setGamePaused();
-    return;
-  }
-
-  // Get all information about device inputs and device interface
-  bool interfaceTurn = m_interface->isTurn();
-  bool interfaceSkipped = m_interface->isSkipped();
-  int currentPlayer = m_interface->getCurrentPlayer();
-  bool isSkipped = m_deviceState == DeviceState::Skipped;
-  bool isTurn = m_deviceState == DeviceState::ActiveTurn;
-  int totalPlayers = m_interface->getTotalPlayers();
-
-  // Game has started and device state needs to be updated
-  if (m_deviceState == DeviceState::AwaitingGameStart || m_deviceState == DeviceState::Paused)
-  {
-
-    // This means we are the first player to go in the game. Immediately start the turn
-    if (interfaceTurn)
-    {
-      startTurn();
-    }
-    else
-    {
-      // Otherwise go into Awaiting Turn mode
-      setTurnSequenceMode();
-    }
-    return;
-  }
-
-  if (buttonAction == ButtonInputType::DoubleButtonPress)
-  {
-    // If a double press action was detected
-    if (isSkipped)
-    {
-      unsetSkipped();
-    }
-    else
-    {
-      if (isActiveTurn())
-      {
-        endTurn();
-      }
-      setSkipped();
-      return;
-    }
-  }
-
-  if (isSkipped != interfaceSkipped) {
-    if (isSkipped) {
-      unsetSkipped();
-    } else {
-      setSkipped();
-    }
-    return;
-  }
-
-  // If we are in a skipped state, immediately leave the program
-  if (isSkipped)
-  {
-    return;
-  }
-  else if (m_deviceState == DeviceState::Skipped && !isSkipped)
-  {
-    unsetSkipped();
-  }
-
-  if (buttonAction == ButtonInputType::ButtonPress && isTurn)
-  {
-    uint32_t timeSinceTurnStart = millis() - m_lastTurnStart;
-    logger.debug("Time since turn start: " + String(timeSinceTurnStart) + " = " + String(millis()) + " + " + String(m_lastTurnStart));
-    if ( timeSinceTurnStart > MIN_TURN_LENGTH) {
-      // If a button was pressed and it is the person's turn
-      sendEndTurn();
-      return;
-    } else {
-      logger.debug("Attempted to end turn too quickly");
-    }
-  }
-
-  if (m_interface->isTurn() == isTurn && isTurn)
-  {
-    // Both the Bluetooth interface and device state believe it is our turn
+    break;
+  case DeviceState::State::ActiveTurnEnforced:
     updateTimer();
-  }
-  else if (interfaceTurn != isTurn)  
-  {
-    logger.debug("Interface turn does not match device turn");
-    if (!isTurn) {
-      logger.debug("Device does not have turn set. Starting new turn");
-      // If the Bluetooth interface thinks it is our turn but the device state doesnt
-      // If the turn just started
-      startTurn();
-    } else {
-      logger.debug("Device has turn set. Ending current turn");
-      // If the device thinks it is our turn but the but bluetooth doesnt
-      // If the turn just ended
-      endTurn();
-    }
-  }
-  else
-  {
-    // It is not our turn and we are not skipped so just update the turn sequence
+    break;
+  case DeviceState::State::AwaitingTurn:
     updateTurnSequence();
+    break;
+  }
+
+  if (updateDeviceState)
+  {
+    m_displayManager->setDisplayMode(m_deviceState);
+  }
+
+  // *** INPUT PROCESSING ***
+  if (buttonAction == ButtonInputType::DoubleButtonPress && DeviceState::isStateSkipEligible(m_deviceState))
+  {
+    m_interface->toggleSkippedState();
+  }
+
+  if (isActiveTurn() && buttonAction == ButtonInputType::ButtonPress)
+  {
+    sendEndTurn();
   }
 }

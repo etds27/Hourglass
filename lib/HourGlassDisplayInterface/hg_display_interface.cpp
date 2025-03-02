@@ -2,6 +2,9 @@
 #include "logger.h"
 #include "constants.h"
 
+#ifdef SIMULATOR
+#include "simulator_tools.h"
+#endif
 
 HGDisplayInterface::~HGDisplayInterface() {}
 
@@ -16,7 +19,12 @@ void HGDisplayInterface::setColorBlindMode(bool colorBlindMode)
   m_colorBlindMode = colorBlindMode;
 }
 
-void HGDisplayInterface::setDisplayMode(DeviceState state)
+void HGDisplayInterface::setAbsoluteOrientation(bool orientation)
+{
+  m_absoluteOrientation = orientation;
+}
+
+void HGDisplayInterface::setDisplayMode(DeviceState::State state)
 {
   logger.debug("Setting Light Mode");
   m_startTime = millis();
@@ -27,36 +35,44 @@ void HGDisplayInterface::setDisplayMode(DeviceState state)
 
 void HGDisplayInterface::update(bool force)
 {
-  if (millis() - m_lastUpdate < RING_REFRESH_RATE && !force)
+  // Exit if attempting to redraw display before reaching the refresh rate
+  if (millis() - m_lastUpdate < m_refreshRate && !force)
   {
     return;
   }
-  // logger.info("Updating Ring Light Color");
-  clear();
+
+  if (getClearBeforeUpdate())
+  {
+    clear();
+  }
+
   switch (m_state)
   {
-  case DeviceState::Off:
+  case DeviceState::State::Off:
     clear();
     break;
-  case DeviceState::AwaitingConnecion:
+  case DeviceState::State::AwaitingConnection:
     updateLightModeAwaitConnection();
     break;
-  case DeviceState::ActiveTurn:
-    updateLightModeActiveTurn();
+  case DeviceState::State::ActiveTurnEnforced:
+    updateLightModeActiveTurnTimer();
     break;
-  case DeviceState::Skipped:
+  case DeviceState::State::ActiveTurnNotEnforced:
+    updateLightModeActiveTurnNoTimer();
+    break;
+  case DeviceState::State::Skipped:
     updateLightModeSkipped();
     break;
-  case DeviceState::AwaitingTurn:
+  case DeviceState::State::AwaitingTurn:
     updateLightModeTurnSequence();
     break;
-  case DeviceState::AwaitingGameStart:
+  case DeviceState::State::AwaitingGameStart:
     updateLightModeAwaitGameStart();
     break;
-  case DeviceState::Paused:
+  case DeviceState::State::Paused:
     updateGamePaused();
     break;
-  case DeviceState::Debug:
+  case DeviceState::State::Debug:
     updateGameDebug();
     break;
   };
@@ -76,7 +92,12 @@ void HGDisplayInterface::updateTurnSequenceData(struct TurnSequenceData data)
   m_turnSequenceData = data;
 }
 
-void HGDisplayInterface::updateAwaitingGameStartData(struct GameStartData data)
+void HGDisplayInterface::updateAwaitingGameStartData(const struct GameStartData data)
 {
   m_gameStartData = data;
+}
+
+bool HGDisplayInterface::getClearBeforeUpdate() const
+{
+  return m_clearBeforeUpdate;
 }

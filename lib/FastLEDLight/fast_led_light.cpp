@@ -1,3 +1,5 @@
+#ifndef SIMULATOR
+
 #include "FastLED.h"
 #include "fast_led_light.h"
 #include "logger.h"
@@ -17,7 +19,6 @@ void FastLEDLight::show() {
 
 void FastLEDLight::setBrightness(uint8_t brightness) {
   FastLED.setBrightness(brightness);
-  logger.debug("Setting brightness to: " + String(brightness));
 }
 
 void FastLEDLight::setPixelColor(uint8_t i, uint32_t color) {
@@ -34,3 +35,5 @@ FastLEDLight::FastLEDLight(const uint8_t ledCount, const uint8_t diPin)
 FastLEDLight::~FastLEDLight() {
   delete[] leds;
 }
+
+#endif

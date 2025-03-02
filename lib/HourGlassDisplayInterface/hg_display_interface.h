@@ -1,5 +1,7 @@
 #pragma once
 #include "device_state.h"
+#include "constants.h"
+#include <stdint.h>
 
 // All required data for any display interface to show the Awaiting Game Start state
 struct GameStartData
@@ -15,20 +17,28 @@ struct TimerData
     bool isTurnTimeEnforced;
 };
 
-
 // All required data for any display interface to show the Awaiting Turn state
 struct TurnSequenceData
 {
     int totalPlayers;
     int myPlayerIndex;
     int currentPlayerIndex;
+    uint16_t skippedPlayers;
 };
 
 class HGDisplayInterface
 {
 protected:
-    DeviceState m_state = DeviceState::Off;
+    /// @brief Clears the current display before showing the updated view
+    bool m_clearBeforeUpdate = true;
+    virtual bool getClearBeforeUpdate() const;
+
+    /// @brief Minimum time (in ms) to wait before the display will redraw
+    uint32_t m_refreshRate = DISPLAY_REFRESH_RATE;
+
+    DeviceState::State m_state = DeviceState::State::Off;
     bool m_colorBlindMode = false;
+    bool m_absoluteOrientation = true;
 
     unsigned long m_startTime;
     struct TimerData m_timerData;
@@ -38,7 +48,6 @@ protected:
     unsigned long m_lastUpdate;
 
     // MARK: Light Modes
-    virtual void updateLightModeActiveTurn() = 0;
     virtual void updateLightModeActiveTurnTimer() = 0;
     virtual void updateLightModeActiveTurnNoTimer() = 0;
     virtual void updateLightModeSkipped() = 0;
@@ -55,8 +64,12 @@ public:
     // Sets the current colorblind mode for the ringlight
     void setColorBlindMode(bool colorBlindMode);
 
+    /// @brief Sets the current absolute/player orientation for the display
+    /// @param orientation Set to `true` for absolute orientation and `false` for player orientation
+    void setAbsoluteOrientation(bool orientation);
+
     // Sets the ring light to the appropriate lighting mode associated with the provided device state
-    virtual void setDisplayMode(DeviceState state);
+    virtual void setDisplayMode(DeviceState::State state);
 
     // Updates the current light display according to the known device state and state properties
     // params:

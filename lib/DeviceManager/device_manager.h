@@ -1,16 +1,18 @@
 #pragma once
 #include "input_monitor.h"
+#include "input_interface.h"
 #include "hg_central_interface.h"
 #include "hg_display_interface.h"
 #include "device_state.h"
 #include "constants.h"
+#include "hg_display_manager.h"
 
 // Maintains the device state while it is powered on
 class DeviceManager
 {
 public:
-  DeviceManager();
-
+  DeviceManager(HourglassDisplayManager *displayManager);
+  ~DeviceManager();
   // Device Name
   char *getDeviceName();
 
@@ -18,7 +20,9 @@ public:
   char *readDeviceName(char *out);
 
   // Writes the device name to the EEPROM and updates the stored device name for the Device Manager
-  void writeDeviceName(char *deviceName, uint8_t length);
+  #ifndef SIMULATOR
+  void writeDeviceName(const char *deviceName, uint8_t length);
+  #endif
 
   // Initializes the bluetooth peripheral interface and sets up the light for output
   void start();
@@ -28,9 +32,12 @@ public:
   void update();
 
 private:
-  DeviceState m_deviceState;
+  HourglassDisplayManager *m_displayManager;
+  DeviceState::State m_deviceState;
 
   unsigned long m_lastTurnStart;
+
+  bool updateCommandedDeviceState();
 
   // Flag indicating that the `start()` has been called
   bool m_started = false;
@@ -49,20 +56,33 @@ private:
   // Used to determine deep sleep eligibility
   unsigned long m_lastConnection;
 
+  /// @brief Last time the device was disconnected from the central
+  /// Used to display AwaitingConnection state after connection has been made
+  unsigned long m_lastDisconnection;
+
   // Interface for retrieving information from the central device
   HGCentralInterface *m_interface;
 
   // Monitor for button to control turn status
   ButtonInputMonitor *m_buttonMonitor;
+  InputInterface *m_inputInterface;
 
   // Device name
   char *m_deviceName;
 
   // Display output for current game state
-  HGDisplayInterface *m_displayInterface;
+  // HGDisplayInterface *m_displayInterface;
 
   // Flag indicating the current color blind status
   bool m_colorBlindMode = false;
+
+  /// @brief Flag indicating if the turn sequence should be oriented by the turn order, or by the device's player
+  /// If true, the 1st player in the player order will be represented in the top right
+  /// If false, the device's player will be represented in the top right
+  bool m_absoluteOrientation = true;
+
+  /// @brief Toggle the device display orientation
+  void toggleDeviceOrientation();
 
   // Toggle the current colorblind state of the output
   void toggleColorBlindMode();
@@ -74,27 +94,18 @@ private:
   void processGameState();
 
   // Update the display interface with the current game state
-  void updateRing(bool force = false);
+  void updateDisplay(bool force = false);
   
-  void setWaitingForConnection();
-  void setGamePaused();
-  void setAwaitGameStart();
+  void setWaitingForConnection();;
   void updateAwaitingGameStartData();
 
-  void setSkipped();
-  void unsetSkipped();
-
   void updateTimer();
-  void updateRingMode();
+  void updateDisplayMode();
 
   bool isActiveTurn();
 
-  void startTurn();
 
   // Send the end of the turn to the central device
   void sendEndTurn();
-  void endTurn();
-
-  void setTurnSequenceMode();
   void updateTurnSequence();
 };

@@ -5,6 +5,7 @@
 #include "device_state.h"
 #include "hg_display_interface.h"
 #include "easing_function.h"
+#include "color_converter.h"
 
 // All required data for any display interface to show the Awaiting Game Start state
 struct GameDebugData
@@ -15,8 +16,11 @@ struct GameDebugData
 class LightInterface : public HGDisplayInterface
 {
 protected:
+  uint8_t m_ringOffset = TOP_RING_OFFSET;
   uint8_t m_ledCount;
   uint8_t m_diPin;
+
+  virtual uint8_t getRingOffset() const;
 
   void updateLightModeActiveTurn();
   void updateLightModeActiveTurnTimer();
@@ -28,43 +32,9 @@ protected:
   void updateGamePaused();
   void updateGameDebug();
 
-
-  // Take a buffer of size (2, 4, 8) and populate a full 16 item buffer using the condensed buffer
-  // The fill option will fill in the space between the
-  void expandBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size, bool fill = true);
-
-  // Replicate the smaller buffer to fit into the full buffer
-  void extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t size);
-
-  // Rotate the full sized color buffer by some offset
-  void offsetBuffer(uint32_t *buffer, uint8_t offset);
-
-  // Reverse the full sized color buffer
-  void reverseBuffer(uint32_t *buffer, uint8_t offset);
-
-  /// @brief Overlays the overlay buffer on top of the base buffer
-  /// Blank/Black values in the overlay buffer will not overwrite the base buffer
-  /// The base buffer will be updated with the new result
-  /// @param baseBuffer Buffer to modify in place with overlayed content
-  /// @param overlayBuffer Buffer to overlay on the base buffer
-  /// @param inverse If set, the overlay only blank leds for negative light designs
-  void overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, uint8_t bufferSize, bool inverse = false);
-
-  /// @brief Set the provided buffer to a single solid color
-  /// @param buffer Buffer to modify in-place
-  /// @param bufferSize Size of the provided buffer
-  /// @param color Color to set the buffer to
-  void solidBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t color);
-
   /// @brief Displays the full sized buffer to the light interface
   /// @param buffer
   void displayBuffer(const uint32_t *buffer, const bool clockwise = true);
-
-  /// @brief Set a buffer to a specific color for all non zero buffer values
-  /// @param buffer Buffer to update colors of in place
-  /// @param bufferSize Size of the provided buffer
-  /// @param color Color to change buffer to
-  void colorBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t color);
 
   /// @brief Obtain the current segment of the display cycle adjusted by the easing function
   /// @param cycleLength Length of a single cycle in milliseconds
@@ -73,8 +43,6 @@ protected:
   /// @param easingFunction Easing Function to adjust the cycle completion percentage to
   /// @return The current step in the cycle adjusted for the Easing Function
   uint8_t getAdjustedCycleSegment(unsigned long cycleDuration, unsigned long cycleStartTime, uint8_t totalCycleSteps, EasingFunction::EasingFunction *easingFunction);
-
-  // 
 
   /// @brief Linearly interpolate the colors provided by their RGB channels
   /// @param color1 Color to use for interpolation
@@ -123,12 +91,63 @@ public:
   virtual void setBrightness(uint8_t brightness) = 0;
   virtual void setPixelColor(uint8_t i, uint32_t color) = 0;
 
+  // Rotate the full sized color buffer by some offset
+  void offsetBuffer(uint32_t *buffer, int8_t offset, uint8_t size = RING_LED_COUNT);
+
+  // Replicate the smaller buffer to fit into the full buffer
+  void extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBufferr, uint8_t smallBufferSize, uint8_t fullBufferSize = RING_LED_COUNT);
+  
+  void copyBuffer(const uint32_t *sourceBuffer, uint32_t *targetBuffer, uint8_t size);
+
+  /// @brief Overlays the overlay buffer on top of the base buffer
+  /// Blank/Black values in the overlay buffer will not overwrite the base buffer
+  /// The base buffer will be updated with the new result
+  /// @param baseBuffer Buffer to modify in place with overlayed content
+  /// @param overlayBuffer Buffer to overlay on the base buffer
+  /// @param bufferSize Size of the buffer to overlay
+  /// @param inverse If set, only overrlay blank leds for negative light designs
+  void overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, uint8_t bufferSize, bool inverse = false);
+
+  /// @brief Set a buffer to a specific color for all non zero buffer values
+  /// @param buffer Buffer to update colors of in place
+  /// @param bufferSize Size of the provided buffer
+  /// @param color Color to change buffer to
+  void colorBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t color);
+
+  // Take a buffer of size (2, 4, 8) and populate a full 16 item buffer using the condensed buffer
+  // The fill option will fill in the space between the LEDs
+  void expandBuffer(const uint32_t *smallBuffer, uint32_t *fullBuffer, uint8_t smallBufferSize, uint8_t fullBufferSize = RING_LED_COUNT, bool fill = true);
+
+  // Reverse the full sized color buffer
+  void reverseBuffer(uint32_t *buffer, uint8_t size);
+
+  /// @brief Set the provided buffer to a single solid color
+  /// @param buffer Buffer to modify in-place
+  /// @param bufferSize Size of the provided buffer
+  /// @param color Color to set the buffer to
+  void solidBuffer(uint32_t *buffer, uint8_t bufferSize, uint32_t color);
+
+  void printBuffer(uint32_t *buffer, int8_t size = RING_LED_COUNT);
+
   // Non enforced turn timer
   unsigned long m_lastColorChange;
   uint32_t m_targetColor;
   uint32_t m_previousColor;
 
-  void setDisplayMode(DeviceState state);
+  void transformBufferColor(uint32_t *buffer, uint8_t bufferSize, ColorTransform::ColorTransform *transform);
+
+  /// @brief Dim an RGB color by a specific value
+  ///
+  /// The color will be converted to HSV, then have the brightness value reduced, then converted back to RGB
+  /// @param color Color to dim
+  /// @param brightness Brightness adjustment factor between 0 and 255
+  /// @return Brightness adjusted color
+  uint32_t dimColor(uint32_t color, uint8_t brightness);
+
+
+  void setDisplayMode(DeviceState::State state);
 
   void updateGameDebugData(GameDebugData data);
+
+
 };

@@ -76,7 +76,7 @@ void SevenSegmentDisplay::set(uint8_t number, bool decimal) {
 
 void SevenSegmentDisplay::setAll() {
   for (int i = 0; i < numberOfPins; i++) {
-    logger.debug("Setting " + String(i) + " (" + String(m_pins[i]) + ") Pin");
+    logger.debug("Setting ", i, " (", m_pins[i], ") Pin");
     digitalWrite(m_pins[i], HIGH);
   }
 }
