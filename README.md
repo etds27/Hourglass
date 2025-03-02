@@ -2,6 +2,8 @@
 ## About Hourglass
 Hourglass provides a wireless turn management system among connected devices. The system consists of multiple peripheral devices operated locally by individual users and a single central device that processes data from the peripherals. The central device manages the system state and provides additional data required for display on the peripherals. The central device does not need to be actively operated and provides game configuration options
 
+Prototype Demo: https://drive.google.com/file/d/1vfFwuXrZOG86haQg10q6Bc9yUWXI989V/view?usp=drive_link
+
 ## About Electrical 
 The peripheral device utilizes an ESP32 microcontroller as its main processor. This unit establishes and maintains a data connection to the central device and updates the user interface accordingly. The device is powered by a 3.7V LiPo battery, which is regulated through a 5V boost converter to provide steady power to the controller. The battery is charged via a TP4056 charging circuit, with its output controlled by an on-off switch. The microcontroller powers and connects to the display interface while also handling input from a momentary push button, which serves as the user's primary input modality.
 
