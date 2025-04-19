@@ -28,23 +28,27 @@ namespace DeviceState
     BuzzerAwaitingTurnEnd = 11,
     BuzzerResults = 12,
     BuzzerWinnerPeriod = 13,
-    BuzzerWinnerPeriodTimed = 14
+    BuzzerWinnerPeriodTimed = 14,
+    BuzzerAlreadyAnswered = 15,
+    BuzzerAwaitingBuzzerEnabled = 16,
+
+    Unknown = 100,
   };
 
   /// @brief Collection of states where the button press event should be sent to the central device
-  extern const std::array<State, 4> ACTIVE_TURN_STATES;
+  extern const std::array<State, 9> ACTIVE_TURN_STATES;
 
   /// @brief Collection of states where the game has started
-  extern const std::array<State, 10> ACTIVE_GAME_STATES;
+  extern const std::array<State, 11> ACTIVE_GAME_STATES;
 
   /// @brief Collection of states where the Skip action is allowed
-  extern const std::array<State, 4> SKIP_ELIGIBLE_STATES;
+  extern const std::array<State, 8> SKIP_ELIGIBLE_STATES;
 
   /// @brief Array of all possible states the device can be in when in Sequential Turn Order mode
   extern const std::array<State, 7> SEQUENTIAL_TURN_ORDER_MODE_STATES;
 
   /// @brief Array of all possible states the device can be in when in Buzzer mode
-  extern const std::array<State, 9> BUZZER_MODE_STATES;
+  extern const std::array<State, 11> BUZZER_MODE_STATES;
 
 
 

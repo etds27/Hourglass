@@ -2,14 +2,19 @@
 
 namespace DeviceState
 {
-    const std::array<State, 4> ACTIVE_TURN_STATES = {
+    const std::array<State, 9> ACTIVE_TURN_STATES = {
         State::ActiveTurnEnforced,
         State::ActiveTurnNotEnforced,
         State::BuzzerAwaitingBuzz,
-        State::BuzzerAwaitingBuzzTimed
+        State::BuzzerAwaitingBuzzTimed,
+        State::BuzzerWinnerPeriod,
+        State::BuzzerWinnerPeriodTimed,
+        State::BuzzerAwaitingTurnEnd,
+        State::BuzzerAwaitingBuzzerEnabled,
+        State::BuzzerResults,
     };
 
-    const std::array<State, 10> ACTIVE_GAME_STATES = {
+    const std::array<State, 11> ACTIVE_GAME_STATES = {
         State::ActiveTurnEnforced,
         State::ActiveTurnNotEnforced,
         State::AwaitingTurn,
@@ -19,13 +24,17 @@ namespace DeviceState
         State::BuzzerAwaitingBuzzTimed,
         State::BuzzerAwaitingTurnEnd,
         State::BuzzerWinnerPeriod,
-        State::BuzzerWinnerPeriodTimed};
+        State::BuzzerWinnerPeriodTimed,
+        State::BuzzerAwaitingBuzzerEnabled};
 
-    const std::array<State, 4> SKIP_ELIGIBLE_STATES = {
+    const std::array<State, 8> SKIP_ELIGIBLE_STATES = {
         State::ActiveTurnEnforced,
         State::ActiveTurnNotEnforced,
         State::AwaitingTurn,
-        State::Skipped};
+        State::Skipped,
+        State::BuzzerAwaitingTurnEnd,
+        State::BuzzerResults,
+        State::BuzzerAwaitingBuzzerEnabled,};
 
     const std::array<State, 7> SEQUENTIAL_TURN_ORDER_MODE_STATES = {
         State::AwaitingConnection,
@@ -36,7 +45,7 @@ namespace DeviceState
         State::Skipped,
         State::Paused};
 
-    const std::array<State, 9> BUZZER_MODE_STATES = {
+    const std::array<State, 11> BUZZER_MODE_STATES = {
         State::AwaitingConnection,
         State::AwaitingGameStart,
         State::BuzzerAwaitingBuzz,
@@ -44,6 +53,8 @@ namespace DeviceState
         State::BuzzerWinnerPeriod,
         State::BuzzerWinnerPeriodTimed,
         State::BuzzerAwaitingTurnEnd,
+        State::BuzzerAwaitingBuzzerEnabled,
+        State::BuzzerResults,
         State::Skipped,
         State::Paused};
 
