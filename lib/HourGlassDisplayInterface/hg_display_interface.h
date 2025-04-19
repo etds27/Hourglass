@@ -17,7 +17,7 @@ struct TimerData
     /// @brief Current time on the timer
     int elapsedTime;
     /// @brief Used to determine which Buzzer winner screen to show the winning player
-   bool isTurnTimeEnforced;
+    bool isTurnTimeEnforced;
 };
 
 /// @brief All required data for any display interface to show the Awaiting Turn state
@@ -109,7 +109,8 @@ protected:
     /// Must have updated TimerData and BuzzerResults Data
     virtual void updateLightModeWinnerPeriodTimed() = 0;
 
-
+    /// @brief Display for the players who did not buzz in time
+    virtual void updateLightModeBuzzerResults() = 0;
 
 public:
     virtual ~HGDisplayInterface();

@@ -87,6 +87,9 @@ void HGDisplayInterface::update(bool force)
   case DeviceState::State::BuzzerWinnerPeriodTimed:
     updateLightModeWinnerPeriodTimed();
     break;
+  case DeviceState::State::BuzzerResults:
+    updateLightModeBuzzerResults();
+    break;
   };
   // noInterrupts();
   show();

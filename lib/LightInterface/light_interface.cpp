@@ -453,6 +453,12 @@ void LightInterface::updateGameDebug()
 
 void LightInterface::updateLightModeBuzzerAwaitingBuzz()
 {
+  // TODO: Remove before merge
+  updateLightModeActiveTurnNoTimer();
+  return;
+
+  unsigned long start = millis();
+
   uint8_t halfBufferSize = m_ledCount / 2;
 
   uint32_t *colorBuffer = new uint32_t[m_ledCount] {};
@@ -472,7 +478,7 @@ void LightInterface::updateLightModeBuzzerAwaitingBuzz()
 
   uint32_t color;
 
-  logger.info(int(offset));
+  // logger.info(int(offset));
 
   switch (currentColorCycle)
   {
@@ -494,17 +500,17 @@ void LightInterface::updateLightModeBuzzerAwaitingBuzz()
 
   brightnessGradientBuffer(tailBuffer1, halfBufferSize / 2, color);
   reverseBuffer(tailBuffer1, halfBufferSize);
+
   copyBuffer(tailBuffer1, tailBuffer2, halfBufferSize);
 
   ColorTransform::ColorTransform *transform = new ColorTransform::ShiftLeft();
   transformBufferColor(tailBuffer2, halfBufferSize, transform);
-  delete transform;
-
-
   overlayBuffer(colorBuffer, tailBuffer1, m_ledCount, halfBufferSize);
   overlayBuffer(colorBuffer, tailBuffer2, m_ledCount, halfBufferSize, halfBufferSize);
   offsetBuffer(colorBuffer, offset, m_ledCount);
   displayBuffer(colorBuffer);
+
+  delete transform;
   delete[] colorBuffer;
   delete[] tailBuffer1;
   delete[] tailBuffer2;
@@ -517,20 +523,16 @@ void LightInterface::updateLightModeBuzzerAwaitingBuzzTimed()
 
 void LightInterface::updateLightModeWinnerPeriod()
 {
-  if (m_buzzerResultsData.myPlayerIndex == m_buzzerResultsData.winningPlayerIndex) {
-    displayMarqueeBuzzer(m_colorBlindMode ? BUZZER_ACTIVE_TURN_COLOR_WINNER_ALT : BUZZER_ACTIVE_TURN_COLOR_WINNER);
-  } else {
-    displayMarqueeBuzzer(m_colorBlindMode ? BUZZER_ACTIVE_TURN_COLOR_LOSER_ALT : BUZZER_ACTIVE_TURN_COLOR_LOSER);
-  }
+  displayMarqueeBuzzer(m_colorBlindMode ? BUZZER_ACTIVE_TURN_COLOR_WINNER_ALT : BUZZER_ACTIVE_TURN_COLOR_WINNER);
 }
 
 void LightInterface::updateLightModeWinnerPeriodTimed()
 {
-  if (m_buzzerResultsData.myPlayerIndex != m_buzzerResultsData.winningPlayerIndex) {
-    displayMarqueeBuzzer(m_colorBlindMode ? BUZZER_ACTIVE_TURN_COLOR_LOSER_ALT : BUZZER_ACTIVE_TURN_COLOR_LOSER);
-    return;
-  }
   displaySymmetricFixedColorTimer(m_timerData.elapsedTime, m_timerData.totalTime);
+}
+
+void LightInterface::updateLightModeBuzzerResults() {
+  displayMarqueeBuzzer(m_colorBlindMode ? BUZZER_ACTIVE_TURN_COLOR_LOSER_ALT : BUZZER_ACTIVE_TURN_COLOR_LOSER);
 }
 
 void LightInterface::displayMarqueeBuzzer(uint32_t color) 
@@ -605,6 +607,7 @@ void LightInterface::displayCounterClockwiseTimer(uint32_t elapsedTime, uint32_t
 
 void LightInterface::displaySymmetricFixedColorTimer(uint32_t elapsedTime, uint32_t totalTimerDuration)
 {
+
   uint8_t halfBufferSize = m_ledCount / 2;
 
   double pct = (double) elapsedTime / totalTimerDuration;
@@ -648,6 +651,7 @@ void LightInterface::displaySymmetricFixedColorTimer(uint32_t elapsedTime, uint3
   delete[] halfBuffer;
   delete[] halfBuffer2;
   delete[] basicColorBuffer;
+  delete[] blankBuffer;
 }
 
 void LightInterface::updateGameDebugData(GameDebugData data)
