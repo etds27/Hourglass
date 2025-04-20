@@ -33,7 +33,7 @@
 
 TFT_eSPI tft = TFT_eSPI();
 LCDRing *lRing = new LCDRing(16, &tft);
-LCDTimer *lTimer = new LCDTimer(&tft);
+// LCDTimer *lTimer = new LCDTimer(&tft);
 FastLEDLight *fRing = new FastLEDLight(16, 12);
 TimerData *data = new TimerData;
 
@@ -50,7 +50,7 @@ void setup() {
     displayManager = new HourglassDisplayManager();
     displayManager->addDisplayInterface(lRing);
     //displayManager->addDisplayInterface(fRing);
-    displayManager->addDisplayInterface(lTimer);
+    // displayManager->addDisplayInterface(lTimer);
 
     deviceManager = new DeviceManager(displayManager);
     tft.init();
@@ -59,7 +59,7 @@ void setup() {
     tft.fillScreen(TFT_BLACK);
 
     displayManager->updateTimerData(*data);
-    displayManager->setDisplayMode(DeviceState::State::ActiveTurnEnforced);
+    displayManager->setDisplayMode(DeviceState::State::BuzzerAwaitingTurnStart);
 }
 
 void loop() {

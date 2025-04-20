@@ -49,7 +49,7 @@ void setup()
     };
 
     fastLEDLight->updateGameDebugData(data);
-    fastLEDLight->setDisplayMode(DeviceState::State::Debug);
+    fastLEDLight->setDisplayMode(DeviceState::State::BuzzerAwaitingTurnStart);
 }
 
 void loop()

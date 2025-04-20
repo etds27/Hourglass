@@ -90,6 +90,9 @@ void HGDisplayInterface::update(bool force)
   case DeviceState::State::BuzzerResults:
     updateLightModeBuzzerResults();
     break;
+  case DeviceState::State::BuzzerAwaitingTurnStart:
+    updateLightModeAwaitTurnStart();
+    break;
   };
   // noInterrupts();
   show();

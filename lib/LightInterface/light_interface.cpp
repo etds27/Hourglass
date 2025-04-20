@@ -535,6 +535,54 @@ void LightInterface::updateLightModeBuzzerResults() {
   displayMarqueeBuzzer(m_colorBlindMode ? BUZZER_ACTIVE_TURN_COLOR_LOSER_ALT : BUZZER_ACTIVE_TURN_COLOR_LOSER);
 }
 
+void LightInterface::updateLightModeAwaitTurnStart()
+{
+  uint32_t *colorBuffer = new uint32_t[m_ledCount] {};
+
+  unsigned long timeSinceModeStart = (millis() - m_startTime);
+
+  // Get length of the cycle
+  uint8_t cycleLength = m_ledCount;
+
+  // Get full cycle duration
+  unsigned long totalCycleDuration = cycleLength * BUZZER_AWAITING_TURN_START_SPEED * 2;
+
+  // Current cycle elapsed time
+  unsigned long cycleElapsedTime = timeSinceModeStart % totalCycleDuration;
+
+  // Cycle percentage completion
+  double pct = (double)cycleElapsedTime / (double)totalCycleDuration;
+
+  double doublePct = pct * 2.0;
+  doublePct = doublePct - (int) doublePct;
+
+  double triplePct = pct * 3.0;
+  triplePct = triplePct - (int) triplePct;
+
+  double quadPct = pct * 4.0;
+  quadPct = quadPct - (int) quadPct;
+
+  EasingFunction::EasingFunction *function = new EasingFunction::Quadratic(EasingMode::EaseInAndOut);
+  pct = function->ease(pct);
+  doublePct = function->ease(doublePct);
+  triplePct = function->ease(triplePct);
+  quadPct = function->ease(quadPct);
+  delete function;
+
+  uint8_t index1 = min((int)(m_ledCount * pct), m_ledCount - 1);
+  uint8_t index2 = min((int)(m_ledCount * doublePct), m_ledCount - 1);
+  uint8_t index3 = min((int)(m_ledCount * triplePct), m_ledCount - 1);
+  uint8_t index4 = min((int)(m_ledCount * quadPct), m_ledCount - 1);
+
+  colorBuffer[index1] = HOURGLASS_GREEN;
+  colorBuffer[index2] = HOURGLASS_BLUE;
+  colorBuffer[index3] = HOURGLASS_RED;
+  colorBuffer[index4] = HOURGLASS_YELLOW;
+
+  displayBuffer(colorBuffer, false);
+  delete[] colorBuffer;
+}
+
 void LightInterface::displayMarqueeBuzzer(uint32_t color) 
 {
   unsigned long timeSinceModeStart = millis() - m_startTime;

@@ -112,6 +112,9 @@ protected:
     /// @brief Display for the players who did not buzz in time
     virtual void updateLightModeBuzzerResults() = 0;
 
+    /// @brief Display the state when waiting for a turn to start
+    virtual void updateLightModeAwaitTurnStart() = 0;
+
 public:
     virtual ~HGDisplayInterface();
 
