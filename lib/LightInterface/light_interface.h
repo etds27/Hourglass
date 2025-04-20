@@ -10,7 +10,7 @@
 // All required data for any display interface to show the Awaiting Game Start state
 struct GameDebugData
 {
-    uint32_t *buffer;
+  uint32_t *buffer;
 };
 
 class LightInterface : public HGDisplayInterface
@@ -22,15 +22,28 @@ protected:
 
   virtual uint8_t getRingOffset() const;
 
-  void updateLightModeActiveTurn();
-  void updateLightModeActiveTurnTimer();
-  void updateLightModeActiveTurnNoTimer();
-  void updateLightModeSkipped();
-  void updateLightModeTurnSequence();
-  void updateLightModeAwaitGameStart();
-  void updateLightModeAwaitConnection();
-  void updateGamePaused();
-  void updateGameDebug();
+  void updateLightModeActiveTurnTimer() override;
+  void updateLightModeActiveTurnNoTimer() override;
+  void updateLightModeSkipped() override;
+  void updateLightModeTurnSequence() override;
+  void updateLightModeAwaitGameStart() override;
+  void updateLightModeAwaitConnection() override;
+  void updateGamePaused() override;
+  void updateGameDebug() override;
+
+  void updateLightModeBuzzerAwaitingBuzz() override;
+  void updateLightModeBuzzerAwaitingBuzzTimed() override;
+  void updateLightModeWinnerPeriod() override;
+  void updateLightModeWinnerPeriodTimed() override;
+  void updateLightModeBuzzerResults() override;
+  void updateLightModeAwaitTurnStart() override;
+
+
+  // MARK: Canned display effects
+  void displayMarqueeBuzzer(uint32_t color);
+  void displayCounterClockwiseTimer(uint32_t elapsedTime, uint32_t totalTimerDuration);
+  void displaySymmetricFixedColorTimer(uint32_t elapsedTime, uint32_t totalTimerDuration);
+
 
   /// @brief Displays the full sized buffer to the light interface
   /// @param buffer
@@ -63,8 +76,8 @@ protected:
   uint32_t interpolateColors(uint32_t colorR1, uint32_t colorG1, uint32_t colorB1, uint32_t colorR2, uint32_t colorG2, uint32_t colorB2, double pct);
 
   /// @brief Interpolate the colors provided by their RGB channels using the provided easing function
-  /// @param color1 
-  /// @param color2 
+  /// @param color1
+  /// @param color2
   /// @param pct Percent color shifting between colors provided
   /// @param easingFunction Function to adjust percentage to expected curve
   /// @return Updated color
@@ -82,8 +95,8 @@ protected:
   /// @return Updated color
   uint32_t interpolateColors(uint32_t colorR1, uint32_t colorG1, uint32_t colorB1, uint32_t colorR2, uint32_t colorG2, uint32_t colorB2, double pct, EasingFunction::EasingFunction *easingFunction);
 
-
   struct GameDebugData m_gameDebugData;
+
 public:
   LightInterface(const uint8_t ledCount = 16, const uint8_t diPin = 0);
   virtual ~LightInterface();
@@ -96,7 +109,7 @@ public:
 
   // Replicate the smaller buffer to fit into the full buffer
   void extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBufferr, uint8_t smallBufferSize, uint8_t fullBufferSize = RING_LED_COUNT);
-  
+
   void copyBuffer(const uint32_t *sourceBuffer, uint32_t *targetBuffer, uint8_t size);
 
   /// @brief Overlays the overlay buffer on top of the base buffer
@@ -104,9 +117,11 @@ public:
   /// The base buffer will be updated with the new result
   /// @param baseBuffer Buffer to modify in place with overlayed content
   /// @param overlayBuffer Buffer to overlay on the base buffer
-  /// @param bufferSize Size of the buffer to overlay
+  /// @param baseBufferSize Size of the base buffer to apply the overlay to
+  /// @param overlayBufferSize Size of the buffer to overlay
+  /// @param overlayBufferOffset Starting position of the base buffer to start the overlay at
   /// @param inverse If set, only overrlay blank leds for negative light designs
-  void overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, uint8_t bufferSize, bool inverse = false);
+  void overlayBuffer(uint32_t *baseBuffer, const uint32_t *overlayBuffer, uint8_t baseBufferSize = RING_LED_COUNT, uint8_t overlayBufferSize = RING_LED_COUNT, uint8_t overlayBufferOffset = 0, bool inverse = false);
 
   /// @brief Set a buffer to a specific color for all non zero buffer values
   /// @param buffer Buffer to update colors of in place
@@ -136,14 +151,16 @@ public:
 
   void transformBufferColor(uint32_t *buffer, uint8_t bufferSize, ColorTransform::ColorTransform *transform);
 
-  /// @brief Dim an RGB color by a specific value
-  ///
-  /// The color will be converted to HSV, then have the brightness value reduced, then converted back to RGB
-  /// @param color Color to dim
-  /// @param brightness Brightness adjustment factor between 0 and 255
-  /// @return Brightness adjusted color
-  uint32_t dimColor(uint32_t color, uint8_t brightness);
-
+  /// @brief Create a fading tail gradient buffer for a specified color
+  /// @param buffer Buffer to update to
+  /// @param bufferSize Size of buffer/tail to make
+  /// @param color Brightest color of the tail
+  /// @param colorMinBrightness The brightness value of the last value in the tail
+  void brightnessGradientBuffer(
+      uint32_t *buffer,
+      uint8_t bufferSize,
+      uint32_t tailColor,
+      uint32_t tailMinBrightness = 0.0);
 
   void setDisplayMode(DeviceState::State state);
 

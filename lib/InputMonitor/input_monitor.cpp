@@ -49,7 +49,7 @@ ButtonInputType ButtonInputMonitor::getAction()
     last_press_start = currentTime;
     currentPresses += 1;
 
-    logger.info("Started press ", (int)currentPresses);
+    logger.info("Started press ", currentPresses);
   }
   else if (isPressed && !value)
   {

@@ -232,6 +232,7 @@ void DeviceManager::update()
   BLE.poll();
 #endif
   processGameState();
+
   updateDisplay();
 }
 
@@ -283,17 +284,20 @@ void DeviceManager::processGameState()
   // Determine is a device state change was made. If it was, we will update the state after getting display specific data
   bool updateDeviceState = updateCommandedDeviceState();
   // Retrieve state specific data for display modes
-  switch (m_deviceState)
+
+  if (DeviceState::deviceStateRequiresGameStartData(m_deviceState)) 
   {
-  case DeviceState::State::AwaitingGameStart:
     updateAwaitingGameStartData();
-    break;
-  case DeviceState::State::ActiveTurnEnforced:
-    updateTimer();
-    break;
-  case DeviceState::State::AwaitingTurn:
+  }
+
+  if (DeviceState::deviceStateRequiresTurnSequenceData(m_deviceState)) 
+  {
     updateTurnSequence();
-    break;
+  }
+
+  if (DeviceState::deviceStateRequiresTimeData(m_deviceState)) 
+  {
+    updateTimer();
   }
 
   if (updateDeviceState)

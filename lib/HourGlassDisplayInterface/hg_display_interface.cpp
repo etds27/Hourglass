@@ -75,6 +75,24 @@ void HGDisplayInterface::update(bool force)
   case DeviceState::State::Debug:
     updateGameDebug();
     break;
+  case DeviceState::State::BuzzerAwaitingBuzz:
+    updateLightModeBuzzerAwaitingBuzz();
+    break;
+  case DeviceState::State::BuzzerAwaitingBuzzTimed:
+    updateLightModeBuzzerAwaitingBuzzTimed();
+    break;
+  case DeviceState::State::BuzzerWinnerPeriod:
+    updateLightModeWinnerPeriod();
+    break;
+  case DeviceState::State::BuzzerWinnerPeriodTimed:
+    updateLightModeWinnerPeriodTimed();
+    break;
+  case DeviceState::State::BuzzerResults:
+    updateLightModeBuzzerResults();
+    break;
+  case DeviceState::State::BuzzerAwaitingTurnStart:
+    updateLightModeAwaitTurnStart();
+    break;
   };
   // noInterrupts();
   show();
@@ -95,6 +113,11 @@ void HGDisplayInterface::updateTurnSequenceData(struct TurnSequenceData data)
 void HGDisplayInterface::updateAwaitingGameStartData(const struct GameStartData data)
 {
   m_gameStartData = data;
+}
+
+void HGDisplayInterface::updateBuzzerResultsData(BuzzerResultsData data)
+{
+  m_buzzerResultsData = data;
 }
 
 bool HGDisplayInterface::getClearBeforeUpdate() const

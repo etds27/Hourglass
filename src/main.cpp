@@ -77,10 +77,10 @@ void setup()
 #else
   // fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
   lRing = new LCDRing(16, &tft);
-  lTimer = new LCDTimer(&tft);
+  // lTimer = new LCDTimer(&tft);
   // displayManager->addDisplayInterface(fastLEDLight);
   displayManager->addDisplayInterface(lRing);
-  displayManager->addDisplayInterface(lTimer);
+  // displayManager->addDisplayInterface(lTimer);
 
   tft.init();
   tft.setRotation(0); // Adjust rotation (0-3)
