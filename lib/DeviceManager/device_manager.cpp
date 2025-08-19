@@ -2,6 +2,7 @@
 #include <EEPROM.h>
 #include "ble_interface.h"
 #include "button_input_interface.h"
+#include "device_config.h"
 #else
 #include "gl_input_interface.h"
 #include "gl_ring_interface.h"
@@ -18,7 +19,7 @@ DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
   m_displayManager = displayManager;
 
   logger.info("Initializing Device Manager");
-  m_deviceName = new char[8];
+  m_deviceName = new char[MAX_NAME_LENGTH];
   readDeviceName(m_deviceName);
   logger.info("Device name: ", m_deviceName);
 
@@ -32,6 +33,18 @@ DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
   m_inputInterface = new ButtonInputInterface(BUTTON_INPUT_PIN);
   logger.info("Creating Central Interface");
   m_interface = new BLEInterface(m_deviceName);
+
+  m_interface->registerDeviceNameChangedCallback([this](char *name) {
+    this->onDeviceNameChanged(name);
+  });
+
+  m_interface->registerDeviceColorChangedCallback([this](uint32_t color) {
+    this->onDeviceColorChanged(color);
+  });
+
+  m_interface->registerDeviceAccentColorChangedCallback([this](uint32_t accentColor) {
+    this->onDeviceAccentColorChanged(accentColor);
+  });
 
   // Allows the main device button to wake the device from sleep state
   esp_sleep_enable_ext0_wakeup(BUTTON_GPIO_PIN, HIGH);
@@ -52,6 +65,12 @@ void DeviceManager::start()
 
   m_interface->setService();
   setWaitingForConnection();
+
+  // Once we are connected, immediately send of the device configuration
+  m_interface->sendDeviceName(m_deviceName);
+  m_interface->sendDeviceColor(DeviceConfigurator::readColor());
+  m_interface->sendDeviceAccentColor(DeviceConfigurator::readAccentColor());
+
   uint32_t now = millis();
   m_lastUpdate = now;
   m_lastReadOut = now;
@@ -67,22 +86,19 @@ char *DeviceManager::getDeviceName()
 
 char *DeviceManager::readDeviceName(char *out)
 {
-  char arduinoID[8] = {};
+  char arduinoID[MAX_NAME_LENGTH] = {};
 #ifdef SIMULATOR
   out = new char[10]{
       'S', 'I', 'M', 'U', 'L', 'A', 'T', 'O', 'R', '\0'};
 #else
   int i;
   // Read the arduinos ID
-
-  for (i = 0; i < 7; i++)
-  {
-    arduinoID[i] = EEPROM.read(i);
-  }
-  arduinoID[i] = '\0';
+  DeviceConfigurator::readName(arduinoID, MAX_NAME_LENGTH);
+  
 #endif
   // logger.info(arduinoID);
-  strcpy(out, arduinoID);
+  strncpy(out, arduinoID, MAX_NAME_LENGTH);
+  out[MAX_NAME_LENGTH - 1] = '\0'; // Ensure null-termination
   return out;
 }
 
@@ -90,24 +106,53 @@ char *DeviceManager::readDeviceName(char *out)
 void DeviceManager::writeDeviceName(const char *deviceName, uint8_t length)
 {
   // Write unique ID to EEPROM
-  int i;
-  logger.info("Writing Device Name: ", deviceName);
-  for (i = 0; i < length; i++)
-  {
-    EEPROM.write(i, deviceName[i]);
-  }
-  EEPROM.write(i, '\0');
-  EEPROM.commit();
-  char message[100];
-  sprintf(message, "Wrote device name to EEPROM: %s", deviceName);
-  logger.info(message);
-  strcpy(m_deviceName, deviceName);
+  DeviceConfigurator::writeName(deviceName);
+
+  // Read the device name so it is reflected in the DeviceManager
+  readDeviceName(m_deviceName);
+  logger.info("Device name changed to: ", deviceName);
+  m_interface->sendDeviceName(deviceName);
+}
+
+void DeviceManager::writeDeviceColor(uint32_t color)
+{
+  // Write the color to the EEPROM
+  DeviceConfigurator::writeColor(color);
+
+  // Read the color so it is reflected in the DeviceManager
+  m_interface->sendDeviceColor(color);
+  logger.info("Device color updated to: ", color);
+}
+
+void DeviceManager::writeDeviceAccentColor(uint32_t accentColor)
+{
+  // Write the accent color to the EEPROM
+  DeviceConfigurator::writeAccentColor(accentColor);
+
+  // Read the accent color so it is reflected in the DeviceManager
+  m_interface->sendDeviceAccentColor(accentColor);
+  logger.info("Device accent color updated to: ", accentColor);
 }
 #endif
 
 bool DeviceManager::isActiveTurn()
 {
   return m_interface->isTurn();
+}
+
+void DeviceManager::onDeviceNameChanged(char *name)
+{
+  writeDeviceName(name, strlen(name));
+}
+
+void DeviceManager::onDeviceColorChanged(uint32_t color)
+{
+  writeDeviceColor(color);
+}
+
+void DeviceManager::onDeviceAccentColorChanged(uint32_t accentColor)
+{
+  writeDeviceAccentColor(accentColor);
 }
 
 // Transition from the active turn to 'turn sequence' mode

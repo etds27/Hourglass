@@ -2,6 +2,7 @@
 #ifndef SIMULATOR
 #include "ble_interface.h"
 #include "logger.h"
+#include "device_config.h"
 
 const char *SERVICE_UUID = "d7560343-51d4-4c24-a0fe-118fd9078144";
 const char *DEVICE_STATE_UUID = "3f29c2e5-3837-4498-bcc1-cb33f1c10c3c";
@@ -15,12 +16,20 @@ const char *REMAINING_TIME_UUID = "4e1c05f6-c128-4bca-96c3-29c014e00eb6";
 const char *TIMER_UUID = "4661b4c1-093d-4db7-bb80-5b5fe3eae519";
 const char *SKIPPED_PLAYERS = "b31fa38e-a424-47ad-85d9-639cbab14e88";
 
+const char *DEVICE_NAME_UUID = "050753a4-2b7a-41f9-912e-4310f5e750e6";
+const char *DEVICE_COLOR_UUID = "85f6ff14-861b-47cf-8e41-5f5b94100bd9";
+const char *DEVICE_ACCENT_COLOR_UUID = "3d56abf2-9473-459b-b5ff-b97f33cae324";
+
 const char *DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb";
 
 const int BLE_POLL_RATE = 50;
 
+// Required to let the linker know about the static instance
+BLEInterface* BLEInterface::instance = nullptr;
+
 BLEInterface::BLEInterface(char *deviceName)
 {
+  instance = this;
   if (!BLE.begin())
   {
     Serial.println("Starting BLE failed!");
@@ -29,7 +38,22 @@ BLEInterface::BLEInterface(char *deviceName)
   }
   m_deviceName = deviceName;
   lastPoll = millis();
-};
+}
+
+void BLEInterface::sendDeviceName(const char *name)
+{
+  m_deviceNameCharacteristic->setValue(name);
+}
+
+void BLEInterface::sendDeviceColor(uint32_t color)
+{
+  m_deviceColor->writeValue(color);
+}
+
+void BLEInterface::sendDeviceAccentColor(uint32_t accentColor)
+{
+  m_deviceAccentColor->writeValue(accentColor);
+}
 
 bool BLEInterface::isConnected()
 {
@@ -129,6 +153,51 @@ void BLEInterface::poll()
   }
 }
 
+void BLEInterface::onDeviceNameChanged(BLEDevice central, BLECharacteristic characteristic)
+{
+  if (instance->m_deviceNameChangeCallback)
+  {
+    char name[MAX_NAME_LENGTH] {};
+    const uint8_t * data = characteristic.value();
+    int len = characteristic.valueLength();
+    strncpy(name, (const char*)data, len);
+    name[min(len, (int) sizeof(name) - 1) ] = '\0';
+    instance->m_deviceNameChangeCallback(name);
+  }
+  else
+  {
+    logger.warning("No device name change callback registered");
+  }
+}
+
+void BLEInterface::onDeviceColorChanged(BLEDevice central, BLECharacteristic characteristic)
+{
+  if (instance->m_deviceColorChangeCallback)
+  {
+    uint32_t color;
+    characteristic.readValue(color);
+    instance->m_deviceColorChangeCallback(color);
+  }
+  else
+  {
+    logger.warning("No device color change callback registered");
+  }
+}
+
+void BLEInterface::onDeviceAccentColorChanged(BLEDevice central, BLECharacteristic characteristic)
+{
+    if (instance->m_deviceColorChangeCallback)
+  {
+    uint32_t color;
+    characteristic.readValue(color);
+    instance->m_deviceAccentColorChangeCallback(color);
+  }
+  else
+  {
+    logger.warning("No accent color change callback registered");
+  }
+}
+
 void BLEInterface::setService()
 {
   logger.info(SERVICE_UUID);
@@ -177,6 +246,17 @@ void BLEInterface::setService()
   // Game is currently paused
   m_skippedPlayers = new BLEIntCharacteristic(SKIPPED_PLAYERS, BLEWrite | BLERead);
   m_service->addCharacteristic(*m_skippedPlayers);
+
+
+  // Device Name Characteristic
+  m_deviceNameCharacteristic = new BLEStringCharacteristic(DEVICE_NAME_UUID, BLERead | BLEWrite, MAX_NAME_LENGTH);
+  m_deviceNameCharacteristic->setEventHandler(BLEWritten, onDeviceNameChanged);
+
+  m_deviceColor = new BLEIntCharacteristic(DEVICE_COLOR_UUID, BLERead | BLEWrite);
+  m_deviceColor->setEventHandler(BLEWritten, onDeviceColorChanged);
+
+  m_deviceAccentColor = new BLEIntCharacteristic(DEVICE_ACCENT_COLOR_UUID, BLERead | BLEWrite);
+  m_deviceAccentColor->setEventHandler(BLEWritten, onDeviceAccentColorChanged);
 
   logger.info("Advertising with name: ", m_deviceName);
   BLE.setLocalName(m_deviceName);
