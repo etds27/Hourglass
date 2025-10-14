@@ -19,7 +19,12 @@ public:
   // Reads the device name from the EEPROM where it is stored.
   char *readDeviceName(char *out);
 
-
+  // Writes the device name to the EEPROM and updates the stored device name for the Device Manager
+  #ifndef SIMULATOR
+  void writeDeviceName(const char *deviceName, uint8_t length);
+  void writeDeviceColor(uint32_t color);
+  void writeDeviceAccentColor(uint32_t accentColor);
+  #endif
 
   // Initializes the bluetooth peripheral interface and sets up the light for output
   void start();
@@ -105,12 +110,7 @@ private:
   void onDeviceColorChanged(uint32_t color);
   void onDeviceAccentColorChanged(uint32_t accentColor);
 
-  // Writes the device name to the EEPROM and updates the stored device name for the Device Manager
-  #ifndef SIMULATOR
-  void writeDeviceName(const char *deviceName, uint8_t length);
-  void writeDeviceColor(uint32_t color);
-  void writeDeviceAccentColor(uint32_t accentColor);
-  #endif
+
 
   void updateDeviceName(const char *name);
   void updateDeviceColor(uint32_t color);

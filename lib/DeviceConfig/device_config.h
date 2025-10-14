@@ -26,4 +26,6 @@ namespace DeviceConfigurator {
     void readName(char* name, size_t maxLength);
     uint32_t readColor();
     uint32_t readAccentColor();
+
+    void printConfig(const DeviceConfig& config);
 }

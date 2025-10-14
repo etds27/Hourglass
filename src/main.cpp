@@ -90,7 +90,7 @@ void setup()
 #endif
 
   deviceManager = new DeviceManager(displayManager);
-  // deviceManager->writeDeviceName("HG7     ", 8);
+  deviceManager->writeDeviceName("ETHAN_TEST", 16);
   // logger.info(String(deviceManager->getDeviceName()));
   deviceManager->start();
 }
