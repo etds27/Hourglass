@@ -16,6 +16,7 @@
 #include "hg_display_manager.h"
 #include "lcd_ring.h"
 #include "lcd_timer.h"
+#include "device_config.h"
 #include <TFT_eSPI.h>
 
 unsigned long lastMemoryUpdate = millis();
@@ -68,7 +69,7 @@ void setup()
   logger.info("Start of program");
   // Start the BLE peripheral
 
-  EEPROM.begin(8);
+  EEPROM.begin(sizeof(DeviceConfig));
 #endif
   displayManager = new HourglassDisplayManager();
 
@@ -89,9 +90,8 @@ void setup()
 
 #endif
 
+  DeviceConfigurator::writeName("ETHAN_TEST");
   deviceManager = new DeviceManager(displayManager);
-  deviceManager->writeDeviceName("ETHAN_TEST", 16);
-  // logger.info(String(deviceManager->getDeviceName()));
   deviceManager->start();
 }
 
