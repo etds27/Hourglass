@@ -61,7 +61,7 @@ DeviceConfig DeviceConfigurator::readConfig()
         logger.info("Overwriting with default config");
         writeConfig(config); // Save the default config
     }
-    printConfig
+    printConfig(config);
     return config;
 }
 
