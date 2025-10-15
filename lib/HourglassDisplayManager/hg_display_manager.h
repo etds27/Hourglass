@@ -34,6 +34,8 @@ class HourglassDisplayManager {
     void updateTimerData(struct TimerData data);
     void updateTurnSequenceData(struct TurnSequenceData data);
     void updateAwaitingGameStartData(struct GameStartData data);
+    void updatePrimaryColor(uint32_t color);
+    void updateAccentColor(uint32_t accentColor);
 
     private:
         std::vector<HGDisplayInterface*> interfaces;

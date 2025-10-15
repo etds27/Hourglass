@@ -58,6 +58,22 @@ void HourglassDisplayManager::updateAwaitingGameStartData(GameStartData data)
                          { interface->updateAwaitingGameStartData(data); });
 }
 
+void HourglassDisplayManager::updatePrimaryColor(uint32_t color)
+{
+    applyToAllInterfaces([color](HGDisplayInterface *interface)
+                         { interface->updatePrimaryColor(color); });
+}
+
+void HourglassDisplayManager::updateAccentColor(uint32_t accentColor)
+{
+    applyToAllInterfaces([accentColor](HGDisplayInterface *interface)
+                         { interface->updateAccentColor(accentColor); });
+}
+
+void HourglassDisplayManager::updateAccentColor(uint32_t accentColor)
+{
+}
+
 void HourglassDisplayManager::applyToAllInterfaces(std::function<void(HGDisplayInterface *)> func)
 {
     for (HGDisplayInterface *interface : interfaces)

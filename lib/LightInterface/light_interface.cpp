@@ -235,8 +235,6 @@ void LightInterface::updateLightModeTurnSequence()
   uint32_t currentPlayerColor = (m_colorBlindMode) ? CURRENT_PLAYER_COLOR_ALT : CURRENT_PLAYER_COLOR;
   uint32_t otherPlayerColor = (m_colorBlindMode) ? OTHER_PLAYER_COLOR_ALT : OTHER_PLAYER_COLOR;
 
-
-
   int deltaTime = (int)(millis() - m_startTime);
   double pct = (deltaTime % SKIPPED_PULSE_DURATION) / (double)SKIPPED_PULSE_DURATION;
 
@@ -448,7 +446,20 @@ void LightInterface::updateGamePaused()
 
 void LightInterface::updateGameDebug()
 {
-  displayBuffer(m_gameDebugData.buffer);
+  uint32_t *buffer = new uint32_t[m_ledCount]{};
+  // copyBuffer(m_gameDebugData.buffer, buffer, m_ledCount);
+
+  for (int i = 0; i < m_ledCount; i++)
+  {
+    if (i % 2 == 0)
+      buffer[i] = m_accentColor;
+    else
+      buffer[i] = m_primaryColor;
+  }
+
+  displayBuffer(buffer);
+
+  delete[] buffer;
 }
 
 void LightInterface::updateLightModeBuzzerAwaitingBuzz()
@@ -461,9 +472,9 @@ void LightInterface::updateLightModeBuzzerAwaitingBuzz()
 
   uint8_t halfBufferSize = m_ledCount / 2;
 
-  uint32_t *colorBuffer = new uint32_t[m_ledCount] {};
-  uint32_t *tailBuffer1 = new uint32_t[halfBufferSize] {};
-  uint32_t *tailBuffer2 = new uint32_t[halfBufferSize] {};
+  uint32_t *colorBuffer = new uint32_t[m_ledCount]{};
+  uint32_t *tailBuffer1 = new uint32_t[halfBufferSize]{};
+  uint32_t *tailBuffer2 = new uint32_t[halfBufferSize]{};
 
   uint8_t numColors = 4;
   uint32_t timeSinceModeStart = millis() - m_startTime;
@@ -474,7 +485,7 @@ void LightInterface::updateLightModeBuzzerAwaitingBuzz()
 
   uint8_t currentColorCycle = totalCycleTime / colorCycleDuration;
 
-  uint8_t offset = (currentCycleTime / (double) colorCycleDuration) * m_ledCount;
+  uint8_t offset = (currentCycleTime / (double)colorCycleDuration) * m_ledCount;
 
   uint32_t color;
 
@@ -531,13 +542,14 @@ void LightInterface::updateLightModeWinnerPeriodTimed()
   displaySymmetricFixedColorTimer(m_timerData.elapsedTime, m_timerData.totalTime);
 }
 
-void LightInterface::updateLightModeBuzzerResults() {
+void LightInterface::updateLightModeBuzzerResults()
+{
   displayMarqueeBuzzer(m_colorBlindMode ? BUZZER_ACTIVE_TURN_COLOR_LOSER_ALT : BUZZER_ACTIVE_TURN_COLOR_LOSER);
 }
 
 void LightInterface::updateLightModeAwaitTurnStart()
 {
-  uint32_t *colorBuffer = new uint32_t[m_ledCount] {};
+  uint32_t *colorBuffer = new uint32_t[m_ledCount]{};
 
   unsigned long timeSinceModeStart = (millis() - m_startTime);
 
@@ -554,13 +566,13 @@ void LightInterface::updateLightModeAwaitTurnStart()
   double pct = (double)cycleElapsedTime / (double)totalCycleDuration;
 
   double doublePct = pct * 2.0;
-  doublePct = doublePct - (int) doublePct;
+  doublePct = doublePct - (int)doublePct;
 
   double triplePct = pct * 3.0;
-  triplePct = triplePct - (int) triplePct;
+  triplePct = triplePct - (int)triplePct;
 
   double quadPct = pct * 4.0;
-  quadPct = quadPct - (int) quadPct;
+  quadPct = quadPct - (int)quadPct;
 
   EasingFunction::EasingFunction *function = new EasingFunction::Quadratic(EasingMode::EaseInAndOut);
   pct = function->ease(pct);
@@ -583,23 +595,25 @@ void LightInterface::updateLightModeAwaitTurnStart()
   delete[] colorBuffer;
 }
 
-void LightInterface::displayMarqueeBuzzer(uint32_t color) 
+void LightInterface::displayMarqueeBuzzer(uint32_t color)
 {
   unsigned long timeSinceModeStart = millis() - m_startTime;
   uint32_t doubleCycleTime = timeSinceModeStart % BUZZER_ACTIVE_TURN_MARQUEE_DURATION;
   uint8_t offset = 0;
 
-  if (doubleCycleTime > BUZZER_ACTIVE_TURN_MARQUEE_DURATION / 2) {
+  if (doubleCycleTime > BUZZER_ACTIVE_TURN_MARQUEE_DURATION / 2)
+  {
     offset = 1;
   }
 
-  uint32_t *colorBuffer = new uint32_t[m_ledCount] {};
+  uint32_t *colorBuffer = new uint32_t[m_ledCount]{};
 
   ColorTransform::ColorTransform *transform = new ColorTransform::DimColor(150);
   uint32_t dimColor = transform->applyTransform(color);
   delete transform;
 
-  for (int i = 0; i < m_ledCount; i++) {
+  for (int i = 0; i < m_ledCount; i++)
+  {
     colorBuffer[i] = i % 2 ? dimColor : color;
   }
 
@@ -658,7 +672,7 @@ void LightInterface::displaySymmetricFixedColorTimer(uint32_t elapsedTime, uint3
 
   uint8_t halfBufferSize = m_ledCount / 2;
 
-  double pct = (double) elapsedTime / totalTimerDuration;
+  double pct = (double)elapsedTime / totalTimerDuration;
   // Restrict pct to be between 0..1
   pct = std::max(0.0, std::min(pct, 1.0));
   uint8_t filled = std::min((int)((pct * halfBufferSize) + 1), (int)halfBufferSize);

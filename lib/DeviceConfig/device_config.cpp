@@ -25,7 +25,7 @@ void DeviceConfigurator::writeName(const char *name)
         strncpy(config.name, name, MAX_NAME_LENGTH - 1);
         config.name[MAX_NAME_LENGTH - 1] = '\0'; // Ensure null-termination
         writeConfig(config);
-        logger.info("Device name updated");
+        logger.info("Device name updated to: ", config.name);
     } else {
         logger.info("Device name unchanged");
     }
@@ -36,7 +36,7 @@ void DeviceConfigurator::writeColor(uint32_t color)
     DeviceConfig config = readConfig();
     config.color = color;
     writeConfig(config);
-    logger.info("Device color updated");
+    logger.info("Device color updated to ", color);
 }
 
 void DeviceConfigurator::writeAccentColor(uint32_t accentColor)
@@ -44,7 +44,7 @@ void DeviceConfigurator::writeAccentColor(uint32_t accentColor)
     DeviceConfig config = readConfig();
     config.accentColor = accentColor;
     writeConfig(config);
-    logger.info("Device accent color updated");
+    logger.info("Device accent color updated to ", accentColor);
 }
 
 DeviceConfig DeviceConfigurator::readConfig()

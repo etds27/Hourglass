@@ -49,6 +49,9 @@ protected:
     /// @brief Minimum time (in ms) to wait before the display will redraw
     uint32_t m_refreshRate = DISPLAY_REFRESH_RATE;
 
+    uint32_t m_primaryColor = HOURGLASS_RED;
+    uint32_t m_accentColor = HOURGLASS_GREEN;
+
     DeviceState::State m_state = DeviceState::State::Off;
     bool m_colorBlindMode = false;
     bool m_absoluteOrientation = true;
@@ -115,6 +118,7 @@ protected:
     /// @brief Display the state when waiting for a turn to start
     virtual void updateLightModeAwaitTurnStart() = 0;
 
+
 public:
     virtual ~HGDisplayInterface();
 
@@ -144,4 +148,13 @@ public:
     void updateTurnSequenceData(struct TurnSequenceData data);
     void updateAwaitingGameStartData(struct GameStartData data);
     void updateBuzzerResultsData(struct BuzzerResultsData data);
+
+    
+    /// @brief Update primary color of the display interface
+    /// @param color New primary color
+    void updatePrimaryColor(uint32_t color);
+
+    /// @brief Update accent color of the display interface
+    /// @param accentColor New accent color
+    void updateAccentColor(uint32_t accentColor);
 };

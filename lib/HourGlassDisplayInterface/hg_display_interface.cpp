@@ -6,6 +6,11 @@
 #include "simulator_tools.h"
 #endif
 
+namespace
+{
+    const LogString loggerTag = "HGDisplayInterface";
+}
+
 HGDisplayInterface::~HGDisplayInterface() {}
 
 void HGDisplayInterface::setUp()
@@ -26,7 +31,7 @@ void HGDisplayInterface::setAbsoluteOrientation(bool orientation)
 
 void HGDisplayInterface::setDisplayMode(DeviceState::State state)
 {
-  logger.debug("Setting Light Mode");
+  logger.debug(loggerTag, "Setting Light Mode");
   m_startTime = millis();
   clear();
   m_state = state;
@@ -124,3 +129,17 @@ bool HGDisplayInterface::getClearBeforeUpdate() const
 {
   return m_clearBeforeUpdate;
 }
+
+void HGDisplayInterface::updatePrimaryColor(uint32_t color)
+{
+  logger.info(loggerTag, ": Updating primary color to ", color);
+  m_primaryColor = color;
+}
+
+void HGDisplayInterface::updateAccentColor(uint32_t accentColor)
+{
+  logger.info(loggerTag, ": Updating accent color to ", accentColor);
+  m_primaryColor = accentColor;
+}
+
+

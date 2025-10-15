@@ -27,28 +27,28 @@ namespace Logging {
     // void error(const LogString& message);
 
     template<typename... Args>
-    void debug(Args&&... args) {
+    void debug(const LogString& tag, Args&&... args) {
       log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::DEBUG);
     }
 
     template<typename... Args>
-    void info(Args&&... args) {
+    void info(const LogString& tag, Args&&... args) {
       log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::INFO);
     }
 
     template<typename... Args>
-    void warning(Args&&... args) {
+    void warning(const LogString& tag, Args&&... args) {
       log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::WARNING);
     }
 
     template<typename... Args>
-    void error(Args&&... args) {
+    void error(const LogString& tag, Args&&... args) {
       log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::FAILURE);
     }
 
 
   private:
-    void log(const LogString& message, Logging::LoggerLevel level);
+    void log(const LogString& message, Logging::LoggerLevel level, const LogString& tag = "");
 
     #ifdef SIMULATOR
     template<typename T, typename... Args>

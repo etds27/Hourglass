@@ -25,7 +25,7 @@ void Logging::Logger::error(const LogString& message) {
 }
 */
 
-void Logging::Logger::log(const LogString& message, Logging::LoggerLevel level) {
+void Logging::Logger::log(const LogString& message, Logging::LoggerLevel level, const LogString& tag) {
   if (level >= loggerLevel) {
     std::cout << millis();
     switch (level) {
@@ -35,6 +35,11 @@ void Logging::Logger::log(const LogString& message, Logging::LoggerLevel level) 
       case Logging::LoggerLevel::FAILURE: std::cout << ": (ERROR)   "; break;
       default: break;
     }
+
+    if (tag.length() > 0) {
+      std::cout << "[" << tag << "] ";
+    }
+
     std::cout << message << std::endl;
   }
 }
@@ -57,7 +62,7 @@ void Logging::Logger::error(const LogString& message) {
   log(message, Logging::LoggerLevel::FAILURE);
 }
 */
-void Logging::Logger::log(const LogString& message, Logging::LoggerLevel level) {
+void Logging::Logger::log(const LogString& message, Logging::LoggerLevel level, const LogString& tag) {
   if (level >= loggerLevel) {
     String messageBuffer = String(millis(), DEC);
     switch (level) {
@@ -71,6 +76,13 @@ void Logging::Logger::log(const LogString& message, Logging::LoggerLevel level) 
       messageBuffer += ": (FAILURE)  "; break;
       default: break;
     }
+
+    if (tag.length() > 0) {
+      messageBuffer += "[";
+      messageBuffer += tag;
+      messageBuffer += "] ";
+    }
+
     messageBuffer += String(message.c_str());
     Serial.println(messageBuffer);
   }
