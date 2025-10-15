@@ -70,9 +70,6 @@ void HourglassDisplayManager::updateAccentColor(uint32_t accentColor)
                          { interface->updateAccentColor(accentColor); });
 }
 
-void HourglassDisplayManager::updateAccentColor(uint32_t accentColor)
-{
-}
 
 void HourglassDisplayManager::applyToAllInterfaces(std::function<void(HGDisplayInterface *)> func)
 {

@@ -139,7 +139,7 @@ void HGDisplayInterface::updatePrimaryColor(uint32_t color)
 void HGDisplayInterface::updateAccentColor(uint32_t accentColor)
 {
   logger.info(loggerTag, ": Updating accent color to ", accentColor);
-  m_primaryColor = accentColor;
+  m_accentColor = accentColor;
 }
 
 
