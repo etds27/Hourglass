@@ -4,6 +4,9 @@
 
 namespace DeviceState
 {
+
+  // Double check when this gets greater than 32
+  extern const uint8_t NUMBER_OF_STATES = 18;
   
   /// @brief The current state of the device
   ///
