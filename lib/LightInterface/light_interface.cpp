@@ -48,6 +48,34 @@ const uint32_t AWAIT_GAME_COLORS_ALT[16] = {
     AWAIT_GAME_COLOR_ALT15,
     AWAIT_GAME_COLOR_ALT16};
 
+/*
+The number of colors used in each state:
+This will match what is set in the app so that when we are in the color
+editor, we display the correct number of colors for each state that can be modified
+  {
+    Off = 0,
+    AwaitingConnection = 1,
+    AwaitingGameStart = 0,
+    ActiveTurnEnforced = 0,
+    ActiveTurnNotEnforced = 3,
+    AwaitingTurn = 3,
+    Skipped = 1,
+    Paused = 0,
+    Debug = 0,
+    BuzzerAwaitingBuzz = 4,
+    BuzzerAwaitingBuzzTimed = 0,
+    BuzzerAwaitingTurnEnd = 0,
+    BuzzerResults = 1,
+    BuzzerWinnerPeriod = 1,
+    BuzzerWinnerPeriodTimed = 0,
+    BuzzerAlreadyAnswered = 0,
+    BuzzerAwaitingBuzzerEnabled = 0,
+    BuzzerAwaitingTurnStart = 4,
+    Unknown = 0,
+  };
+*/
+
+
 LightInterface::LightInterface(const uint8_t ledCount, const uint8_t diPin)
 {
   logger.info("Initializing Light Interface");
