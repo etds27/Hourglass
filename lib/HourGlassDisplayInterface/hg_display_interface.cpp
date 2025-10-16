@@ -35,6 +35,7 @@ void HGDisplayInterface::setDisplayMode(DeviceState::State state)
   m_startTime = millis();
   clear();
   m_state = state;
+  loadCurrentColorConfig();
   update();
 };
 
@@ -128,6 +129,12 @@ void HGDisplayInterface::updateBuzzerResultsData(BuzzerResultsData data)
 bool HGDisplayInterface::getClearBeforeUpdate() const
 {
   return m_clearBeforeUpdate;
+}
+
+void HGDisplayInterface::loadCurrentColorConfig()
+{
+  m_colorConfig = DeviceConfigurator::readColorConfig(static_cast<uint16_t>(m_state));
+  logger.info(loggerTag, ": Loaded color config for state ", static_cast<uint16_t>(m_state));
 }
 
 void HGDisplayInterface::updatePrimaryColor(uint32_t color)

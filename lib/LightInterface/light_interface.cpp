@@ -92,6 +92,12 @@ uint8_t LightInterface::getRingOffset() const
 
 void LightInterface::updateLightModeActiveTurnNoTimer()
 {
+  // Uses 3 colors to create a moving inchworm effect
+  // The colors will be set in the color config for the state
+  // color[0] is the main color
+  // color[1] is the color of the first segment
+  // color[2] is the color of the second segment
+
   // This lighting effect will be n (divides m_ledCount) equally spaced LEDs
   // These LEDs will grow to fill until reaching the next LED
   // Then it will shrink from the starting edge
@@ -146,7 +152,7 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
   {
     for (int i = 0; i < subcycle; i++)
     {
-      colorBuffer[i] = NO_TIMER_COLOR;
+      colorBuffer[i] = m_colorConfig.colors[0];
     }
     /*
     // This prevents the ring from being 100% off at the start of the sequence
@@ -160,7 +166,7 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
   {
     for (int i = subcycle; i < segmentLength; i++)
     {
-      colorBuffer[i] = NO_TIMER_COLOR;
+      colorBuffer[i] =  m_colorConfig.colors[0];
     }
     /*
     // This prevents the ring from being 100% off at the end of the sequence
@@ -175,8 +181,8 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
   extendBuffer(colorBuffer, fullColorBuffer, segmentLength);
 
   // Color the first segment green and the opposite segment blue
-  this->colorBuffer(fullColorBuffer, segmentLength, RED);
-  this->colorBuffer(fullColorBuffer + (segmentLength * NO_TIMER_SEGMENTS / 2), segmentLength, BLUE);
+  this->colorBuffer(fullColorBuffer, segmentLength,  m_colorConfig.colors[1]);
+  this->colorBuffer(fullColorBuffer + (segmentLength * NO_TIMER_SEGMENTS / 2), segmentLength,  m_colorConfig.colors[2]);
   if (NO_TIMER_APPLY_OFFSET)
   {
     // Offset is the number of full cycles that have already played
@@ -197,6 +203,9 @@ void LightInterface::updateLightModeActiveTurnTimer()
 // Light mode for skipped should be a pulsing gray that changes based on brightness values
 void LightInterface::updateLightModeSkipped()
 {
+  // This lighting mode uses one color from the color config for the state
+  // color[0] is used for the pulsing color
+
   int deltaTime = (int)(millis() - m_startTime);
 
   // Percentage through pulse sequence
@@ -209,7 +218,7 @@ void LightInterface::updateLightModeSkipped()
 
   for (int i = 0; i < m_ledCount; i++)
   {
-    colorBuffer[i] = SKIPPED_COLOR;
+    colorBuffer[i] = m_colorConfig.colors[0];
   }
 
   displayBuffer(colorBuffer);
@@ -224,6 +233,12 @@ void LightInterface::updateLightModeTurnSequence()
   //    Skipped player lights will be calculated and then dimmed with a dynamic local brightness setting that is calculated based on time
   //    A local brightness function for color will need to be implemented to acheive localized dimming
 
+  // This lighting mode uses 3 colors from the color config for the state
+  // color[0] is the color for the current player
+  // color[1] is the color for the user's player
+  // color[2] is the color for all other players
+  // color[3] is unused
+
   // logger.debug("Total Players:  ", m_turnSequenceData.totalPlayers);
   // logger.debug("My Player:      ", m_turnSequenceData.myPlayerIndex);
   // logger.debug("Current Player: ", m_turnSequenceData.currentPlayerIndex);
@@ -231,9 +246,9 @@ void LightInterface::updateLightModeTurnSequence()
   uint32_t *colorBuffer = new uint32_t[m_ledCount];
   uint32_t *modifiedColorBuffer = new uint32_t[m_ledCount];
 
-  uint32_t myPlayerColor = (m_colorBlindMode) ? MY_PLAYER_COLOR_ALT : MY_PLAYER_COLOR;
-  uint32_t currentPlayerColor = (m_colorBlindMode) ? CURRENT_PLAYER_COLOR_ALT : CURRENT_PLAYER_COLOR;
-  uint32_t otherPlayerColor = (m_colorBlindMode) ? OTHER_PLAYER_COLOR_ALT : OTHER_PLAYER_COLOR;
+  uint32_t myPlayerColor = m_colorConfig.colors[0];
+  uint32_t currentPlayerColor = m_colorConfig.colors[1];
+  uint32_t otherPlayerColor = m_colorConfig.colors[2];
 
   int deltaTime = (int)(millis() - m_startTime);
   double pct = (deltaTime % SKIPPED_PULSE_DURATION) / (double)SKIPPED_PULSE_DURATION;
@@ -328,10 +343,12 @@ void LightInterface::updateLightModeAwaitGameStart()
 
 void LightInterface::updateLightModeAwaitConnection()
 {
+  // This lighting mode uses one color from the color config for the state
+  // color[0] is used for the cycling color
   uint32_t *colorBuffer = new uint32_t[m_ledCount]{};
 
   // unsigned long currentSecond = (int)(millis() - m_startTime) / AWAIT_CONNECTION_SPEED;
-  uint32_t color = (m_colorBlindMode) ? AWAIT_CONNECTION_COLOR_ALT : AWAIT_CONNECTION_COLOR;
+  uint32_t color = m_colorConfig.colors[0];
 
   unsigned long timeSinceModeStart = (millis() - m_startTime);
 
@@ -464,6 +481,12 @@ void LightInterface::updateGameDebug()
 
 void LightInterface::updateLightModeBuzzerAwaitingBuzz()
 {
+  // 4 colors are used for this lighting mode
+  // color[0] is the first color in the cycle
+  // color[1] is the second color in the cycle
+  // color[2] is the third color in the cycle
+  // color[3] is the fourth color in the cycle
+
   // TODO: Remove before merge
   updateLightModeActiveTurnNoTimer();
   return;
@@ -494,16 +517,16 @@ void LightInterface::updateLightModeBuzzerAwaitingBuzz()
   switch (currentColorCycle)
   {
   case 0:
-    color = m_colorBlindMode ? BUZZER_AWAITING_TURN_END_COLOR_ALT_1 : BUZZER_AWAITING_TURN_END_COLOR_1;
+    color = m_colorConfig.colors[0];
     break;
   case 1:
-    color = m_colorBlindMode ? BUZZER_AWAITING_TURN_END_COLOR_ALT_2 : BUZZER_AWAITING_TURN_END_COLOR_2;
+    color = m_colorConfig.colors[1];
     break;
   case 2:
-    color = m_colorBlindMode ? BUZZER_AWAITING_TURN_END_COLOR_ALT_3 : BUZZER_AWAITING_TURN_END_COLOR_3;
+    color = m_colorConfig.colors[2];
     break;
   case 3:
-    color = m_colorBlindMode ? BUZZER_AWAITING_TURN_END_COLOR_ALT_4 : BUZZER_AWAITING_TURN_END_COLOR_4;
+    color = m_colorConfig.colors[3];
     break;
   default:
     break;
@@ -534,7 +557,9 @@ void LightInterface::updateLightModeBuzzerAwaitingBuzzTimed()
 
 void LightInterface::updateLightModeWinnerPeriod()
 {
-  displayMarqueeBuzzer(m_colorBlindMode ? BUZZER_ACTIVE_TURN_COLOR_WINNER_ALT : BUZZER_ACTIVE_TURN_COLOR_WINNER);
+  // Uses a marquee effect with the winner color
+  // color[0] is the winner color
+  displayMarqueeBuzzer(m_colorConfig.colors[0]);
 }
 
 void LightInterface::updateLightModeWinnerPeriodTimed()
@@ -544,11 +569,19 @@ void LightInterface::updateLightModeWinnerPeriodTimed()
 
 void LightInterface::updateLightModeBuzzerResults()
 {
-  displayMarqueeBuzzer(m_colorBlindMode ? BUZZER_ACTIVE_TURN_COLOR_LOSER_ALT : BUZZER_ACTIVE_TURN_COLOR_LOSER);
+  // Uses a marquee effect with the loser color
+  // color[0] is the loser color
+  displayMarqueeBuzzer(m_colorConfig.colors[0]);
 }
 
 void LightInterface::updateLightModeAwaitTurnStart()
 {
+  // This lighting mode uses 4 colors from the color config for the state
+  // color[0] is the first color in the cycle
+  // color[1] is the second color in the cycle
+  // color[2] is the third color in the cycle
+  // color[3] is the fourth color in the cycle
+
   uint32_t *colorBuffer = new uint32_t[m_ledCount]{};
 
   unsigned long timeSinceModeStart = (millis() - m_startTime);
@@ -586,10 +619,10 @@ void LightInterface::updateLightModeAwaitTurnStart()
   uint8_t index3 = min((int)(m_ledCount * triplePct), m_ledCount - 1);
   uint8_t index4 = min((int)(m_ledCount * quadPct), m_ledCount - 1);
 
-  colorBuffer[index1] = HOURGLASS_GREEN;
-  colorBuffer[index2] = HOURGLASS_BLUE;
-  colorBuffer[index3] = HOURGLASS_RED;
-  colorBuffer[index4] = HOURGLASS_YELLOW;
+  colorBuffer[index1] = m_colorConfig.colors[0];
+  colorBuffer[index2] = m_colorConfig.colors[1];
+  colorBuffer[index3] = m_colorConfig.colors[2];
+  colorBuffer[index4] = m_colorConfig.colors[3];
 
   displayBuffer(colorBuffer, false);
   delete[] colorBuffer;

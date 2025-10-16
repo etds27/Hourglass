@@ -3,6 +3,8 @@
 #include "constants.h"
 #include <stdint.h>
 
+#include "device_config.h"
+
 /// @brief All required data for any display interface to show the Awaiting Game Start state
 struct GameStartData
 {
@@ -63,6 +65,10 @@ protected:
     struct BuzzerResultsData m_buzzerResultsData;
 
     unsigned long m_lastUpdate;
+
+    ColorConfig m_colorConfig;
+
+    virtual void loadCurrentColorConfig();
 
     // MARK: Light Modes
 
