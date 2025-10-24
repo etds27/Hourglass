@@ -19,7 +19,14 @@
 //  WARNING = 2,
 //  ERROR = 3,
 //  OFF = 4
-#define LOGGER_LEVEL 1
+
+#ifdef PROD_RELEASE
+// Diable logging in production release
+#define LOGGER_LEVEL 4
+#else
+#define LOGGER_LEVEL 0
+#endif
+
 
 #define LED_ADAFRUIT 0
 
