@@ -28,22 +28,22 @@ namespace Logging {
 
     template<typename... Args>
     void debug(const LogString& tag, Args&&... args) {
-      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::DEBUG);
+      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::DEBUG, tag);
     }
 
     template<typename... Args>
     void info(const LogString& tag, Args&&... args) {
-      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::INFO);
+      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::INFO, tag);
     }
 
     template<typename... Args>
     void warning(const LogString& tag, Args&&... args) {
-      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::WARNING);
+      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::WARNING, tag);
     }
 
     template<typename... Args>
     void error(const LogString& tag, Args&&... args) {
-      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::FAILURE);
+      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::FAILURE, tag);
     }
 
 

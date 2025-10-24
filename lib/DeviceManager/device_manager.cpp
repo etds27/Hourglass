@@ -20,36 +20,25 @@ namespace
   const LogString loggerTag = "DeviceManager";
 }
 
-DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
+DeviceManager::DeviceManager(HourglassDisplayManager *displayManager, InputInterface *inputInterface, HGCentralInterface *centralInterface)
 {
   m_displayManager = displayManager;
+  m_inputInterface = inputInterface;
+  m_interface = centralInterface;
 
   logger.info(loggerTag, ": Initializing Device Manager");
   m_deviceName = new char[MAX_NAME_LENGTH];
   readDeviceName(m_deviceName);
   logger.info(loggerTag, ": Device name: ", m_deviceName);
 
-#ifdef SIMULATOR
-  m_inputInterface = new GLInputInterface();
-  m_interface = new SimulatorCentralInterface(m_deviceName);
-#else
-  logger.info(loggerTag, ": Creating Input Interface");
-  m_inputInterface = new ButtonInputInterface(BUTTON_INPUT_PIN);
-  logger.info(loggerTag, ": Creating Central Interface");
-  m_interface = new BLEInterface(m_deviceName);
 
-  m_interface->registerDeviceNameChangedCallback([this](char *name)
-                                                 { this->onDeviceNameChanged(name); });
-
-  m_interface->registerDeviceColorChangedCallback([this](uint32_t color)
-                                                  { this->onDeviceColorChanged(color); });
-
-  m_interface->registerDeviceAccentColorChangedCallback([this](uint32_t accentColor)
-                                                        { this->onDeviceAccentColorChanged(accentColor); });
+#ifndef SIMULATOR
+  registerCallbacks();
 
   // Allows the main device button to wake the device from sleep state
   esp_sleep_enable_ext0_wakeup(BUTTON_GPIO_PIN, HIGH);
 #endif
+  m_interface->sendDeviceName(m_deviceName);
 
   logger.info(loggerTag, ": Creating Input Monitor");
   m_buttonMonitor = new ButtonInputMonitor(m_inputInterface);
@@ -66,9 +55,11 @@ void DeviceManager::start()
   setWaitingForConnection();
 
   // Once we are connected, immediately send the device configuration
+  // logger.info(loggerTag, ": Sending initial device configuration to central");
   m_interface->sendDeviceName(m_deviceName);
-  m_interface->sendDeviceColor(DeviceConfigurator::readColor());
-  m_interface->sendDeviceAccentColor(DeviceConfigurator::readAccentColor());
+  // logger.info(loggerTag, ": Sent device name to central: ", m_deviceName);
+  // logger.info(loggerTag, ": Sending default color configuration to central");
+  m_interface->sendDeviceColorConfig(DeviceConfigurator::DEFAULT_COLOR_CONFIG);
 
   uint32_t now = millis();
   m_lastUpdate = now;
@@ -106,19 +97,13 @@ void DeviceManager::writeDeviceName(const char *deviceName, uint8_t length)
   m_interface->sendDeviceName(deviceName);
 }
 
-void DeviceManager::writeDeviceColor(uint32_t color)
+void DeviceManager::writeDeviceColorConfig(ColorConfig config, DeviceState::State configState)
 {
-  DeviceConfigurator::writeColor(color);
-  m_interface->sendDeviceColor(color);
-  logger.info(loggerTag, ": Device color updated to: ", color);
+  DeviceConfigurator::writeColorConfig(config, static_cast<uint16_t>(configState));
+  // m_interface->sendDeviceColorConfig(config);
+  DeviceConfigurator::printColorConfig(config, static_cast<uint16_t>(configState));
 }
 
-void DeviceManager::writeDeviceAccentColor(uint32_t accentColor)
-{
-  DeviceConfigurator::writeAccentColor(accentColor);
-  m_interface->sendDeviceAccentColor(accentColor);
-  logger.info(loggerTag, ": Device accent color updated to: ", accentColor);
-}
 #endif
 
 bool DeviceManager::isActiveTurn()
@@ -128,20 +113,53 @@ bool DeviceManager::isActiveTurn()
 
 void DeviceManager::onDeviceNameChanged(char *name)
 {
-  logger.info(loggerTag, ": onDeviceNameChanged received. Device name changed to: ", name);
-  writeDeviceName(name, strlen(name));
+  // No-op
+  // Device name writes are handled immediately in onDeviceNameChanged
 }
 
-void DeviceManager::onDeviceColorChanged(uint32_t color)
+void DeviceManager::onDeviceNameWriteChanged(bool write)
 {
-  logger.info(loggerTag, ": onDeviceColorChanged received. Device color changed to: ", color);
-  writeDeviceColor(color);
+  if (write)
+  {
+    logger.info(loggerTag, ": Device name write enabled");
+    m_interface->getDeviceName(m_deviceName, MAX_NAME_LENGTH);
+    logger.info(loggerTag, ": onDeviceNameWriteChanged received. Device name changed to: ", m_deviceName);
+    writeDeviceName(m_deviceName, strlen(m_deviceName));
+  }
+  else
+  {
+    logger.info(loggerTag, ": Device name write not enabled");
+  }
 }
 
-void DeviceManager::onDeviceAccentColorChanged(uint32_t accentColor)
+void DeviceManager::onDeviceColorConfigChanged(ColorConfig config)
 {
-  logger.info(loggerTag, ": onDeviceAccentColorChanged received. Device accent color changed to: ", accentColor);
-  writeDeviceAccentColor(accentColor);
+  DeviceConfigurator::printColorConfig(config, 0);
+  // writeDeviceColorConfig(config);
+}
+
+void DeviceManager::onDeviceColorConfigWriteChanged(bool write)
+{
+  if (write)
+  {
+    logger.info(loggerTag, ": Device color config write enabled");
+    DeviceState::State configState= m_interface->getDeviceColorConfigState();
+    ColorConfig config = m_interface->readColorConfig();
+    // DeviceConfigurator::printColorConfig(config, configState);
+    writeDeviceColorConfig(config, configState);
+  }
+  else
+  {
+    logger.info(loggerTag, ": Device color config write not enabled");
+  }
+}
+
+void DeviceManager::onDeviceColorConfigStateChanged(DeviceState::State state)
+{
+  logger.info(loggerTag, ": onDeviceColorConfigStateChanged received. New state: ", static_cast<int>(state));
+  // Update the app with the new configuration state
+  ColorConfig config = DeviceConfigurator::readColorConfig(static_cast<uint16_t>(state));
+  m_interface->sendDeviceColorConfig(config);
 }
 
 void DeviceManager::sendEndTurn()
@@ -214,7 +232,34 @@ void DeviceManager::enterDeepSleep()
 
 void DeviceManager::updateDisplay(bool force)
 {
+  if (m_deviceState == DeviceState::State::ConfigurationMode)
+  {
+    updateConfigDisplay(force);
+    return;
+  }
+
   m_displayManager->update(force);
+}
+
+void DeviceManager::updateConfigDisplay(bool force)
+{
+  DeviceState::State configState = m_interface->getDeviceColorConfigState();
+
+  if (DeviceState::deviceStateRequiresAuxiliaryData(configState))
+  {
+    logger.info(loggerTag, ": updateConfigDisplay: New config state requires auxiliary data: ", static_cast<int>(configState));
+    configState = DeviceState::State::Off;
+  }
+
+  bool diff = m_configState != configState;
+  if (diff || configState == DeviceState::State::Off)
+  {
+    logger.info(loggerTag, ": Device Config State transition: ",
+                static_cast<int>(m_configState), " -> ",
+                static_cast<int>(configState));
+    m_displayManager->setDisplayMode(m_configState);
+  }
+  m_configState = configState;
 }
 
 void DeviceManager::updateAwaitingGameStartData()
@@ -233,8 +278,24 @@ void DeviceManager::updateTurnSequence()
   m_displayManager->updateTurnSequenceData(data);
 }
 
+void DeviceManager::registerCallbacks()
+{
+  m_interface->registerDeviceNameChangedCallback([this](char *name)
+                                                 { this->onDeviceNameChanged(name); });
+
+  m_interface->registerDeviceColorConfigChangedCallback([this](ColorConfig config)
+                                                        { this->onDeviceColorConfigChanged(config); });
+  m_interface->registerDeviceNameWriteCallback([this](bool write)
+                                               { this->onDeviceNameWriteChanged(write); });
+  m_interface->registerDeviceColorConfigStateChangeCallback([this](DeviceState::State state)
+                                                            { this->onDeviceColorConfigStateChanged(state); });
+  m_interface->registerDeviceColorConfigWriteCallback([this](bool write)
+                                                      { this->onDeviceColorConfigWriteChanged(write); });
+}
+
 void DeviceManager::updateDisplayMode()
 {
+  logger.info(loggerTag, ": Updating display mode to: ", static_cast<int>(m_deviceState));
   m_displayManager->setDisplayMode(m_deviceState);
 }
 
@@ -255,7 +316,7 @@ void DeviceManager::update()
   }
 
 #ifndef SIMULATOR
-  BLE.poll();
+  m_interface->poll();
 #endif
   processGameState();
   updateDisplay();
@@ -298,6 +359,11 @@ void DeviceManager::processGameState()
     return;
 
   bool updateDeviceState = updateCommandedDeviceState();
+
+  if (m_deviceState == DeviceState::State::ConfigurationMode)
+  {
+    return;
+  }
 
   if (DeviceState::deviceStateRequiresGameStartData(m_deviceState))
     updateAwaitingGameStartData();

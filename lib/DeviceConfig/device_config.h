@@ -43,5 +43,7 @@ namespace DeviceConfigurator {
 
     ColorConfigHeader readColorConfigHeader();
 
-
+    const ColorConfig DEFAULT_COLOR_CONFIG = {
+        .colors = {HOURGLASS_RED, HOURGLASS_GREEN, HOURGLASS_BLUE, HOURGLASS_YELLOW}
+    };
 }

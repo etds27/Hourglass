@@ -21,17 +21,24 @@ unsigned long HGCentralInterface::getExpectedElapsedTime()
 void HGCentralInterface::registerDeviceNameChangedCallback(std::function<void(char *name)> callback)
 {
         m_deviceNameChangeCallback = callback;
-
 }
 
-void HGCentralInterface::registerDeviceColorChangedCallback(std::function<void(uint32_t color)> callback)
+void HGCentralInterface::registerDeviceNameWriteCallback(std::function<void(bool write)> callback)
 {
-        m_deviceColorChangeCallback = callback;
-
+        m_deviceNameWriteChangeCallback = callback;
 }
 
-void HGCentralInterface::registerDeviceAccentColorChangedCallback(std::function<void(uint32_t accentColor)> callback)
+void HGCentralInterface::registerDeviceColorConfigChangedCallback(std::function<void(ColorConfig config)> callback)
 {
-        m_deviceAccentColorChangeCallback = callback;
+        m_deviceColorConfigChangeCallback = callback;
+}
 
+void HGCentralInterface::registerDeviceColorConfigStateChangeCallback(std::function<void(DeviceState::State state)> callback)
+{
+        m_deviceColorConfigStateChangeCallback = callback;
+}
+
+void HGCentralInterface::registerDeviceColorConfigWriteCallback(std::function<void(bool write)> callback)
+{
+        m_deviceColorConfigWriteChangeCallback = callback;
 }

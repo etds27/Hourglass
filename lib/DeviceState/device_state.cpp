@@ -2,6 +2,10 @@
 
 namespace DeviceState
 {
+
+    const uint8_t NUMBER_OF_STATES = 19;
+
+
     const std::array<State, 9> ACTIVE_TURN_STATES = {
         State::ActiveTurnEnforced,
         State::ActiveTurnNotEnforced,
@@ -113,5 +117,10 @@ namespace DeviceState
     bool deviceStateRequiresTurnSequenceData(State state)
     {
         return std::find(TURN_SEQUENCE_DATA_REQUIRED.begin(), TURN_SEQUENCE_DATA_REQUIRED.end(), state) != TURN_SEQUENCE_DATA_REQUIRED.end();
+    }
+    
+    bool deviceStateRequiresAuxiliaryData(State state)
+    {
+        return deviceStateRequiresGameStartData(state) || deviceStateRequiresTurnSequenceData(state) || deviceStateRequiresTimeData(state);
     }
 }

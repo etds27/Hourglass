@@ -6,10 +6,6 @@ namespace
 {
     // Local logger tag for this module
     const LogString loggerTag = "DeviceConfigurator";
-
-    const ColorConfig DEFAULT_COLOR_CONFIG = {
-        .colors = {HOURGLASS_RED, HOURGLASS_GREEN, HOURGLASS_BLUE, HOURGLASS_YELLOW}
-    };
 }
 
 // Write the main device configuration to EEPROM
@@ -67,6 +63,7 @@ void DeviceConfigurator::writeColorConfig(const ColorConfig &colorConfig, uint16
     header.configsWritten |= (1u << index); // Mark this index as written
     EEPROM.put(DEVICE_COLOR_CONFIG_LOCATION, header); // Update header in EEPROM
 
+    logger.info(loggerTag, ": Color config written at index ", index, " at address ", addr);
     // Commit to EEPROM and log
     if (!EEPROM.commit()) {
         logger.error(loggerTag, ": Failed to commit color config at index ", index);

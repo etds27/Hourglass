@@ -4,9 +4,8 @@
 #else
 #include <Arduino.h>
 #include <EEPROM.h>
-#include "fast_led_light.h"
-#include "ble_interface.h"
-#include "button_input_interface.h"
+#include "mock_central_interface.h"
+#include "mock_input_interface.h"
 #endif
 
 #include "colors.h"
@@ -14,12 +13,8 @@
 #include "logger.h"
 #include "device_manager.h"
 #include "device_state.h"
-#include "fast_led_light.h"
 #include "hg_display_manager.h"
-#include "lcd_ring.h"
-#include "lcd_timer.h"
 #include "device_config.h"
-#include <TFT_eSPI.h>
 
 unsigned long lastMemoryUpdate = millis();
 
@@ -34,16 +29,14 @@ namespace
 
 #ifdef SIMULATOR
 GLRingInterface *gRing;
-#else
-TFT_eSPI tft = TFT_eSPI();
-FastLEDLight *fastLEDLight;
-LCDRing *lRing;
-LCDTimer *lTimer;
 #endif
 DeviceManager *deviceManager;
 HourglassDisplayManager *displayManager;
 InputInterface *inputInterface;
-HGCentralInterface *interface;
+MockCentralInterface *interface;
+unsigned long startTime = millis();
+
+
 
 void setup()
 {
@@ -90,34 +83,55 @@ void setup()
   DeviceConfigurator::readName(deviceName, MAX_NAME_LENGTH);
 
   logger.info(loggerTag, ": Creating Input Interface");
-  inputInterface = new ButtonInputInterface(BUTTON_INPUT_PIN);
+  inputInterface = new MockInputInterface();
   logger.info(loggerTag, ": Creating Central Interface");
-  interface = new BLEInterface(deviceName);
+  interface = new MockCentralInterface();
 
 
   // fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
-  lRing = new LCDRing(16, &tft);
-  // lTimer = new LCDTimer(&tft);
-  // displayManager->addDisplayInterface(fastLEDLight);
-  displayManager->addDisplayInterface(lRing);
+  // displayManager->addDisplayInterface(lRing);
   // displayManager->addDisplayInterface(lTimer);
-
-  tft.init();
-  tft.setRotation(0); // Adjust rotation (0-3)
-
-  tft.fillScreen(TFT_BACKGROUND_COLOR);
 
 #endif
 
   DeviceConfigurator::writeName("ETHAN_TEST");
   deviceManager = new DeviceManager(displayManager, inputInterface, interface);
   deviceManager->start();
+  logger.info(loggerTag, ": Device Manager started");
 }
 
 // unsigned long start = millis();
 
 void loop()
 {
+
+  if (millis() - startTime > 1000)
+  {
+
+    // Test changing device name
+    // logger.info("Triggering device name change from central");
+    // interface->triggerDeviceNameChange("Ethan 2");
+    // interface->triggerDeviceNameWrite(true);
+    // interface->triggerDeviceNameWrite(false);
+
+    // Test changing color config
+    // logger.info(loggerTag, ": Triggering color config change from central");
+    // ColorConfig newConfig = {{
+    //     0xFF0000, // Red
+    //     0x00FF00, // Green
+    //     0x0000FF, // Blue
+    //     0xFFFF00  // Yellow
+    // }};
+    // interface->triggerDeviceColorConfigChange(newConfig);
+    // interface->triggerDeviceColorConfigStateChange(DeviceState::State::AwaitingGameStart);
+    // interface->triggerDeviceColorConfigWrite(true);
+    // interface->triggerDeviceColorConfigWrite(false);
+
+
+    while (millis() - startTime < 2000)
+      ;
+    // exit(0);
+  }
 
   if (ENABLE_DEBUG)
   {
@@ -136,6 +150,7 @@ void loop()
 int main()
 {
   setup();
+  startTime = millis();
   while (true)
   {
     loop();

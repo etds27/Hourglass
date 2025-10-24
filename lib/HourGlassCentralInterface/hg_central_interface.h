@@ -3,6 +3,7 @@
 #include <functional>
 // #include "device_manager.h"
 #include "device_state.h"
+#include "device_config.h"
 
 namespace DeviceState {
     enum State;
@@ -10,6 +11,8 @@ namespace DeviceState {
 class HGCentralInterface
 {
 public:
+    virtual void poll() = 0;
+
     virtual bool isConnected() = 0;
     virtual bool isTurn() = 0;
     virtual void endTurn() = 0;
@@ -25,6 +28,11 @@ public:
     unsigned long getExpectedElapsedTime();
     virtual int getCurrentPlayer() = 0;
     virtual int getTotalPlayers() = 0;
+
+    // Config
+    virtual ColorConfig readColorConfig() = 0;
+    virtual void getDeviceName(char *out, uint8_t length) = 0;
+    virtual DeviceState::State getDeviceColorConfigState() = 0;
 
     // Gets the current device's player index
     virtual int getMyPlayer() = 0;
@@ -51,19 +59,20 @@ public:
     virtual void setService() = 0;
 
     void registerDeviceNameChangedCallback(std::function<void(char *name)> callback);
-    void registerDeviceColorChangedCallback(std::function<void(uint32_t color)> callback);
-    void registerDeviceAccentColorChangedCallback(std::function<void(uint32_t accentColor)> callback);
+    void registerDeviceNameWriteCallback(std::function<void(bool write)> callback);
+    void registerDeviceColorConfigChangedCallback(std::function<void(ColorConfig config)> callback);
+    void registerDeviceColorConfigStateChangeCallback(std::function<void(DeviceState::State state)> callback);
+    void registerDeviceColorConfigWriteCallback(std::function<void(bool write)> callback);
+
 
     virtual void sendDeviceName(const char *name) = 0;
-    virtual void sendDeviceColor(uint32_t color) = 0;
-    virtual void sendDeviceAccentColor(uint32_t accentColor) = 0;
+    virtual void sendDeviceColorConfig(ColorConfig config) = 0;
 
 protected:
     virtual ~HGCentralInterface();
 
     char *m_deviceName;
-    uint32_t m_deviceColor;
-    uint32_t m_deviceAccentColor;
+    ColorConfig m_deviceColorConfig;
 
     unsigned int lastPoll;
 
@@ -81,6 +90,8 @@ protected:
     DeviceState::State m_deviceState;
 
     std::function<void(char *name)> m_deviceNameChangeCallback;
-    std::function<void(uint32_t color)> m_deviceColorChangeCallback;
-    std::function<void(uint32_t accentColor)> m_deviceAccentColorChangeCallback;
+    std::function<void(bool write)> m_deviceNameWriteChangeCallback;
+    std::function<void(ColorConfig config)> m_deviceColorConfigChangeCallback;
+    std::function<void(DeviceState::State state)> m_deviceColorConfigStateChangeCallback;
+    std::function<void(bool write)> m_deviceColorConfigWriteChangeCallback;
 };

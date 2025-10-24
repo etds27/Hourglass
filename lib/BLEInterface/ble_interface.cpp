@@ -17,8 +17,10 @@ const char *TIMER_UUID = "4661b4c1-093d-4db7-bb80-5b5fe3eae519";
 const char *SKIPPED_PLAYERS = "b31fa38e-a424-47ad-85d9-639cbab14e88";
 
 const char *DEVICE_NAME_UUID = "050753a4-2b7a-41f9-912e-4310f5e750e6";
-const char *DEVICE_COLOR_UUID = "85f6ff14-861b-47cf-8e41-5f5b94100bd9";
-const char *DEVICE_ACCENT_COLOR_UUID = "3d56abf2-9473-459b-b5ff-b97f33cae324";
+const char *DEVICE_NAME_WRITE_UUID = "050753a4-2b7a-41f9-912e-4310f5e750e6";
+const char *DEVICE_COLOR_CONFIG_UUID = "85f6ff14-861b-47cf-8e41-5f5b94100bd9";
+const char *DEVICE_COLOR_CONFIG_STATE_UUID = "f4c4d6e1-3b1e-4d2a-8f3a-2e5b8f0c6d7e";
+const char *DEVICE_COLOR_CONFIG_WRITE_UUID = " 4408c2ec-10c0-4a76-87ab-4d9a5b51eaa7 ";
 
 const char *DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb";
 
@@ -39,20 +41,32 @@ BLEInterface::BLEInterface(char *deviceName)
   m_deviceName = deviceName;
   lastPoll = millis();
 }
-
 void BLEInterface::sendDeviceName(const char *name)
 {
   m_deviceNameCharacteristic->setValue(name);
 }
 
-void BLEInterface::sendDeviceColor(uint32_t color)
+void BLEInterface::sendDeviceColorConfig(ColorConfig config)
 {
-  m_deviceColor->writeValue(color);
+  m_deviceColorConfig->writeValue((uint8_t*)&config, sizeof(ColorConfig));
 }
 
-void BLEInterface::sendDeviceAccentColor(uint32_t accentColor)
+ColorConfig BLEInterface::readColorConfig()
 {
-  m_deviceAccentColor->writeValue(accentColor);
+    ColorConfig config;
+    m_deviceColorConfig->readValue((uint8_t*)&config, sizeof(ColorConfig));
+    return config;
+}
+
+void BLEInterface::getDeviceName(char* out, uint8_t length)
+{
+    const String data = m_deviceNameCharacteristic->value();
+    data.toCharArray(out, length);
+}
+
+DeviceState::State BLEInterface::getDeviceColorConfigState()
+{   
+    return  static_cast<DeviceState::State>(m_deviceColorConfigState->value());
 }
 
 bool BLEInterface::isConnected()
@@ -170,13 +184,31 @@ void BLEInterface::onDeviceNameChanged(BLEDevice central, BLECharacteristic char
   }
 }
 
-void BLEInterface::onDeviceColorChanged(BLEDevice central, BLECharacteristic characteristic)
+void BLEInterface::onDeviceNameWriteChanged(BLEDevice central, BLECharacteristic characteristic)
 {
-  if (instance->m_deviceColorChangeCallback)
+  if (instance->m_deviceNameWriteChangeCallback)
   {
-    uint32_t color;
-    characteristic.readValue(color);
-    instance->m_deviceColorChangeCallback(color);
+    const bool writeStatus = characteristic.value()[0];
+    if (writeStatus) {
+      instance->m_deviceNameWriteChangeCallback(writeStatus);
+    } else {
+      logger.info("Device name write status not enabled");
+    }
+
+  }
+  else
+  {
+    logger.warning("No device name write change callback registered");
+  }
+}
+
+void BLEInterface::onDeviceColorConfigChanged(BLEDevice central, BLECharacteristic characteristic)
+{
+  if (instance->m_deviceColorConfigChangeCallback)
+  {
+    ColorConfig config;
+    characteristic.readValue((uint8_t*)&config, sizeof(ColorConfig));
+    instance->m_deviceColorConfigChangeCallback(config);
   }
   else
   {
@@ -184,17 +216,33 @@ void BLEInterface::onDeviceColorChanged(BLEDevice central, BLECharacteristic cha
   }
 }
 
-void BLEInterface::onDeviceAccentColorChanged(BLEDevice central, BLECharacteristic characteristic)
+void BLEInterface::onDeviceColorConfigStateChanged(BLEDevice central, BLECharacteristic characteristic)
 {
-    if (instance->m_deviceColorChangeCallback)
+  if (instance->m_deviceColorConfigStateChangeCallback)
   {
-    uint32_t color;
-    characteristic.readValue(color);
-    instance->m_deviceAccentColorChangeCallback(color);
+    DeviceState::State state = static_cast<DeviceState::State>(characteristic.value()[0]);
+    instance->m_deviceColorConfigStateChangeCallback(state);
   }
   else
   {
-    logger.warning("No accent color change callback registered");
+    logger.warning("No device color state change callback registered");
+  }
+}
+
+void BLEInterface::onDeviceColorConfigWriteChanged(BLEDevice central, BLECharacteristic characteristic)
+{
+  if (instance->m_deviceColorConfigWriteChangeCallback)
+  {
+    bool writeStatus = characteristic.value()[0];
+    if (writeStatus) {
+      instance->m_deviceColorConfigWriteChangeCallback(writeStatus);
+    } else {
+      logger.info("Device color write status not enabled");
+    }
+  }
+  else
+  {
+    logger.warning("No device color write change callback registered");
   }
 }
 
@@ -247,16 +295,33 @@ void BLEInterface::setService()
   m_skippedPlayers = new BLEIntCharacteristic(SKIPPED_PLAYERS, BLEWrite | BLERead);
   m_service->addCharacteristic(*m_skippedPlayers);
 
+  // ========= CONFIGURATION CHARACTERISTICS ==========
 
   // Device Name Characteristic
   m_deviceNameCharacteristic = new BLEStringCharacteristic(DEVICE_NAME_UUID, BLERead | BLEWrite, MAX_NAME_LENGTH);
   m_deviceNameCharacteristic->setEventHandler(BLEWritten, onDeviceNameChanged);
+  m_service->addCharacteristic(*m_deviceNameCharacteristic);
 
-  m_deviceColor = new BLEIntCharacteristic(DEVICE_COLOR_UUID, BLERead | BLEWrite);
-  m_deviceColor->setEventHandler(BLEWritten, onDeviceColorChanged);
+  // Device Name Write Characteristic
 
-  m_deviceAccentColor = new BLEIntCharacteristic(DEVICE_ACCENT_COLOR_UUID, BLERead | BLEWrite);
-  m_deviceAccentColor->setEventHandler(BLEWritten, onDeviceAccentColorChanged);
+  m_deviceNameWrite = new BLEBoolCharacteristic(DEVICE_NAME_WRITE_UUID, BLERead | BLEWrite);
+  m_deviceNameWrite->setEventHandler(BLEWritten, onDeviceNameWriteChanged);
+  m_service->addCharacteristic(*m_deviceNameCharacteristic);
+
+  // Setting a 16 byte config to match the 4 x 4 size color config
+  m_deviceColorConfig = new BLECharacteristic(DEVICE_COLOR_CONFIG_UUID, BLERead | BLEWrite | BLENotify, 16);
+  m_deviceColorConfig->setEventHandler(BLEWritten, onDeviceColorConfigChanged);
+  m_service->addCharacteristic(*m_deviceColorConfig);
+
+  // Device Color Config State Characteristic
+  m_deviceColorConfigState = new BLEIntCharacteristic(DEVICE_COLOR_CONFIG_STATE_UUID, BLERead | BLEWrite | BLENotify);
+  m_deviceColorConfigState->setEventHandler(BLEWritten, onDeviceColorConfigStateChanged);
+  m_service->addCharacteristic(*m_deviceColorConfigState);
+
+  // Device Color Config Write Characteristic
+  m_deviceColorConfigWrite = new BLEBoolCharacteristic(DEVICE_COLOR_CONFIG_WRITE_UUID, BLERead | BLEWrite);
+  m_deviceColorConfigWrite->setEventHandler(BLEWritten, onDeviceColorConfigWriteChanged);
+  m_service->addCharacteristic(*m_deviceColorConfigWrite);
 
   logger.info("Advertising with name: ", m_deviceName);
   BLE.setLocalName(m_deviceName);
