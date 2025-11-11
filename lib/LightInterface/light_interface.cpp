@@ -10,6 +10,11 @@
 #include "simulator_tools.h"
 #endif
 
+namespace
+{
+    const LogString loggerTag = "LightInterface";
+}
+
 // const int RING_REFRESH_RATE = 1;
 
 const uint32_t AWAIT_GAME_COLORS[16] = {
@@ -78,11 +83,11 @@ editor, we display the correct number of colors for each state that can be modif
 
 LightInterface::LightInterface(const uint8_t ledCount, const uint8_t diPin)
 {
-  logger.info("Initializing Light Interface");
+  logger.info(loggerTag, "Initializing Light Interface");
   m_ledCount = ledCount;
   m_diPin = diPin;
   m_lastUpdate = millis();
-  logger.info("Initialized Light Interface");
+  logger.info(loggerTag, "Initialized Light Interface");
 }
 
 LightInterface::~LightInterface() {}
@@ -168,12 +173,12 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
   uint8_t subcycle = currentSegment % (totalCycleSteps / 2);
 
 #if ENABLE_DEBUG
-  logger.debug("Adjusted Time: ", adjustedTime);
-  logger.debug("Segment Length: ", segmentLength);
-  logger.debug("Cycle length: ", totalCycleSteps);
-  logger.debug("Current Segment: ", currentSegment);
-  logger.debug("Growing: ", growing));
-  logger.debug("Subcycle: ", subcycle);
+  logger.debug(loggerTag, "Adjusted Time: ", adjustedTime);
+  logger.debug(loggerTag, "Segment Length: ", segmentLength);
+  logger.debug(loggerTag, "Cycle length: ", totalCycleSteps);
+  logger.debug(loggerTag, "Current Segment: ", currentSegment);
+  logger.debug(loggerTag, "Growing: ", growing);
+  logger.debug(loggerTag, "Subcycle: ", subcycle);
 #endif
 
   if (growing)
@@ -184,7 +189,7 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
     }
     /*
     // This prevents the ring from being 100% off at the start of the sequence
-    if (subcycle == 0) {
+    if (subcycle == 0) { 
       // logger.info("Extending first light");
       colorBuffer[0] = NO_TIMER_COLOR;
     }
@@ -198,7 +203,7 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
     }
     /*
     // This prevents the ring from being 100% off at the end of the sequence
-    if (subcycle == segmentLength) {
+    if (subcycle == segmentLength) { 
       // logger.info("Extending last light");
       colorBuffer[subcycle - 1] = NO_TIMER_COLOR;
     }
@@ -210,7 +215,7 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
 
   // Color the first segment green and the opposite segment blue
   this->colorBuffer(fullColorBuffer, segmentLength,  m_colorConfig.colors[1]);
-  this->colorBuffer(fullColorBuffer + (segmentLength * NO_TIMER_SEGMENTS / 2), segmentLength,  m_colorConfig.colors[2]);
+  this->colorBuffer(fullColorBuffer + (segmentLength * NO_TIMER_SEGMENTS / 2), segmentLength,  m_colorConfig.colors[0]);
   if (NO_TIMER_APPLY_OFFSET)
   {
     // Offset is the number of full cycles that have already played
@@ -249,6 +254,8 @@ void LightInterface::updateLightModeSkipped()
     colorBuffer[i] = m_colorConfig.colors[0];
   }
 
+  // logger.info(loggerTag, "Skipped Brightness: ", brightness, " color: ", colorBuffer[0]);
+
   displayBuffer(colorBuffer);
   delete[] colorBuffer;
 }
@@ -267,10 +274,10 @@ void LightInterface::updateLightModeTurnSequence()
   // color[2] is the color for all other players
   // color[3] is unused
 
-  // logger.debug("Total Players:  ", m_turnSequenceData.totalPlayers);
-  // logger.debug("My Player:      ", m_turnSequenceData.myPlayerIndex);
-  // logger.debug("Current Player: ", m_turnSequenceData.currentPlayerIndex);
-  // logger.debug("");
+  // logger.debug(loggerTag, "Total Players:  ", m_turnSequenceData.totalPlayers);
+  // logger.debug(loggerTag, "My Player:      ", m_turnSequenceData.myPlayerIndex);
+  // logger.debug(loggerTag, "Current Player: ", m_turnSequenceData.currentPlayerIndex);
+  // logger.debug(loggerTag, "");
   uint32_t *colorBuffer = new uint32_t[m_ledCount];
   uint32_t *modifiedColorBuffer = new uint32_t[m_ledCount];
 
@@ -473,11 +480,11 @@ void LightInterface::updateGamePaused()
   }
 
   /*
-  logger.info("PCT: ", pct);
-  logger.info("Prev: ", m_previousColor);
-  logger.info("Target: ", m_targetColor);
-  logger.info("Color: ", color);
-  logger.info("");
+  logger.info(loggerTag, "PCT: ", pct);
+  logger.info(loggerTag, "Prev: ", m_previousColor);
+  logger.info(loggerTag, "Target: ", m_targetColor);
+  logger.info(loggerTag, "Color: ", color);
+  logger.info(loggerTag, "");
   */
 
   solidBuffer(colorBuffer, m_ledCount, color);
@@ -540,7 +547,7 @@ void LightInterface::updateLightModeBuzzerAwaitingBuzz()
 
   uint32_t color;
 
-  // logger.info(int(offset));
+  // logger.info(loggerTag, int(offset));
 
   switch (currentColorCycle)
   {
@@ -654,6 +661,19 @@ void LightInterface::updateLightModeAwaitTurnStart()
 
   displayBuffer(colorBuffer, false);
   delete[] colorBuffer;
+}
+
+void LightInterface::updateDeviceColorMode()
+{
+  uint32_t *colorBuffer = new uint32_t[m_ledCount]{};
+  uint32_t primaryColor = m_colorConfig.colors[0];
+  uint32_t accentColor = m_colorConfig.colors[1];
+  uint32_t *smallBuffer = new uint32_t[2]{primaryColor, accentColor};
+
+  expandBuffer(smallBuffer, colorBuffer, 2, m_ledCount);
+  displayBuffer(colorBuffer);
+  delete[] colorBuffer;
+  delete[] smallBuffer;
 }
 
 void LightInterface::displayMarqueeBuzzer(uint32_t color)
@@ -786,7 +806,7 @@ void LightInterface::extendBuffer(const uint32_t *smallBuffer, uint32_t *fullBuf
 {
   if (fullBufferSize % smallBufferSize)
   {
-    logger.error("LightInterface::extendBuffer: Smaller buffer size must divide evenly into Full Buffer Size");
+    logger.error(loggerTag, "LightInterface::extendBuffer: Smaller buffer size must divide evenly into Full Buffer Size");
     return;
   }
 
@@ -871,7 +891,7 @@ void LightInterface::printBuffer(uint32_t *buffer, int8_t size)
   for (int i = 0; i < size; i++)
   {
     sprintf(bufferString, "printBuffer: Buffer[%d/%d]: %d", i, size, buffer[i]);
-    logger.info(bufferString);
+    logger.info(loggerTag, bufferString);
   }
 }
 

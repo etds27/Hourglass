@@ -39,7 +39,7 @@ namespace DeviceConfigurator {
     ColorConfig readColorConfig(uint16_t index);
 
     void printConfig(const DeviceConfig& config);
-    void printColorConfig(const ColorConfig &cfg, uint16_t index);
+    void printColorConfig(const ColorConfig &cfg, uint16_t index = -1);
 
     ColorConfigHeader readColorConfigHeader();
 

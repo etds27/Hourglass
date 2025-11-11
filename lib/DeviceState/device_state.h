@@ -36,6 +36,7 @@ namespace DeviceState
     BuzzerAwaitingBuzzerEnabled = 16,
     BuzzerAwaitingTurnStart = 17,
     ConfigurationMode = 18,
+    DeviceColorMode = 19, // Used only for the app colors
 
     Unknown = 100,
   };

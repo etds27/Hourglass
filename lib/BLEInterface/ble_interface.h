@@ -114,6 +114,7 @@ private:
   BLEBoolCharacteristic *m_deviceNameWrite;
 
   BLEDescriptor *m_activeTurnDescriptor;
+  unsigned long lastPoll;
 };
 
 #endif

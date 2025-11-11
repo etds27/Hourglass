@@ -1,6 +1,7 @@
 #include <EEPROM.h>
 #include "device_config.h"
 #include "logger.h"
+#include "colors.h"
 
 namespace
 {
@@ -13,7 +14,7 @@ void DeviceConfigurator::writeConfig(const DeviceConfig &config)
 {
     // Ensure the version matches the expected version
     if (config.version != DEVICE_CONFIG_VERSION) {
-        logger.info(loggerTag, ": Invalid device config version");
+        logger.warning(loggerTag, ": Invalid device config version");
         return;
     }
 
@@ -173,6 +174,6 @@ void DeviceConfigurator::printColorConfig(const ColorConfig &cfg, uint16_t index
 {
     logger.info(loggerTag, "=== Color Config ", index, " ===");
     for (int i = 0; i < 4; ++i) {
-        logger.info(loggerTag, "Color[", i, "]: ", cfg.colors[i]);
+        logger.info(loggerTag, "Color[", i, "]: ", ColorFormatter::toHex16(cfg.colors[i]).c_str());
     }
 }

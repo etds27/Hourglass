@@ -3,7 +3,7 @@
 namespace DeviceState
 {
 
-    const uint8_t NUMBER_OF_STATES = 19;
+    const uint8_t NUMBER_OF_STATES = 20;
 
 
     const std::array<State, 9> ACTIVE_TURN_STATES = {

@@ -38,7 +38,7 @@ DeviceManager::DeviceManager(HourglassDisplayManager *displayManager, InputInter
   // Allows the main device button to wake the device from sleep state
   esp_sleep_enable_ext0_wakeup(BUTTON_GPIO_PIN, HIGH);
 #endif
-  m_interface->sendDeviceName(m_deviceName);
+  // m_interface->sendDeviceName(m_deviceName);
 
   logger.info(loggerTag, ": Creating Input Monitor");
   m_buttonMonitor = new ButtonInputMonitor(m_inputInterface);
@@ -136,6 +136,7 @@ void DeviceManager::onDeviceColorConfigChanged(ColorConfig config)
 {
   DeviceConfigurator::printColorConfig(config, 0);
   // writeDeviceColorConfig(config);
+  m_displayManager->updateColorConfig(config);
 }
 
 void DeviceManager::onDeviceColorConfigWriteChanged(bool write)
@@ -159,6 +160,8 @@ void DeviceManager::onDeviceColorConfigStateChanged(DeviceState::State state)
   logger.info(loggerTag, ": onDeviceColorConfigStateChanged received. New state: ", static_cast<int>(state));
   // Update the app with the new configuration state
   ColorConfig config = DeviceConfigurator::readColorConfig(static_cast<uint16_t>(state));
+  logger.info(loggerTag, ": Sending color config for state ", static_cast<int>(state), " to central");
+  DeviceConfigurator::printColorConfig(config);
   m_interface->sendDeviceColorConfig(config);
 }
 
@@ -177,6 +180,11 @@ bool DeviceManager::updateCommandedDeviceState()
                 static_cast<int>(m_deviceState), " -> ",
                 static_cast<int>(newDeviceState));
   }
+
+  if (newDeviceState != DeviceState::State::ConfigurationMode) {
+    m_configState = DeviceState::State::Off;
+  }
+
   m_deviceState = newDeviceState;
   return diff;
 }
@@ -257,9 +265,10 @@ void DeviceManager::updateConfigDisplay(bool force)
     logger.info(loggerTag, ": Device Config State transition: ",
                 static_cast<int>(m_configState), " -> ",
                 static_cast<int>(configState));
-    m_displayManager->setDisplayMode(m_configState);
+    m_displayManager->setDisplayMode(configState);
   }
   m_configState = configState;
+  m_displayManager->update(force);
 }
 
 void DeviceManager::updateAwaitingGameStartData()
@@ -307,7 +316,7 @@ void DeviceManager::update()
 
   if (currentTime - m_lastReadOut > 2000)
   {
-    logger.info(loggerTag, ": Update Period: ", deltaTime);
+    // logger.info(loggerTag, ": Update Period: ", deltaTime);
 
     if (ENABLE_DEBUG)
       m_interface->readData();

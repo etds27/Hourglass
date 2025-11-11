@@ -124,6 +124,9 @@ protected:
     /// @brief Display the state when waiting for a turn to start
     virtual void updateLightModeAwaitTurnStart() = 0;
 
+    /// @brief Update the display for Device Color Mode (App Colors)
+    virtual void updateDeviceColorMode() = 0;
+
 
 public:
     virtual ~HGDisplayInterface();
@@ -154,6 +157,10 @@ public:
     void updateTurnSequenceData(struct TurnSequenceData data);
     void updateAwaitingGameStartData(struct GameStartData data);
     void updateBuzzerResultsData(struct BuzzerResultsData data);
+
+    // Allows us to override the current color configuration for the display interface for live configuration updates
+    /// @brief Update the color configuration for the display interface
+    void updateColorConfig(ColorConfig config);
 
     
     /// @brief Update primary color of the display interface
