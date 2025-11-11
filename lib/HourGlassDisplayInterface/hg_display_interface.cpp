@@ -6,6 +6,11 @@
 #include "simulator_tools.h"
 #endif
 
+namespace
+{
+    const LogString loggerTag = "HGDisplayInterface";
+}
+
 HGDisplayInterface::~HGDisplayInterface() {}
 
 void HGDisplayInterface::setUp()
@@ -26,10 +31,11 @@ void HGDisplayInterface::setAbsoluteOrientation(bool orientation)
 
 void HGDisplayInterface::setDisplayMode(DeviceState::State state)
 {
-  logger.debug("Setting Light Mode");
+  logger.debug(loggerTag, "Setting Light Mode");
   m_startTime = millis();
   clear();
   m_state = state;
+  loadCurrentColorConfig();
   update();
 };
 
@@ -93,6 +99,9 @@ void HGDisplayInterface::update(bool force)
   case DeviceState::State::BuzzerAwaitingTurnStart:
     updateLightModeAwaitTurnStart();
     break;
+  case DeviceState::State::DeviceColorMode:
+    updateDeviceColorMode();
+    break;
   };
   // noInterrupts();
   show();
@@ -120,7 +129,30 @@ void HGDisplayInterface::updateBuzzerResultsData(BuzzerResultsData data)
   m_buzzerResultsData = data;
 }
 
+void HGDisplayInterface::updateColorConfig(ColorConfig config)
+{
+  m_colorConfig = config;
+}
+
 bool HGDisplayInterface::getClearBeforeUpdate() const
 {
   return m_clearBeforeUpdate;
+}
+
+void HGDisplayInterface::loadCurrentColorConfig()
+{
+  m_colorConfig = DeviceConfigurator::readColorConfig(static_cast<uint16_t>(m_state));
+  logger.info(loggerTag, "Loaded color config for state ", static_cast<uint16_t>(m_state));
+}
+
+void HGDisplayInterface::updatePrimaryColor(uint32_t color)
+{
+  logger.info(loggerTag, "Updating primary color to ", color);
+  m_primaryColor = color;
+}
+
+void HGDisplayInterface::updateAccentColor(uint32_t accentColor)
+{
+  logger.info(loggerTag, "Updating accent color to ", accentColor);
+  m_accentColor = accentColor;
 }

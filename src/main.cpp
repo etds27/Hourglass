@@ -1,11 +1,8 @@
-#ifdef SIMULATOR
-#include "simulator_tools.h"
-#include "gl_ring_interface.h"
-#else
 #include <Arduino.h>
 #include <EEPROM.h>
 #include "fast_led_light.h"
-#endif
+#include "ble_interface.h"
+#include "button_input_interface.h"
 
 #include "colors.h"
 #include "constants.h"
@@ -16,28 +13,40 @@
 #include "hg_display_manager.h"
 #include "lcd_ring.h"
 #include "lcd_timer.h"
+#include "device_config.h"
 #include <TFT_eSPI.h>
 
 unsigned long lastMemoryUpdate = millis();
 
-// SevenSegmentDisplay* sevenSegment;
-// DeviceManager* deviceManager;
-// RingLight* m_ring;
+namespace
+{
+  const LogString loggerTag = "Main";
+}
 
-#ifdef SIMULATOR
-GLRingInterface *gRing;
-#else
 TFT_eSPI tft = TFT_eSPI();
 FastLEDLight *fastLEDLight;
 LCDRing *lRing;
 LCDTimer *lTimer;
-#endif
 DeviceManager *deviceManager;
 HourglassDisplayManager *displayManager;
+InputInterface *inputInterface;
+HGCentralInterface *interface;
+
+
+bool isPrintableString(const char *buf, size_t len) {
+  bool allPrintable = true;
+  for (size_t i = 0; i < len; i++) {
+    uint8_t c = buf[i];
+    if (c == 0xFF) return false;  // uninitialized EEPROM
+    if (c == 0x00) break;         // reached end of string
+    if (c < 0x20 || c > 0x7E) return false; // invalid char
+    allPrintable = true;
+  }
+  return allPrintable;
+}
 
 void setup()
 {
-
   switch (LOGGER_LEVEL)
   {
   case 0:
@@ -60,38 +69,40 @@ void setup()
     break;
   }
 
-#ifndef SIMULATOR
   Serial.begin(115200);
-  // while (!Serial)
-  //   ;
-  delay(2000);
-  logger.info("Start of program");
-  // Start the BLE peripheral
+  delay(1000);
 
-  EEPROM.begin(8);
-#endif
+  EEPROM.begin(0x0400);
+  char deviceName[MAX_NAME_LENGTH] = {};
+  DeviceConfigurator::readName(deviceName, MAX_NAME_LENGTH);
+
+  if (!isPrintableString(deviceName, MAX_NAME_LENGTH)) {
+    logger.warning(loggerTag, ": Device name in EEPROM is invalid, resetting to default.");
+    DeviceConfigurator::writeName("Hourglass");
+    DeviceConfigurator::readName(deviceName, MAX_NAME_LENGTH);
+  }
+
   displayManager = new HourglassDisplayManager();
+  inputInterface = new ButtonInputInterface(BUTTON_INPUT_PIN);
+  interface = new BLEInterface(deviceName);
 
-#ifdef SIMULATOR
-  gRing = new GLRingInterface(16);
-#else
-  // fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
-  lRing = new LCDRing(16, &tft);
+
+  fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
+  displayManager->addDisplayInterface(fastLEDLight);
+
+  // lRing = new LCDRing(16, &tft);
+  // displayManager->addDisplayInterface(lRing);
+  
   // lTimer = new LCDTimer(&tft);
-  // displayManager->addDisplayInterface(fastLEDLight);
-  displayManager->addDisplayInterface(lRing);
   // displayManager->addDisplayInterface(lTimer);
 
-  tft.init();
-  tft.setRotation(0); // Adjust rotation (0-3)
+  // tft.init();
+  // tft.setRotation(0); // Adjust rotation (0-3)
 
-  tft.fillScreen(TFT_BACKGROUND_COLOR);
+  // tft.fillScreen(TFT_BACKGROUND_COLOR);
 
-#endif
-
-  deviceManager = new DeviceManager(displayManager);
-  // deviceManager->writeDeviceName("HG7     ", 8);
-  // logger.info(String(deviceManager->getDeviceName()));
+  // DeviceConfigurator::writeName("ETHAN_TEST");
+  deviceManager = new DeviceManager(displayManager, inputInterface, interface);
   deviceManager->start();
 }
 
@@ -99,18 +110,6 @@ void setup()
 
 void loop()
 {
-
-  if (ENABLE_DEBUG)
-  {
-#ifdef SIMULATOR
-    if (millis() - lastMemoryUpdate > 1000)
-    {
-      size_t freeMemory = esp_get_free_heap_size();
-      logger.info("Free Memory: ", freeMemory);
-      lastMemoryUpdate = millis();
-    }
-#endif
-  }
   deviceManager->update();
 }
 

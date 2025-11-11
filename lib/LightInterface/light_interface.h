@@ -37,6 +37,8 @@ protected:
   void updateLightModeWinnerPeriodTimed() override;
   void updateLightModeBuzzerResults() override;
   void updateLightModeAwaitTurnStart() override;
+  void updateDeviceColorMode() override;
+
 
 
   // MARK: Canned display effects

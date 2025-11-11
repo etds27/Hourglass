@@ -115,3 +115,23 @@
 #define COTTON 0xFBFBF9
 #define SNOW 0xFFFAFA
 #define WHITE 0xFFFFFF
+
+#include <string>
+
+namespace ColorFormatter {
+    inline std::string toHex16(uint32_t color);
+
+    inline std::string toHex24(uint32_t color);
+};
+
+std::string ColorFormatter::toHex16(uint32_t color) {
+    char buffer[9];
+    snprintf(buffer, sizeof(buffer), "#%06X", color & 0xFFFFFF);
+    return std::string(buffer);
+}
+
+std::string ColorFormatter::toHex24(uint32_t color) {
+    char buffer[11];
+    snprintf(buffer, sizeof(buffer), "#%08X", color);
+    return std::string(buffer);
+}

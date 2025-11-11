@@ -2,6 +2,12 @@
 #ifndef SIMULATOR
 #include "ble_interface.h"
 #include "logger.h"
+#include "device_config.h"
+
+namespace
+{
+    const LogString loggerTag = "BLEInterface";
+}
 
 const char *SERVICE_UUID = "d7560343-51d4-4c24-a0fe-118fd9078144";
 const char *DEVICE_STATE_UUID = "3f29c2e5-3837-4498-bcc1-cb33f1c10c3c";
@@ -15,21 +21,58 @@ const char *REMAINING_TIME_UUID = "4e1c05f6-c128-4bca-96c3-29c014e00eb6";
 const char *TIMER_UUID = "4661b4c1-093d-4db7-bb80-5b5fe3eae519";
 const char *SKIPPED_PLAYERS = "b31fa38e-a424-47ad-85d9-639cbab14e88";
 
+const char *DEVICE_NAME_UUID = "050753a4-2b7a-41f9-912e-4310f5e750e6";
+const char *DEVICE_NAME_WRITE_UUID = "ba60a34c-ff34-4439-ae35-e262d8f77b3e";
+const char *DEVICE_COLOR_CONFIG_UUID = "85f6ff14-861b-47cf-8e41-5f5b94100bd9";
+const char *DEVICE_COLOR_CONFIG_STATE_UUID = "f4c4d6e1-3b1e-4d2a-8f3a-2e5b8f0c6d7e";
+const char *DEVICE_COLOR_CONFIG_WRITE_UUID = "4408c2ec-10c0-4a76-87ab-4d9a5b51eaa7";
+
 const char *DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb";
 
 const int BLE_POLL_RATE = 50;
 
+// Required to let the linker know about the static instance
+BLEInterface* BLEInterface::instance = nullptr;
+
 BLEInterface::BLEInterface(char *deviceName)
 {
+  instance = this;
   if (!BLE.begin())
   {
-    Serial.println("Starting BLE failed!");
+    logger.error(loggerTag, "Starting BLE failed!");
     while (1)
       ; // Stay here if initialization fails
   }
   m_deviceName = deviceName;
   lastPoll = millis();
-};
+}
+void BLEInterface::sendDeviceName(const char *name)
+{
+  m_deviceNameCharacteristic->setValue(name);
+}
+
+void BLEInterface::sendDeviceColorConfig(ColorConfig config)
+{
+  m_deviceColorConfig->writeValue((uint8_t*)&config, sizeof(ColorConfig));
+}
+
+ColorConfig BLEInterface::readColorConfig()
+{
+    ColorConfig config;
+    m_deviceColorConfig->readValue((uint8_t*)&config, sizeof(ColorConfig));
+    return config;
+}
+
+void BLEInterface::getDeviceName(char* out, uint8_t length)
+{
+    const String data = m_deviceNameCharacteristic->value();
+    data.toCharArray(out, length);
+}
+
+DeviceState::State BLEInterface::getDeviceColorConfigState()
+{   
+    return  static_cast<DeviceState::State>(m_deviceColorConfigState->value());
+}
 
 bool BLEInterface::isConnected()
 {
@@ -41,6 +84,7 @@ DeviceState::State BLEInterface::getCommandedDeviceState()
 {
   int rawState = m_gameState->value();
   m_deviceState = static_cast<DeviceState::State>(rawState);
+  // logger.info(loggerTag, "Current Commanded Device State: ", static_cast<int>(m_deviceState));
   return m_deviceState;
 }
 
@@ -54,13 +98,13 @@ void BLEInterface::endTurn()
 {
   // Write an end turn notification by setting the value to true first to initiate the end turn
   // Then a false is written to ensure that the next `endTurn` action will write correctly
-  logger.debug("Sending End Turn Notification");
+  logger.debug(loggerTag, "Sending End Turn Notification");
   m_endTurn->writeValue(true);
   m_endTurn->writeValue(false);
 }
 
 void BLEInterface::toggleSkippedState() {
-  logger.debug("Sending Skipped State Toggle Notification");
+  logger.debug(loggerTag, "Sending Skipped State Toggle Notification");
   m_toggleSkip->writeValue(true);
   m_toggleSkip->writeValue(false);
 }
@@ -126,12 +170,97 @@ void BLEInterface::poll()
   if (millis() - lastPoll > BLE_POLL_RATE)
   {
     BLE.poll();
+    // lastPoll = millis();
+  }
+}
+
+void BLEInterface::onDeviceNameChanged(BLEDevice central, BLECharacteristic characteristic)
+{
+  logger.info(loggerTag, "Device Name Changed");
+  if (instance->m_deviceNameChangeCallback)
+  {
+    char name[MAX_NAME_LENGTH] {};
+    const uint8_t * data = characteristic.value();
+    int len = characteristic.valueLength();
+    strncpy(name, (const char*)data, len);
+    name[min(len, (int) sizeof(name) - 1) ] = '\0';
+    instance->m_deviceNameChangeCallback(name);
+  }
+  else
+  {
+    logger.warning(loggerTag, "No device name change callback registered");
+  }
+}
+
+void BLEInterface::onDeviceNameWriteChanged(BLEDevice central, BLECharacteristic characteristic)
+{
+  logger.info(loggerTag, "Device Name Write Changed");
+  if (instance->m_deviceNameWriteChangeCallback)
+  {
+    const bool writeStatus = characteristic.value()[0];
+    if (writeStatus) {
+      instance->m_deviceNameWriteChangeCallback(writeStatus);
+    } else {
+      logger.info(loggerTag, "Device name write status not enabled");
+    }
+
+  }
+  else
+  {
+    logger.warning(loggerTag, "No device name write change callback registered");
+  }
+}
+
+void BLEInterface::onDeviceColorConfigChanged(BLEDevice central, BLECharacteristic characteristic)
+{
+  logger.info(loggerTag, "Device Color Config Changed");
+  if (instance->m_deviceColorConfigChangeCallback)
+  {
+    ColorConfig config;
+    characteristic.readValue((uint8_t*)&config, sizeof(ColorConfig));
+    instance->m_deviceColorConfigChangeCallback(config);
+  }
+  else
+  {
+    logger.warning(loggerTag, "No device color change callback registered");
+  }
+}
+
+void BLEInterface::onDeviceColorConfigStateChanged(BLEDevice central, BLECharacteristic characteristic)
+{
+  logger.info(loggerTag, "Device Color Config State Changed");
+  if (instance->m_deviceColorConfigStateChangeCallback)
+  {
+    DeviceState::State state = static_cast<DeviceState::State>(characteristic.value()[0]);
+    instance->m_deviceColorConfigStateChangeCallback(state);
+  }
+  else
+  {
+    logger.warning(loggerTag, "No device color state change callback registered");
+  }
+}
+
+void BLEInterface::onDeviceColorConfigWriteChanged(BLEDevice central, BLECharacteristic characteristic)
+{
+  logger.info(loggerTag, "Device Color Config Write Changed");
+  if (instance->m_deviceColorConfigWriteChangeCallback)
+  {
+    bool writeStatus = characteristic.value()[0];
+    if (writeStatus) {
+      instance->m_deviceColorConfigWriteChangeCallback(writeStatus);
+    } else {
+      logger.info(loggerTag, "Device color write status not enabled");
+    }
+  }
+  else
+  {
+    logger.warning(loggerTag, "No device color write change callback registered");
   }
 }
 
 void BLEInterface::setService()
 {
-  logger.info(SERVICE_UUID);
+  logger.info(loggerTag, SERVICE_UUID);
   m_service = new BLEService(SERVICE_UUID);
 
   // Number of players
@@ -178,28 +307,57 @@ void BLEInterface::setService()
   m_skippedPlayers = new BLEIntCharacteristic(SKIPPED_PLAYERS, BLEWrite | BLERead);
   m_service->addCharacteristic(*m_skippedPlayers);
 
-  logger.info("Advertising with name: ", m_deviceName);
+  // ========= CONFIGURATION CHARACTERISTICS ==========
+
+  // Device Name Characteristic
+  m_deviceNameCharacteristic = new BLEStringCharacteristic(DEVICE_NAME_UUID,  BLERead | BLEWrite | BLENotify, MAX_NAME_LENGTH);
+  m_deviceNameCharacteristic->setEventHandler(BLEWritten, onDeviceNameChanged);
+  m_service->addCharacteristic(*m_deviceNameCharacteristic);
+
+  // Device Name Write Characteristic
+
+  m_deviceNameWrite = new BLEBoolCharacteristic(DEVICE_NAME_WRITE_UUID,  BLERead | BLEWrite | BLENotify);
+  m_deviceNameWrite->setEventHandler(BLEWritten, onDeviceNameWriteChanged);
+  m_service->addCharacteristic(*m_deviceNameWrite);
+
+  // Setting a 16 byte config to match the 4 x 4 size color config
+  m_deviceColorConfig = new BLECharacteristic(DEVICE_COLOR_CONFIG_UUID, BLERead | BLEWrite | BLENotify, 16);
+  m_deviceColorConfig->setEventHandler(BLEWritten, onDeviceColorConfigChanged);
+  m_service->addCharacteristic(*m_deviceColorConfig);
+
+  // Device Color Config State Characteristic
+  m_deviceColorConfigState = new BLEIntCharacteristic(DEVICE_COLOR_CONFIG_STATE_UUID, BLERead | BLEWrite | BLENotify);
+  m_deviceColorConfigState->setEventHandler(BLEWritten, onDeviceColorConfigStateChanged);
+  m_service->addCharacteristic(*m_deviceColorConfigState);
+
+  // Device Color Config Write Characteristic
+  m_deviceColorConfigWrite = new BLEBoolCharacteristic(DEVICE_COLOR_CONFIG_WRITE_UUID,  BLERead | BLEWrite | BLENotify);
+  m_deviceColorConfigWrite->setEventHandler(BLEWritten, onDeviceColorConfigWriteChanged);
+  m_service->addCharacteristic(*m_deviceColorConfigWrite);
+
+  logger.info(loggerTag, "Advertising with name: ", m_deviceName);
   BLE.setLocalName(m_deviceName);
+  BLE.setDeviceName(m_deviceName);
   BLE.setAdvertisedService(*m_service);
   BLE.addService(*m_service);
 
   BLE.advertise();
-  logger.info("Connected");
+  logger.info(loggerTag, "Connected");
 }
 
 void BLEInterface::readData()
 {
   if (!isConnected())
   {
-    logger.warning("BLE interface not connected");
+    logger.warning(loggerTag, "BLE interface not connected");
     return;
   }
-  logger.info("Num Players:    ", getTotalPlayers());
-  logger.info("Current Player: ", getCurrentPlayer());
-  logger.info("Timer:          ", getTimer());
-  logger.info("Elapsed Time:   ", getElapsedTime());
-  logger.info("My number:      ", getMyPlayer());
-  logger.info("\n");
+  logger.info(loggerTag, "Num Players:    ", getTotalPlayers());
+  logger.info(loggerTag, "Current Player: ", getCurrentPlayer());
+  logger.info(loggerTag, "Timer:          ", getTimer());
+  logger.info(loggerTag, "Elapsed Time:   ", getElapsedTime());
+  logger.info(loggerTag, "My number:      ", getMyPlayer());
+  logger.info(loggerTag, "\n");
 }
 
 #endif

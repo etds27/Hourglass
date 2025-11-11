@@ -3,6 +3,8 @@
 #include "constants.h"
 #include <stdint.h>
 
+#include "device_config.h"
+
 /// @brief All required data for any display interface to show the Awaiting Game Start state
 struct GameStartData
 {
@@ -49,6 +51,9 @@ protected:
     /// @brief Minimum time (in ms) to wait before the display will redraw
     uint32_t m_refreshRate = DISPLAY_REFRESH_RATE;
 
+    uint32_t m_primaryColor = HOURGLASS_RED;
+    uint32_t m_accentColor = HOURGLASS_GREEN;
+
     DeviceState::State m_state = DeviceState::State::Off;
     bool m_colorBlindMode = false;
     bool m_absoluteOrientation = true;
@@ -60,6 +65,10 @@ protected:
     struct BuzzerResultsData m_buzzerResultsData;
 
     unsigned long m_lastUpdate;
+
+    ColorConfig m_colorConfig;
+
+    virtual void loadCurrentColorConfig();
 
     // MARK: Light Modes
 
@@ -115,6 +124,10 @@ protected:
     /// @brief Display the state when waiting for a turn to start
     virtual void updateLightModeAwaitTurnStart() = 0;
 
+    /// @brief Update the display for Device Color Mode (App Colors)
+    virtual void updateDeviceColorMode() = 0;
+
+
 public:
     virtual ~HGDisplayInterface();
 
@@ -144,4 +157,17 @@ public:
     void updateTurnSequenceData(struct TurnSequenceData data);
     void updateAwaitingGameStartData(struct GameStartData data);
     void updateBuzzerResultsData(struct BuzzerResultsData data);
+
+    // Allows us to override the current color configuration for the display interface for live configuration updates
+    /// @brief Update the color configuration for the display interface
+    void updateColorConfig(ColorConfig config);
+
+    
+    /// @brief Update primary color of the display interface
+    /// @param color New primary color
+    void updatePrimaryColor(uint32_t color);
+
+    /// @brief Update accent color of the display interface
+    /// @param accentColor New accent color
+    void updateAccentColor(uint32_t accentColor);
 };

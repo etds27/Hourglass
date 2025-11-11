@@ -4,6 +4,9 @@
 
 namespace DeviceState
 {
+
+  // Double check when this gets greater than 32
+  extern const uint8_t NUMBER_OF_STATES;
   
   /// @brief The current state of the device
   ///
@@ -32,6 +35,8 @@ namespace DeviceState
     BuzzerAlreadyAnswered = 15,
     BuzzerAwaitingBuzzerEnabled = 16,
     BuzzerAwaitingTurnStart = 17,
+    ConfigurationMode = 18,
+    DeviceColorMode = 19, // Used only for the app colors
 
     Unknown = 100,
   };
@@ -82,5 +87,9 @@ namespace DeviceState
 
   /// @brief Determines if the device is in a state where the turn sequence data is needed
   bool deviceStateRequiresTurnSequenceData(State state);
+
+  /// @brief Determines if the device is in a state where auxiliary data is needed
+  /// Note: Make sure this function is updated when new auxiliary data requirements are added
+  bool deviceStateRequiresAuxiliaryData(State state);
 
 }

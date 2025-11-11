@@ -27,28 +27,28 @@ namespace Logging {
     // void error(const LogString& message);
 
     template<typename... Args>
-    void debug(Args&&... args) {
-      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::DEBUG);
+    void debug(const LogString& tag, Args&&... args) {
+      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::DEBUG, tag);
     }
 
     template<typename... Args>
-    void info(Args&&... args) {
-      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::INFO);
+    void info(const LogString& tag, Args&&... args) {
+      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::INFO, tag);
     }
 
     template<typename... Args>
-    void warning(Args&&... args) {
-      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::WARNING);
+    void warning(const LogString& tag, Args&&... args) {
+      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::WARNING, tag);
     }
 
     template<typename... Args>
-    void error(Args&&... args) {
-      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::FAILURE);
+    void error(const LogString& tag, Args&&... args) {
+      log(stringConcat(LogString(), std::forward<Args>(args)...), LoggerLevel::FAILURE, tag);
     }
 
 
   private:
-    void log(const LogString& message, Logging::LoggerLevel level);
+    void log(const LogString& message, Logging::LoggerLevel level, const LogString& tag = "");
 
     #ifdef SIMULATOR
     template<typename T, typename... Args>

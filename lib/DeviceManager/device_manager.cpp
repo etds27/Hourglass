@@ -1,7 +1,11 @@
+#include "device_manager.h"
+#include "logger.h"
+
 #ifndef SIMULATOR
 #include <EEPROM.h>
 #include "ble_interface.h"
 #include "button_input_interface.h"
+#include "device_config.h"
 #else
 #include "gl_input_interface.h"
 #include "gl_ring_interface.h"
@@ -10,48 +14,53 @@
 #endif
 
 #include <cstring>
-#include "device_manager.h"
-#include "logger.h"
 
-DeviceManager::DeviceManager(HourglassDisplayManager *displayManager)
+namespace
+{
+  const LogString loggerTag = "DeviceManager";
+}
+
+DeviceManager::DeviceManager(HourglassDisplayManager *displayManager, InputInterface *inputInterface, HGCentralInterface *centralInterface)
 {
   m_displayManager = displayManager;
+  m_inputInterface = inputInterface;
+  m_interface = centralInterface;
 
-  logger.info("Initializing Device Manager");
-  m_deviceName = new char[8];
+  logger.info(loggerTag, ": Initializing Device Manager");
+  m_deviceName = new char[MAX_NAME_LENGTH];
   readDeviceName(m_deviceName);
-  logger.info("Device name: ", m_deviceName);
+  logger.info(loggerTag, ": Device name: ", m_deviceName);
 
 
-#ifdef SIMULATOR
-  m_inputInterface = new GLInputInterface();
-  m_interface = new SimulatorCentralInterface(m_deviceName);
-#else
-
-  logger.info("Creating Input Interface");
-  m_inputInterface = new ButtonInputInterface(BUTTON_INPUT_PIN);
-  logger.info("Creating Central Interface");
-  m_interface = new BLEInterface(m_deviceName);
+#ifndef SIMULATOR
+  registerCallbacks();
 
   // Allows the main device button to wake the device from sleep state
   esp_sleep_enable_ext0_wakeup(BUTTON_GPIO_PIN, HIGH);
 #endif
+  // m_interface->sendDeviceName(m_deviceName);
 
-  logger.info("Creating Input Monitor");
+  logger.info(loggerTag, ": Creating Input Monitor");
   m_buttonMonitor = new ButtonInputMonitor(m_inputInterface);
 }
 
-DeviceManager::~DeviceManager()
-{
-}
+DeviceManager::~DeviceManager() = default;
 
 void DeviceManager::start()
 {
-  logger.info("Starting the device manager");
+  logger.info(loggerTag, ": Starting the device manager");
   m_displayManager->setDisplayMode(DeviceState::State::Off);
 
   m_interface->setService();
   setWaitingForConnection();
+
+  // Once we are connected, immediately send the device configuration
+  // logger.info(loggerTag, ": Sending initial device configuration to central");
+  m_interface->sendDeviceName(m_deviceName);
+  // logger.info(loggerTag, ": Sent device name to central: ", m_deviceName);
+  // logger.info(loggerTag, ": Sending default color configuration to central");
+  m_interface->sendDeviceColorConfig(DeviceConfigurator::DEFAULT_COLOR_CONFIG);
+
   uint32_t now = millis();
   m_lastUpdate = now;
   m_lastReadOut = now;
@@ -67,42 +76,34 @@ char *DeviceManager::getDeviceName()
 
 char *DeviceManager::readDeviceName(char *out)
 {
-  char arduinoID[8] = {};
+  char arduinoID[MAX_NAME_LENGTH] = {};
 #ifdef SIMULATOR
-  out = new char[10]{
-      'S', 'I', 'M', 'U', 'L', 'A', 'T', 'O', 'R', '\0'};
+  out = new char[10]{'S', 'I', 'M', 'U', 'L', 'A', 'T', 'O', 'R', '\0'};
 #else
-  int i;
-  // Read the arduinos ID
-
-  for (i = 0; i < 7; i++)
-  {
-    arduinoID[i] = EEPROM.read(i);
-  }
-  arduinoID[i] = '\0';
+  DeviceConfigurator::readName(arduinoID, MAX_NAME_LENGTH);
 #endif
-  // logger.info(arduinoID);
-  strcpy(out, arduinoID);
+
+  strncpy(out, arduinoID, MAX_NAME_LENGTH);
+  out[MAX_NAME_LENGTH - 1] = '\0'; // Ensure null-termination
   return out;
 }
 
 #ifndef SIMULATOR
 void DeviceManager::writeDeviceName(const char *deviceName, uint8_t length)
 {
-  // Write unique ID to EEPROM
-  int i;
-  logger.info("Writing Device Name: ", deviceName);
-  for (i = 0; i < length; i++)
-  {
-    EEPROM.write(i, deviceName[i]);
-  }
-  EEPROM.write(i, '\0');
-  EEPROM.commit();
-  char message[100];
-  sprintf(message, "Wrote device name to EEPROM: %s", deviceName);
-  logger.info(message);
-  strcpy(m_deviceName, deviceName);
+  DeviceConfigurator::writeName(deviceName);
+  readDeviceName(m_deviceName);
+  logger.info(loggerTag, ": Device name changed to: ", deviceName);
+  m_interface->sendDeviceName(deviceName);
 }
+
+void DeviceManager::writeDeviceColorConfig(ColorConfig config, DeviceState::State configState)
+{
+  DeviceConfigurator::writeColorConfig(config, static_cast<uint16_t>(configState));
+  // m_interface->sendDeviceColorConfig(config);
+  DeviceConfigurator::printColorConfig(config, static_cast<uint16_t>(configState));
+}
+
 #endif
 
 bool DeviceManager::isActiveTurn()
@@ -110,7 +111,60 @@ bool DeviceManager::isActiveTurn()
   return m_interface->isTurn();
 }
 
-// Transition from the active turn to 'turn sequence' mode
+void DeviceManager::onDeviceNameChanged(char *name)
+{
+  // No-op
+  // Device name writes are handled immediately in onDeviceNameChanged
+}
+
+void DeviceManager::onDeviceNameWriteChanged(bool write)
+{
+  if (write)
+  {
+    logger.info(loggerTag, ": Device name write enabled");
+    m_interface->getDeviceName(m_deviceName, MAX_NAME_LENGTH);
+    logger.info(loggerTag, ": onDeviceNameWriteChanged received. Device name changed to: ", m_deviceName);
+    writeDeviceName(m_deviceName, strlen(m_deviceName));
+  }
+  else
+  {
+    logger.info(loggerTag, ": Device name write not enabled");
+  }
+}
+
+void DeviceManager::onDeviceColorConfigChanged(ColorConfig config)
+{
+  DeviceConfigurator::printColorConfig(config, 0);
+  // writeDeviceColorConfig(config);
+  m_displayManager->updateColorConfig(config);
+}
+
+void DeviceManager::onDeviceColorConfigWriteChanged(bool write)
+{
+  if (write)
+  {
+    logger.info(loggerTag, ": Device color config write enabled");
+    DeviceState::State configState= m_interface->getDeviceColorConfigState();
+    ColorConfig config = m_interface->readColorConfig();
+    // DeviceConfigurator::printColorConfig(config, configState);
+    writeDeviceColorConfig(config, configState);
+  }
+  else
+  {
+    logger.info(loggerTag, ": Device color config write not enabled");
+  }
+}
+
+void DeviceManager::onDeviceColorConfigStateChanged(DeviceState::State state)
+{
+  logger.info(loggerTag, ": onDeviceColorConfigStateChanged received. New state: ", static_cast<int>(state));
+  // Update the app with the new configuration state
+  ColorConfig config = DeviceConfigurator::readColorConfig(static_cast<uint16_t>(state));
+  logger.info(loggerTag, ": Sending color config for state ", static_cast<int>(state), " to central");
+  DeviceConfigurator::printColorConfig(config);
+  m_interface->sendDeviceColorConfig(config);
+}
+
 void DeviceManager::sendEndTurn()
 {
   m_interface->endTurn();
@@ -122,11 +176,16 @@ bool DeviceManager::updateCommandedDeviceState()
   bool diff = m_deviceState != newDeviceState;
   if (diff)
   {
-    char message[50];
-    sprintf(message, "Device State transition: %i -> %i", static_cast<int>(m_deviceState), static_cast<int>(newDeviceState));
-    logger.info(message);
+    logger.info(loggerTag, ": Device State transition: ",
+                static_cast<int>(m_deviceState), " -> ",
+                static_cast<int>(newDeviceState));
   }
-  m_deviceState = m_interface->getCommandedDeviceState();
+
+  if (newDeviceState != DeviceState::State::ConfigurationMode) {
+    m_configState = DeviceState::State::Off;
+  }
+
+  m_deviceState = newDeviceState;
   return diff;
 }
 
@@ -135,10 +194,7 @@ void DeviceManager::updateTimer()
   int timer = m_interface->getTimer();
   int elapsedTime = m_interface->getExpectedElapsedTime();
   bool isTurnTimeEnforced = m_interface->isTurnTimerEnforced();
-  struct TimerData data = {
-      .totalTime = timer,
-      .elapsedTime = elapsedTime,
-      .isTurnTimeEnforced = isTurnTimeEnforced};
+  TimerData data{.totalTime = timer, .elapsedTime = elapsedTime, .isTurnTimeEnforced = isTurnTimeEnforced};
 
   m_displayManager->updateTimerData(data);
 }
@@ -146,10 +202,9 @@ void DeviceManager::updateTimer()
 void DeviceManager::setWaitingForConnection()
 {
   if (m_deviceState == DeviceState::State::AwaitingConnection)
-  {
     return;
-  }
-  logger.info("Setting device state to: AwaitingConnection");
+
+  logger.info(loggerTag, ": Setting device state to: AwaitingConnection");
   m_deviceState = DeviceState::State::AwaitingConnection;
   updateDisplayMode();
 }
@@ -157,7 +212,7 @@ void DeviceManager::setWaitingForConnection()
 void DeviceManager::toggleDeviceOrientation()
 {
   m_absoluteOrientation = !m_absoluteOrientation;
-  logger.info("Updated absolute orientation to: ", m_absoluteOrientation);
+  logger.info(loggerTag, ": Updated absolute orientation to: ", m_absoluteOrientation);
   m_displayManager->setAbsoluteOrientation(m_absoluteOrientation);
   updateDisplay();
 }
@@ -165,14 +220,14 @@ void DeviceManager::toggleDeviceOrientation()
 void DeviceManager::toggleColorBlindMode()
 {
   m_colorBlindMode = !m_colorBlindMode;
-  logger.info("Setting Color Blind Mode to: ", m_colorBlindMode);
+  logger.info(loggerTag, ": Setting Color Blind Mode to: ", m_colorBlindMode);
   m_displayManager->setColorBlindMode(m_colorBlindMode);
   updateDisplay();
 }
 
 void DeviceManager::enterDeepSleep()
 {
-  logger.info("Entering Deep Sleep");
+  logger.info(loggerTag, ": Entering Deep Sleep");
   m_deviceState = DeviceState::State::Off;
   updateDisplayMode();
   updateDisplay(true);
@@ -185,29 +240,71 @@ void DeviceManager::enterDeepSleep()
 
 void DeviceManager::updateDisplay(bool force)
 {
+  if (m_deviceState == DeviceState::State::ConfigurationMode)
+  {
+    updateConfigDisplay(force);
+    return;
+  }
+
+  m_displayManager->update(force);
+}
+
+void DeviceManager::updateConfigDisplay(bool force)
+{
+  DeviceState::State configState = m_interface->getDeviceColorConfigState();
+
+  if (DeviceState::deviceStateRequiresAuxiliaryData(configState))
+  {
+    logger.info(loggerTag, ": updateConfigDisplay: New config state requires auxiliary data: ", static_cast<int>(configState));
+    configState = DeviceState::State::Off;
+  }
+
+  bool diff = m_configState != configState;
+  if (diff || configState == DeviceState::State::Off)
+  {
+    logger.info(loggerTag, ": Device Config State transition: ",
+                static_cast<int>(m_configState), " -> ",
+                static_cast<int>(configState));
+    m_displayManager->setDisplayMode(configState);
+  }
+  m_configState = configState;
   m_displayManager->update(force);
 }
 
 void DeviceManager::updateAwaitingGameStartData()
 {
-  GameStartData data{
-      .totalPlayers = m_interface->getTotalPlayers()};
+  GameStartData data{.totalPlayers = m_interface->getTotalPlayers()};
   m_displayManager->updateAwaitingGameStartData(data);
 }
 
 void DeviceManager::updateTurnSequence()
 {
-  int totalPlayers = m_interface->getTotalPlayers();
-  int myPlayer = m_interface->getMyPlayer();
-  int currentPlayer = m_interface->getCurrentPlayer();
-  uint16_t skippedPlayers = m_interface->getSkippedPlayers();
-
-  struct TurnSequenceData data = {.totalPlayers = totalPlayers, .myPlayerIndex = myPlayer, .currentPlayerIndex = currentPlayer, .skippedPlayers = skippedPlayers};
+  TurnSequenceData data{
+      .totalPlayers = m_interface->getTotalPlayers(),
+      .myPlayerIndex = m_interface->getMyPlayer(),
+      .currentPlayerIndex = m_interface->getCurrentPlayer(),
+      .skippedPlayers = m_interface->getSkippedPlayers()};
   m_displayManager->updateTurnSequenceData(data);
+}
+
+void DeviceManager::registerCallbacks()
+{
+  m_interface->registerDeviceNameChangedCallback([this](char *name)
+                                                 { this->onDeviceNameChanged(name); });
+
+  m_interface->registerDeviceColorConfigChangedCallback([this](ColorConfig config)
+                                                        { this->onDeviceColorConfigChanged(config); });
+  m_interface->registerDeviceNameWriteCallback([this](bool write)
+                                               { this->onDeviceNameWriteChanged(write); });
+  m_interface->registerDeviceColorConfigStateChangeCallback([this](DeviceState::State state)
+                                                            { this->onDeviceColorConfigStateChanged(state); });
+  m_interface->registerDeviceColorConfigWriteCallback([this](bool write)
+                                                      { this->onDeviceColorConfigWriteChanged(write); });
 }
 
 void DeviceManager::updateDisplayMode()
 {
+  logger.info(loggerTag, ": Updating display mode to: ", static_cast<int>(m_deviceState));
   m_displayManager->setDisplayMode(m_deviceState);
 }
 
@@ -217,22 +314,20 @@ void DeviceManager::update()
   unsigned long deltaTime = currentTime - m_lastUpdate;
   m_lastUpdate = currentTime;
 
-  // Log data from the interface
   if (currentTime - m_lastReadOut > 2000)
   {
-    logger.info("Update Period: ", deltaTime);
+    // logger.info(loggerTag, ": Update Period: ", deltaTime);
 
     if (ENABLE_DEBUG)
-    {
       m_interface->readData();
-    }
+
     m_lastReadOut = currentTime;
   }
+
 #ifndef SIMULATOR
-  BLE.poll();
+  m_interface->poll();
 #endif
   processGameState();
-
   updateDisplay();
 }
 
@@ -242,27 +337,23 @@ void DeviceManager::processGameState()
 
   if (m_started)
   {
-    logger.error("Attempting to update the device manager before running `start()`");
+    logger.error(loggerTag, ": Attempting to update before running `start()`");
     while (1)
       ;
   }
 
-  // Check how long we have been awaiting connection.
-  // If it is longer than the no connection timeout, enter deep sleep
-  if (m_deviceState == DeviceState::State::AwaitingConnection && m_lastUpdate - m_lastConnection > CONNECTION_TIMEOUT)
+  if (m_deviceState == DeviceState::State::AwaitingConnection &&
+      m_lastUpdate - m_lastConnection > CONNECTION_TIMEOUT)
   {
-    logger.debug("Entering deep sleep");
+    logger.debug(loggerTag, ": Entering deep sleep");
     // enterDeepSleep();
   }
 
-  if (buttonAction == ButtonInputType::LongPress) {
+  if (buttonAction == ButtonInputType::LongPress)
     toggleDeviceOrientation();
-  }
 
   if (buttonAction == ButtonInputType::TripleButtonPress)
-  {
     toggleColorBlindMode();
-  }
 
   if (!m_interface->isConnected())
   {
@@ -270,49 +361,37 @@ void DeviceManager::processGameState()
     setWaitingForConnection();
     return;
   }
+
   m_lastConnection = m_lastUpdate;
 
-  // This prolongs the Awaiting Connection state for EXPECTED_CHARACTERISTIC_DISCOVERY ms after the initial device connection is initiated by the central device
-  // During this time, the central device will discover and populate all characteristics so when the commanded state is first shown, all data is available
-  // If this check is not made, the display will have undefined behavior between initial connection and service discovery
   if (m_lastUpdate - m_lastDisconnection < EXPECTED_CHARACTERISTIC_DISCOVERY)
+    return;
+
+  bool updateDeviceState = updateCommandedDeviceState();
+
+  if (m_deviceState == DeviceState::State::ConfigurationMode)
   {
     return;
   }
 
-  // *** DISPLAY FOR ACTIVE GAME ***
-  // Determine is a device state change was made. If it was, we will update the state after getting display specific data
-  bool updateDeviceState = updateCommandedDeviceState();
-  // Retrieve state specific data for display modes
-
-  if (DeviceState::deviceStateRequiresGameStartData(m_deviceState)) 
-  {
+  if (DeviceState::deviceStateRequiresGameStartData(m_deviceState))
     updateAwaitingGameStartData();
-  }
 
-  if (DeviceState::deviceStateRequiresTurnSequenceData(m_deviceState)) 
-  {
+  if (DeviceState::deviceStateRequiresTurnSequenceData(m_deviceState))
     updateTurnSequence();
-  }
 
-  if (DeviceState::deviceStateRequiresTimeData(m_deviceState)) 
-  {
+  if (DeviceState::deviceStateRequiresTimeData(m_deviceState))
     updateTimer();
-  }
 
   if (updateDeviceState)
-  {
     m_displayManager->setDisplayMode(m_deviceState);
-  }
 
-  // *** INPUT PROCESSING ***
-  if (buttonAction == ButtonInputType::DoubleButtonPress && DeviceState::isStateSkipEligible(m_deviceState))
+  if (buttonAction == ButtonInputType::DoubleButtonPress &&
+      DeviceState::isStateSkipEligible(m_deviceState))
   {
     m_interface->toggleSkippedState();
   }
 
   if (isActiveTurn() && buttonAction == ButtonInputType::ButtonPress)
-  {
     sendEndTurn();
-  }
 }

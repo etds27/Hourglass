@@ -24,6 +24,10 @@ FastLEDLight *fastLEDLight;
 DeviceManager *deviceManager;
 // ButtonInputMonitor* buttonInputMonitor;
 
+unsigned long lastLightUpdate = millis();
+uint32_t primaryColor = 0x000000;
+uint32_t accentColor = 0x000000;
+
 void setup()
 {
     loggerLevel = Logging::LoggerLevel::DEBUG;
@@ -48,11 +52,20 @@ void setup()
         .buffer = buffer
     };
 
-    fastLEDLight->updateGameDebugData(data);
-    fastLEDLight->setDisplayMode(DeviceState::State::BuzzerAwaitingTurnStart);
+    fastLEDLight->setDisplayMode(DeviceState::State::Debug);
 }
 
 void loop()
 {
+    if (millis() - lastLightUpdate > 1000)
+    {
+        fastLEDLight->updatePrimaryColor(primaryColor);
+        fastLEDLight->updateAccentColor(accentColor);
+        lastLightUpdate = millis();
+        primaryColor += 20 << 16 | 20 << 8 | 20;
+        accentColor += 20 << 16 | 20 << 8 | 20;
+    }
+
+
     fastLEDLight->update();
 }
