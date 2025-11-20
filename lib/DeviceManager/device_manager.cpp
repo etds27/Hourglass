@@ -57,6 +57,8 @@ void DeviceManager::start()
   // Once we are connected, immediately send the device configuration
   // logger.info(loggerTag, ": Sending initial device configuration to central");
   m_interface->sendDeviceName(m_deviceName);
+  m_interface->sendDeviceLEDCount(DeviceConfigurator::readLEDCount());
+  m_interface->sendDeviceLEDOffset(DeviceConfigurator::readLEDOffset());
   // logger.info(loggerTag, ": Sent device name to central: ", m_deviceName);
   // logger.info(loggerTag, ": Sending default color configuration to central");
   m_interface->sendDeviceColorConfig(DeviceConfigurator::DEFAULT_COLOR_CONFIG);
@@ -163,6 +165,42 @@ void DeviceManager::onDeviceColorConfigStateChanged(DeviceState::State state)
   logger.info(loggerTag, ": Sending color config for state ", static_cast<int>(state), " to central");
   DeviceConfigurator::printColorConfig(config);
   m_interface->sendDeviceColorConfig(config);
+}
+
+void DeviceManager::onDeviceLEDOffsetChanged(uint8_t offset)
+{
+  logger.info(loggerTag, ": onDeviceLEDOffsetChanged received. New offset: ", offset);
+  m_displayManager->updateLEDOffset(offset);
+}
+
+void DeviceManager::onDeviceLEDOffsetWriteChanged(bool write)
+{
+  logger.info(loggerTag, ": onDeviceLEDOffsetWriteChanged received. New value: ", write);
+  if (write) {
+    uint8_t offset = m_interface->readDeviceLEDOffset();
+    DeviceConfigurator::writeLEDOffset(offset);
+    logger.info(loggerTag, ": LED offset changed to: ", offset);
+  } else {
+    logger.info(loggerTag, ": LED offset write not enabled");
+  }
+}
+
+void DeviceManager::onDeviceLEDCountChanged(uint8_t count)
+{
+  logger.info(loggerTag, ": onDeviceLEDCountChanged received. New count: ", count);
+  m_displayManager->updateLEDCount(count);
+}
+
+void DeviceManager::onDeviceLEDCountWriteChanged(bool write)
+{
+  logger.info(loggerTag, ": onDeviceLEDCountWriteChanged received. New value: ", write);
+  if (write) {
+    uint8_t count = m_interface->readDeviceLEDCount();
+    DeviceConfigurator::writeLEDCount(count);
+    logger.info(loggerTag, ": LED count changed to: ", count);
+  } else {
+    logger.info(loggerTag, ": LED count write not enabled");
+  }
 }
 
 void DeviceManager::sendEndTurn()
@@ -300,6 +338,14 @@ void DeviceManager::registerCallbacks()
                                                             { this->onDeviceColorConfigStateChanged(state); });
   m_interface->registerDeviceColorConfigWriteCallback([this](bool write)
                                                       { this->onDeviceColorConfigWriteChanged(write); });
+  m_interface->registerDeviceLEDOffsetChangedCallback([this](uint8_t offset)
+                                                      { this->onDeviceLEDOffsetChanged(offset); });
+  m_interface->registerDeviceLEDOffsetWriteCallback([this](bool write)
+                                                   { this->onDeviceLEDOffsetWriteChanged(write); });
+  m_interface->registerDeviceLEDCountChangedCallback([this](uint8_t count)
+                                                    { this->onDeviceLEDCountChanged(count); });
+  m_interface->registerDeviceLEDCountWriteCallback([this](bool write)
+                                                  { this->onDeviceLEDCountWriteChanged(write); });
 }
 
 void DeviceManager::updateDisplayMode()

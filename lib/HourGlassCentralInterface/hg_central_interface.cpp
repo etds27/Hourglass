@@ -42,3 +42,23 @@ void HGCentralInterface::registerDeviceColorConfigWriteCallback(std::function<vo
 {
         m_deviceColorConfigWriteChangeCallback = callback;
 }
+
+void HGCentralInterface::registerDeviceLEDOffsetChangedCallback(std::function<void(uint8_t offset)> callback)
+{
+        m_deviceLEDOffsetChangeCallback = callback;
+}
+
+void HGCentralInterface::registerDeviceLEDOffsetWriteCallback(std::function<void(bool write)> callback)
+{
+        m_deviceLEDOffsetWriteChangeCallback = callback;
+}
+
+void HGCentralInterface::registerDeviceLEDCountChangedCallback(std::function<void(uint8_t count)> callback)
+{
+        m_deviceLEDCountChangeCallback = callback;
+}
+
+void HGCentralInterface::registerDeviceLEDCountWriteCallback(std::function<void(bool write)> callback)
+{
+        m_deviceLEDCountWriteChangeCallback = callback;
+}

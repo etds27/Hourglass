@@ -26,6 +26,10 @@ const char *DEVICE_NAME_WRITE_UUID = "ba60a34c-ff34-4439-ae35-e262d8f77b3e";
 const char *DEVICE_COLOR_CONFIG_UUID = "85f6ff14-861b-47cf-8e41-5f5b94100bd9";
 const char *DEVICE_COLOR_CONFIG_STATE_UUID = "f4c4d6e1-3b1e-4d2a-8f3a-2e5b8f0c6d7e";
 const char *DEVICE_COLOR_CONFIG_WRITE_UUID = "4408c2ec-10c0-4a76-87ab-4d9a5b51eaa7";
+const char *DEVICE_LED_OFFSET_UUID = "aea26019-8b62-4292-a999-b565ecc71e1b";
+const char *DEVICE_LED_OFFSET_WRITE_UUID = "7d73338d-cf99-4d10-a946-d2417ea9dca7";
+const char *DEVICE_LED_COUNT_UUID = "d7ce0c0d-833e-45ab-96da-852dc61463af";
+const char *DEVICE_LED_COUNT_WRITE_UUID = "8c00da28-1352-45d9-b7bb-c4a5ba4dea40";
 
 const char *DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb";
 
@@ -56,6 +60,16 @@ void BLEInterface::sendDeviceColorConfig(ColorConfig config)
   m_deviceColorConfig->writeValue((uint8_t*)&config, sizeof(ColorConfig));
 }
 
+void BLEInterface::sendDeviceLEDOffset(int8_t offset)
+{
+  m_deviceLEDOffset->writeValue(offset);
+}
+
+void BLEInterface::sendDeviceLEDCount(uint8_t count)
+{
+  m_deviceLEDCount->writeValue(count);
+}
+
 ColorConfig BLEInterface::readColorConfig()
 {
     ColorConfig config;
@@ -72,6 +86,16 @@ void BLEInterface::getDeviceName(char* out, uint8_t length)
 DeviceState::State BLEInterface::getDeviceColorConfigState()
 {   
     return  static_cast<DeviceState::State>(m_deviceColorConfigState->value());
+}
+
+int8_t BLEInterface::readDeviceLEDOffset()
+{
+    return m_deviceLEDOffset->value();
+}
+
+uint8_t BLEInterface::readDeviceLEDCount()
+{
+    return m_deviceLEDCount->value();
 }
 
 bool BLEInterface::isConnected()
@@ -258,6 +282,70 @@ void BLEInterface::onDeviceColorConfigWriteChanged(BLEDevice central, BLECharact
   }
 }
 
+void BLEInterface::onDeviceLEDOffsetChanged(BLEDevice central, BLECharacteristic characteristic)
+{
+  logger.info(loggerTag, "Device LED Offset Changed");
+  if (instance->m_deviceLEDOffsetChangeCallback)
+  {
+    uint8_t offset = characteristic.value()[0];
+    instance->m_deviceLEDOffsetChangeCallback(offset);
+  }
+  else
+  {
+    logger.warning(loggerTag, "No device LED offset change callback registered");
+  }
+}
+
+void BLEInterface::onDeviceLEDOffsetWriteChanged(BLEDevice central, BLECharacteristic characteristic)
+{
+  logger.info(loggerTag, "Device LED Offset Write Changed");
+  if (instance->m_deviceLEDOffsetWriteChangeCallback)
+  {
+    bool writeStatus = characteristic.value()[0];
+    if (writeStatus) {
+      instance->m_deviceLEDOffsetWriteChangeCallback(writeStatus);
+    } else {
+      logger.info(loggerTag, "Device LED offset write status not enabled");
+    }
+  }
+  else
+  {
+    logger.warning(loggerTag, "No device LED offset write change callback registered");
+  }
+}
+
+void BLEInterface::onDeviceLEDCountChanged(BLEDevice central, BLECharacteristic characteristic)
+{
+  logger.info(loggerTag, "Device LED Count Changed");
+  if (instance->m_deviceLEDCountChangeCallback)
+  {
+    uint8_t count = characteristic.value()[0];
+    instance->m_deviceLEDCountChangeCallback(count);
+  }
+  else
+  {
+    logger.warning(loggerTag, "No device LED count change callback registered");
+  }
+}
+
+void BLEInterface::onDeviceLEDCountWriteChanged(BLEDevice central, BLECharacteristic characteristic)
+{
+  logger.info(loggerTag, "Device LED Count Write Changed");
+  if (instance->m_deviceLEDCountWriteChangeCallback)
+  {
+    bool writeStatus = characteristic.value()[0];
+    if (writeStatus) {
+      instance->m_deviceLEDCountWriteChangeCallback(writeStatus);
+    } else {
+      logger.info(loggerTag, "Device LED count write status not enabled");
+    }
+  }
+  else
+  {
+    logger.warning(loggerTag, "No device LED count write change callback registered");
+  }
+}
+
 void BLEInterface::setService()
 {
   logger.info(loggerTag, SERVICE_UUID);
@@ -334,6 +422,26 @@ void BLEInterface::setService()
   m_deviceColorConfigWrite = new BLEBoolCharacteristic(DEVICE_COLOR_CONFIG_WRITE_UUID,  BLERead | BLEWrite | BLENotify);
   m_deviceColorConfigWrite->setEventHandler(BLEWritten, onDeviceColorConfigWriteChanged);
   m_service->addCharacteristic(*m_deviceColorConfigWrite);
+
+  // Device LED Offset Characteristic
+  m_deviceLEDOffset = new BLEIntCharacteristic(DEVICE_LED_OFFSET_UUID, BLERead | BLEWrite | BLENotify);
+  m_deviceLEDOffset->setEventHandler(BLEWritten, onDeviceLEDOffsetChanged);
+  m_service->addCharacteristic(*m_deviceLEDOffset);
+
+  // Device LED Offset Write Characteristic
+  m_deviceLEDOffsetWrite = new BLEBoolCharacteristic(DEVICE_LED_OFFSET_WRITE_UUID,  BLERead | BLEWrite | BLENotify);
+  m_deviceLEDOffsetWrite->setEventHandler(BLEWritten, onDeviceLEDOffsetWriteChanged);
+  m_service->addCharacteristic(*m_deviceLEDOffsetWrite);
+
+  // Device LED Count Characteristic
+  m_deviceLEDCount = new BLEIntCharacteristic(DEVICE_LED_COUNT_UUID, BLERead | BLEWrite | BLENotify);
+  m_deviceLEDCount->setEventHandler(BLEWritten, onDeviceLEDCountChanged);
+  m_service->addCharacteristic(*m_deviceLEDCount);
+
+  // Device LED Count Write Characteristic
+  m_deviceLEDCountWrite = new BLEBoolCharacteristic(DEVICE_LED_COUNT_WRITE_UUID,  BLERead | BLEWrite | BLENotify);
+  m_deviceLEDCountWrite->setEventHandler(BLEWritten, onDeviceLEDCountWriteChanged);
+  m_service->addCharacteristic(*m_deviceLEDCountWrite);
 
   logger.info(loggerTag, "Advertising with name: ", m_deviceName);
   BLE.setLocalName(m_deviceName);

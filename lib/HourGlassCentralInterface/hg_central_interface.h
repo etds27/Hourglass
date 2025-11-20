@@ -33,6 +33,8 @@ public:
     virtual ColorConfig readColorConfig() = 0;
     virtual void getDeviceName(char *out, uint8_t length) = 0;
     virtual DeviceState::State getDeviceColorConfigState() = 0;
+    virtual int8_t readDeviceLEDOffset() = 0;
+    virtual uint8_t readDeviceLEDCount() = 0;
 
     // Gets the current device's player index
     virtual int getMyPlayer() = 0;
@@ -63,10 +65,16 @@ public:
     void registerDeviceColorConfigChangedCallback(std::function<void(ColorConfig config)> callback);
     void registerDeviceColorConfigStateChangeCallback(std::function<void(DeviceState::State state)> callback);
     void registerDeviceColorConfigWriteCallback(std::function<void(bool write)> callback);
+    void registerDeviceLEDOffsetChangedCallback(std::function<void(uint8_t offset)> callback);
+    void registerDeviceLEDOffsetWriteCallback(std::function<void(bool write)> callback);
+    void registerDeviceLEDCountChangedCallback(std::function<void(uint8_t count)> callback);
+    void registerDeviceLEDCountWriteCallback(std::function<void(bool write)> callback);
 
 
     virtual void sendDeviceName(const char *name) = 0;
     virtual void sendDeviceColorConfig(ColorConfig config) = 0;
+    virtual void sendDeviceLEDOffset(int8_t offset) = 0;
+    virtual void sendDeviceLEDCount(uint8_t count) = 0;
 
 protected:
     virtual ~HGCentralInterface();
@@ -94,4 +102,8 @@ protected:
     std::function<void(ColorConfig config)> m_deviceColorConfigChangeCallback;
     std::function<void(DeviceState::State state)> m_deviceColorConfigStateChangeCallback;
     std::function<void(bool write)> m_deviceColorConfigWriteChangeCallback;
+    std::function<void(uint8_t offset)> m_deviceLEDOffsetChangeCallback;
+    std::function<void(bool write)> m_deviceLEDOffsetWriteChangeCallback;
+    std::function<void(uint8_t count)> m_deviceLEDCountChangeCallback;
+    std::function<void(bool write)> m_deviceLEDCountWriteChangeCallback;
 };

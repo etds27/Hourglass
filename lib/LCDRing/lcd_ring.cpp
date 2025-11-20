@@ -59,11 +59,6 @@ void LCDRing::setPixelColor(uint8_t i, uint32_t color)
     m_leds[i] = rgb24to565(color);
 }
 
-uint8_t LCDRing::getRingOffset() const
-{
-    return m_ringOffset;
-}
-
 bool LCDRing::getClearBeforeUpdate() const
 {
     return m_clearBeforeUpdate;

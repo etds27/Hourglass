@@ -45,6 +45,16 @@ int MockCentralInterface::getTotalPlayers() { return m_totalPlayers; }
 
 ColorConfig MockCentralInterface::readColorConfig() { return m_colorConfig; }
 
+uint8_t MockCentralInterface::readDeviceLEDOffset()
+{
+    return m_ledOffset;
+}
+
+uint8_t MockCentralInterface::readDeviceLEDCount()
+{
+    return m_ledCount;
+}
+
 void MockCentralInterface::getDeviceName(char *out, uint8_t length)
 {
     strncpy(out, m_deviceName, length);

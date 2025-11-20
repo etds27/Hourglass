@@ -40,6 +40,8 @@ class HourglassDisplayManager {
     void updateAccentColor(uint32_t accentColor);
 
     void updateColorConfig(ColorConfig config);
+    void updateLEDOffset(uint8_t offset);
+    void updateLEDCount(uint8_t count);
 
     private:
         std::vector<HGDisplayInterface*> interfaces;

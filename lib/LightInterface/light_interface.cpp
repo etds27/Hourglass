@@ -118,11 +118,6 @@ void LightInterface::setDisplayMode(DeviceState::State state)
   HGDisplayInterface::setDisplayMode(state);
 }
 
-uint8_t LightInterface::getRingOffset() const
-{
-  return m_ringOffset;
-}
-
 void LightInterface::updateLightModeActiveTurnNoTimer()
 {
   // Uses 3 colors to create a moving inchworm effect
@@ -215,13 +210,22 @@ void LightInterface::updateLightModeActiveTurnNoTimer()
 
   // Color the first segment green and the opposite segment blue
   this->colorBuffer(fullColorBuffer, segmentLength,  m_colorConfig.colors[1]);
-  this->colorBuffer(fullColorBuffer + (segmentLength * NO_TIMER_SEGMENTS / 2), segmentLength,  m_colorConfig.colors[0]);
+  this->colorBuffer(fullColorBuffer + (segmentLength * NO_TIMER_SEGMENTS / 2), segmentLength,  m_colorConfig.colors[2]);
   if (NO_TIMER_APPLY_OFFSET)
   {
     // Offset is the number of full cycles that have already played
     uint8_t offset = -segmentLength * (currentCycle % NO_TIMER_SEGMENTS);
-    offsetBuffer(fullColorBuffer, offset);
+    offsetBuffer(fullColorBuffer, offset, m_ledCount);
   }
+
+  for (int i = 0; i < m_ledCount; i++)
+  {
+    if (fullColorBuffer[i] == 0)
+    {
+      fullColorBuffer[i] = m_colorConfig.colors[3];
+    }
+  }
+
   displayBuffer(fullColorBuffer);
 
   delete[] colorBuffer;
@@ -364,14 +368,13 @@ void LightInterface::updateLightModeAwaitGameStart()
 {
   uint32_t *colorBuffer = new uint32_t[m_ledCount];
   const uint32_t *colors = (m_colorBlindMode) ? AWAIT_GAME_COLORS_ALT : AWAIT_GAME_COLORS;
-
   int segments = std::max(m_gameStartData.totalPlayers, 1);
 
   expandBuffer(colors, colorBuffer, segments, m_ledCount);
 
   unsigned long currentSecond = (int)(millis() - m_startTime) / AWAIT_GAME_START_SPEED;
   uint8_t offset = currentSecond % m_ledCount;
-  offsetBuffer(colorBuffer, offset);
+  offsetBuffer(colorBuffer, offset, m_ledCount);
   displayBuffer(colorBuffer);
   delete[] colorBuffer;
 }
@@ -594,7 +597,7 @@ void LightInterface::updateLightModeWinnerPeriod()
 {
   // Uses a marquee effect with the winner color
   // color[0] is the winner color
-  displayMarqueeBuzzer(m_colorConfig.colors[0]);
+  displayDualMarqueeBuzzer(m_colorConfig.colors[0], m_colorConfig.colors[1]);
 }
 
 void LightInterface::updateLightModeWinnerPeriodTimed()
@@ -606,7 +609,7 @@ void LightInterface::updateLightModeBuzzerResults()
 {
   // Uses a marquee effect with the loser color
   // color[0] is the loser color
-  displayMarqueeBuzzer(m_colorConfig.colors[0]);
+  displayDualMarqueeBuzzer(m_colorConfig.colors[0], m_colorConfig.colors[1]);
 }
 
 void LightInterface::updateLightModeAwaitTurnStart()
@@ -676,7 +679,25 @@ void LightInterface::updateDeviceColorMode()
   delete[] smallBuffer;
 }
 
+void LightInterface::updateLightModeDeviceLEDOffsetMode()
+{
+  uint32_t *colorBuffer = new uint32_t[m_ledCount]{};
+  colorBuffer[0] = BLUE;
+  colorBuffer[m_ledCount - 1] = RED;
+
+  displayBuffer(colorBuffer, false);
+  delete[] colorBuffer;
+}
+
 void LightInterface::displayMarqueeBuzzer(uint32_t color)
+{
+  ColorTransform::ColorTransform *transform = new ColorTransform::DimColor(150);
+  uint32_t dimColor = transform->applyTransform(color);
+  delete transform;
+  displayDualMarqueeBuzzer(color, dimColor);
+}
+
+void LightInterface::displayDualMarqueeBuzzer(uint32_t color1, uint32_t color2)
 {
   unsigned long timeSinceModeStart = millis() - m_startTime;
   uint32_t doubleCycleTime = timeSinceModeStart % BUZZER_ACTIVE_TURN_MARQUEE_DURATION;
@@ -689,13 +710,9 @@ void LightInterface::displayMarqueeBuzzer(uint32_t color)
 
   uint32_t *colorBuffer = new uint32_t[m_ledCount]{};
 
-  ColorTransform::ColorTransform *transform = new ColorTransform::DimColor(150);
-  uint32_t dimColor = transform->applyTransform(color);
-  delete transform;
-
   for (int i = 0; i < m_ledCount; i++)
   {
-    colorBuffer[i] = i % 2 ? dimColor : color;
+    colorBuffer[i] = i % 2 ? color1 : color2;
   }
 
   offsetBuffer(colorBuffer, offset, m_ledCount);
@@ -901,11 +918,11 @@ void LightInterface::displayBuffer(const uint32_t *buffer, const bool clockwise)
   {
     if (clockwise)
     {
-      setPixelColor(((m_ledCount - i - 1) + getRingOffset()) % m_ledCount, buffer[i]);
+      setPixelColor(((m_ledCount - i - 1) + m_ledOffset) % m_ledCount, buffer[i]);
     }
     else
     {
-      setPixelColor((i + getRingOffset()) % m_ledCount, buffer[i]);
+      setPixelColor((i + m_ledOffset) % m_ledCount, buffer[i]);
     }
   }
 }

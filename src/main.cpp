@@ -75,6 +75,8 @@ void setup()
   EEPROM.begin(0x0400);
   char deviceName[MAX_NAME_LENGTH] = {};
   DeviceConfigurator::readName(deviceName, MAX_NAME_LENGTH);
+  // DeviceConfigurator::writeLEDCount(16);
+  // DeviceConfigurator::writeLEDOffset(0);
 
   if (!isPrintableString(deviceName, MAX_NAME_LENGTH)) {
     logger.warning(loggerTag, ": Device name in EEPROM is invalid, resetting to default.");

@@ -5,7 +5,7 @@
 #include "constants.h"
 #include "device_state.h"
 
-#define DEVICE_CONFIG_VERSION 2
+#define DEVICE_CONFIG_VERSION 3
 #define MAX_NAME_LENGTH 16
 #define DEVICE_CONFIG_LOCATION 0x0000
 
@@ -16,6 +16,8 @@
 struct DeviceConfig {
     uint8_t version = DEVICE_CONFIG_VERSION;
     char name[MAX_NAME_LENGTH];
+    uint8_t ledOffset = 0;
+    uint8_t ledCount = 16;
 };
 
 struct ColorConfigHeader {
@@ -31,12 +33,17 @@ struct ColorConfig {
 namespace DeviceConfigurator {
     void writeConfig(const DeviceConfig& config);
     void writeName(const char* name);
+    void writeLEDOffset(uint8_t offset);
+    void writeLEDCount(uint8_t count);
 
     void writeColorConfig(const ColorConfig& colorConfig, uint16_t index = -1);
 
     DeviceConfig readConfig();
     void readName(char* name, size_t maxLength);
     ColorConfig readColorConfig(uint16_t index);
+    ColorConfig readDefaultColorConfig(uint16_t index);
+    int8_t readLEDOffset();
+    uint8_t readLEDCount();
 
     void printConfig(const DeviceConfig& config);
     void printColorConfig(const ColorConfig &cfg, uint16_t index = -1);

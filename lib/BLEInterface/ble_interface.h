@@ -13,6 +13,8 @@ public:
   BLEInterface(char *deviceName);
   void sendDeviceName(const char *name);
   void sendDeviceColorConfig(ColorConfig config);
+  void sendDeviceLEDOffset(int8_t offset);
+  void sendDeviceLEDCount(uint8_t count);
 
   void readData();
   bool isConnected();
@@ -33,6 +35,8 @@ public:
   ColorConfig readColorConfig();
   void getDeviceName(char *out, uint8_t length);
   DeviceState::State getDeviceColorConfigState();
+  int8_t readDeviceLEDOffset();
+  uint8_t readDeviceLEDCount();
 
   // Check if a game is active
   bool isGameActive();
@@ -94,6 +98,35 @@ private:
   /// @note This callback is static so it can be used as a BLE event handler.
   static void onDeviceColorConfigWriteChanged(BLEDevice central, BLECharacteristic characteristic);
 
+  /// @brief  Callback for when the device LED offset changes.
+  /// This is triggered when the central device writes a new `uint8_t` to the `DEVICE_LED_OFFSET_UUID` characteristic
+  /// @param central The BLE device that wrote the characteristic
+  /// @param characteristic  The characteristic that was written to
+  static void onDeviceLEDOffsetChanged(BLEDevice central, BLECharacteristic characteristic);
+
+  /// @brief  Callback for when the device LED offset write status changes.
+  /// This is triggered when the central device writes to the `DEVICE_LED_OFFSET_WRITE_UUID` characteristic,
+  /// signaling that the peripheral should read the new LED offset from the `DEVICE_LED_OFFSET_UUID` characteristic.
+  /// @param central The BLE device that wrote the characteristic
+  /// @param characteristic The characteristic that was written to
+  /// @note This callback is static so it can be used as a BLE event handler.
+  static void onDeviceLEDOffsetWriteChanged(BLEDevice central, BLECharacteristic characteristic);
+
+  /// @brief Callback for when the device LED count changes.
+  /// This is triggered when the central device writes a new `uint8_t` to the `DEVICE_LED_COUNT_UUID` characteristic
+  /// @param central The BLE device that wrote the characteristic
+  /// @param characteristic The characteristic that was written to
+  /// @note This callback is static so it can be used as a BLE event handler.
+  static void onDeviceLEDCountChanged(BLEDevice central, BLECharacteristic characteristic);
+
+  /// @brief Callback for when the device LED count write status changes.
+  /// This is triggered when the central device writes to the `DEVICE_LED_COUNT_WRITE_UUID` characteristic,
+  /// signaling that the peripheral should read the new LED count from the `DEVICE_LED_COUNT_UUID
+  /// @param central  The BLE device that wrote the characteristic
+  /// @param characteristic The characteristic that was written to
+  /// @note This callback is static so it can be used as a BLE event handler.
+  static void onDeviceLEDCountWriteChanged(BLEDevice central, BLECharacteristic characteristic);
+
   static String serviceIds[];
   char *m_deviceName;
   BLEService *m_service;
@@ -112,6 +145,10 @@ private:
   BLEBoolCharacteristic *m_deviceColorConfigWrite;
   BLEStringCharacteristic *m_deviceNameCharacteristic;
   BLEBoolCharacteristic *m_deviceNameWrite;
+  BLEIntCharacteristic *m_deviceLEDOffset;
+  BLEBoolCharacteristic *m_deviceLEDOffsetWrite;
+  BLEIntCharacteristic *m_deviceLEDCount;
+  BLEBoolCharacteristic *m_deviceLEDCountWrite;
 
   BLEDescriptor *m_activeTurnDescriptor;
   unsigned long lastPoll;

@@ -35,7 +35,7 @@ void HGDisplayInterface::setDisplayMode(DeviceState::State state)
   m_startTime = millis();
   clear();
   m_state = state;
-  loadCurrentColorConfig();
+  loadCurrentDisplayConfig();
   update();
 };
 
@@ -102,6 +102,9 @@ void HGDisplayInterface::update(bool force)
   case DeviceState::State::DeviceColorMode:
     updateDeviceColorMode();
     break;
+  case DeviceState::State::DeviceLEDOffsetMode:
+    updateLightModeDeviceLEDOffsetMode();
+    break;
   };
   // noInterrupts();
   show();
@@ -134,15 +137,30 @@ void HGDisplayInterface::updateColorConfig(ColorConfig config)
   m_colorConfig = config;
 }
 
+void HGDisplayInterface::updateLEDOffset(uint8_t offset)
+{
+  m_ledOffset = offset;
+}
+
+void HGDisplayInterface::updateLEDCount(uint8_t count)
+{
+  m_ledCount = count;
+}
+
 bool HGDisplayInterface::getClearBeforeUpdate() const
 {
   return m_clearBeforeUpdate;
 }
 
-void HGDisplayInterface::loadCurrentColorConfig()
+void HGDisplayInterface::loadCurrentDisplayConfig()
 {
   m_colorConfig = DeviceConfigurator::readColorConfig(static_cast<uint16_t>(m_state));
   logger.info(loggerTag, "Loaded color config for state ", static_cast<uint16_t>(m_state));
+
+  DeviceConfig config = DeviceConfigurator::readConfig();
+  m_ledOffset = config.ledOffset;
+  m_ledCount = config.ledCount;
+  logger.info(loggerTag, "Loaded device config: LED Offset=", m_ledOffset, ", LED Count=", m_ledCount);
 }
 
 void HGDisplayInterface::updatePrimaryColor(uint32_t color)
