@@ -109,6 +109,7 @@ DeviceConfig DeviceConfigurator::readConfig()
 
     // Handle invalid or uninitialized EEPROM
     if (config.version != DEVICE_CONFIG_VERSION) {
+        config = DeviceConfig{};
         logger.warning(loggerTag, ": Invalid device config version, initializing defaults");
         config.version = DEVICE_CONFIG_VERSION;
         strncpy(config.name, "Default", MAX_NAME_LENGTH);

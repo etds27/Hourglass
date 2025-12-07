@@ -1,8 +1,8 @@
 #pragma once
-#include "light_interface.h"
 
 #ifndef SIMULATOR
 #include <FastLED.h>
+#include "light_interface.h"
 
 class FastLEDLight : public LightInterface {
 public:
