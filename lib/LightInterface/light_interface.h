@@ -16,11 +16,8 @@ struct GameDebugData
 class LightInterface : public HGDisplayInterface
 {
 protected:
-  uint8_t m_ringOffset = TOP_RING_OFFSET;
-  uint8_t m_ledCount;
   uint8_t m_diPin;
 
-  virtual uint8_t getRingOffset() const;
 
   void updateLightModeActiveTurnTimer() override;
   void updateLightModeActiveTurnNoTimer() override;
@@ -38,11 +35,13 @@ protected:
   void updateLightModeBuzzerResults() override;
   void updateLightModeAwaitTurnStart() override;
   void updateDeviceColorMode() override;
+  void updateLightModeDeviceLEDOffsetMode() override;
 
 
 
   // MARK: Canned display effects
   void displayMarqueeBuzzer(uint32_t color);
+  void displayDualMarqueeBuzzer(uint32_t color1, uint32_t color2);
   void displayCounterClockwiseTimer(uint32_t elapsedTime, uint32_t totalTimerDuration);
   void displaySymmetricFixedColorTimer(uint32_t elapsedTime, uint32_t totalTimerDuration);
 

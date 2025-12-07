@@ -22,6 +22,9 @@ public:
     int getCurrentPlayer() override;
     int getTotalPlayers() override;
     ColorConfig readColorConfig() override;
+    int8_t readDeviceLEDOffset() override;
+    uint8_t readDeviceLEDCount() override;
+
     void getDeviceName(char *out, uint8_t length) override;
     DeviceState::State getDeviceColorConfigState() override;
     int getMyPlayer() override;
@@ -69,6 +72,8 @@ private:
     ColorConfig m_colorConfig;
     char m_deviceName[MAX_NAME_LENGTH] = "MockDevice";
     DeviceState::State m_configState = DeviceState::State::Off;
+    uint8_t m_ledOffset = 0;
+    uint8_t m_ledCount = 16;
 
     // State for inspection
     bool m_endTurnCalled = false;

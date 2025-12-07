@@ -45,6 +45,34 @@ void DeviceConfigurator::writeName(const char *name)
     }
 }
 
+void DeviceConfigurator::writeLEDOffset(uint8_t offset)
+{
+    DeviceConfig config = readConfig();
+    config.ledOffset = offset;
+    if (config.ledOffset != offset) {
+        logger.info(loggerTag, ": LED offset unchanged");
+        return;
+    }
+    logger.info(loggerTag, ": LED offset updated to: ", config.ledOffset);
+    writeConfig(config);
+}
+
+void DeviceConfigurator::writeLEDCount(uint8_t count)
+{
+    if (count == 0) {
+        logger.warning(loggerTag, ": LED count cannot be zero");
+        return;
+    }
+    DeviceConfig config = readConfig();
+    config.ledCount = count;
+    if (config.ledCount != count) {
+        logger.info(loggerTag, ": LED count unchanged");
+        return;
+    }
+    logger.info(loggerTag, ": LED count updated to: ", config.ledCount);
+    writeConfig(config);
+}
+
 // Write a dynamic color configuration to EEPROM
 // If index is UINT16_MAX (default), append to end of stored configs
 void DeviceConfigurator::writeColorConfig(const ColorConfig &colorConfig, uint16_t index)
@@ -76,11 +104,12 @@ void DeviceConfigurator::writeColorConfig(const ColorConfig &colorConfig, uint16
 // Read the main device configuration from EEPROM
 DeviceConfig DeviceConfigurator::readConfig()
 {
-    DeviceConfig config;
+    DeviceConfig config = DeviceConfig{};
     EEPROM.get(DEVICE_CONFIG_LOCATION, config);
 
     // Handle invalid or uninitialized EEPROM
     if (config.version != DEVICE_CONFIG_VERSION) {
+        config = DeviceConfig{};
         logger.warning(loggerTag, ": Invalid device config version, initializing defaults");
         config.version = DEVICE_CONFIG_VERSION;
         strncpy(config.name, "Default", MAX_NAME_LENGTH);
@@ -117,16 +146,19 @@ ColorConfig DeviceConfigurator::readColorConfig(uint16_t index)
         EEPROM.put(DEVICE_COLOR_CONFIG_LOCATION, header);
         EEPROM.commit();
 
+        config = readDefaultColorConfig(index);
+
         // Save first default color config
-        writeColorConfig(DEFAULT_COLOR_CONFIG, 0);
+        writeColorConfig(config, 0);
         return config;
     }
 
     if (header.configsWritten & (1u << index)) {
         logger.info(loggerTag, ": Reading existing color config at index ", index);
     } else {
-        logger.info(loggerTag, ": No color config at index ", index, ", returning default colors");
-        return DEFAULT_COLOR_CONFIG;
+        logger.info(loggerTag, ": No color config at index ", index, ", returning default colors for this index");
+        config = readDefaultColorConfig(index);
+        return config;
     }
 
     // Check for invalid index
@@ -139,6 +171,38 @@ ColorConfig DeviceConfigurator::readColorConfig(uint16_t index)
     uint32_t addr = DEVICE_COLOR_CONFIG_LOCATION + sizeof(ColorConfigHeader) + index * sizeof(ColorConfig);
     EEPROM.get(addr, config);
     return config;
+}
+
+ColorConfig DeviceConfigurator::readDefaultColorConfig(uint16_t index)
+{
+    DeviceState::State state = static_cast<DeviceState::State>(index);
+    switch (state)
+    {
+    case DeviceState::State::BuzzerAwaitingTurnEnd:
+        return ColorConfig{.colors = {0xFFFF00FF, 0xFFFF00FF, 0xFFFF00FF, 0xFFFF00FF}};
+    case DeviceState::State::BuzzerWinnerPeriod:
+        return ColorConfig{.colors = {BUZZER_ACTIVE_TURN_COLOR_WINNER, BLUE, 0x0, 0x0}};
+    case DeviceState::State::BuzzerResults:
+        return ColorConfig{.colors = {BUZZER_ACTIVE_TURN_COLOR_LOSER, BLUE, 0x0, 0x0}};
+    case DeviceState::State::AwaitingConnection: return ColorConfig{.colors = {HOURGLASS_BLUE, 0x0, 0x0, 0x0}};
+    case DeviceState::State::Skipped: return ColorConfig{.colors = {WHITE, 0x0, 0x0, 0x0}};
+    case DeviceState::State::DeviceColorMode: return ColorConfig{.colors = {WHITE, WHITE, HOURGLASS_BLUE, HOURGLASS_YELLOW}};
+
+    default:
+        return DEFAULT_COLOR_CONFIG;
+    }
+}
+
+int8_t DeviceConfigurator::readLEDOffset()
+{
+    DeviceConfig config = readConfig();
+    return config.ledOffset;
+}
+
+uint8_t DeviceConfigurator::readLEDCount()
+{
+    DeviceConfig config = readConfig();
+    return config.ledCount;
 }
 
 // Read the header for dynamic color configs
@@ -166,6 +230,8 @@ void DeviceConfigurator::printConfig(const DeviceConfig &config)
     logger.info(loggerTag, "=== Device Config ===");
     logger.info(loggerTag, "Version:      ", config.version);
     logger.info(loggerTag, "Name:         ", config.name);
+    logger.info(loggerTag, "LED Offset:   ", config.ledOffset);
+    logger.info(loggerTag, "LED Count:    ", config.ledCount);
     logger.info(loggerTag, "=====================");
 }
 

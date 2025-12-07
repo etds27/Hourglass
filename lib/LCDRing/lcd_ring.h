@@ -16,9 +16,6 @@ public:
     void setPixelColor(uint8_t i, uint32_t color) override;
 
 protected:
-  uint8_t m_ringOffset = 4;
-  uint8_t getRingOffset() const override;
-
   bool m_clearBeforeUpdate = false;
   bool getClearBeforeUpdate() const override;
 

@@ -150,6 +150,16 @@ private:
   void onDeviceColorConfigWriteChanged(bool write);
   /// @brief Callback for when the state to be configured is changed via BLE.
   void onDeviceColorConfigStateChanged(DeviceState::State state);
+
+  /// @brief Callback for when the LED offset is changed via BLE.
+  void onDeviceLEDOffsetChanged(uint8_t offset);
+  /// @brief Callback triggered to commit an LED offset change from BLE.
+  void onDeviceLEDOffsetWriteChanged(bool write);
+  /// @brief Callback for when the LED count is changed via BLE.
+  void onDeviceLEDCountChanged(uint8_t count);
+  /// @brief Callback triggered to commit an LED count change from BLE.
+  void onDeviceLEDCountWriteChanged(bool write);
+
   /// @brief The state currently being configured in `ConfigurationMode`.
   DeviceState::State m_configState = DeviceState::State::Off;
 

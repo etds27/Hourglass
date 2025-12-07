@@ -37,6 +37,7 @@ namespace DeviceState
     BuzzerAwaitingTurnStart = 17,
     ConfigurationMode = 18,
     DeviceColorMode = 19, // Used only for the app colors
+    DeviceLEDOffsetMode = 20, // Used only for the app LED offset
 
     Unknown = 100,
   };
@@ -91,5 +92,4 @@ namespace DeviceState
   /// @brief Determines if the device is in a state where auxiliary data is needed
   /// Note: Make sure this function is updated when new auxiliary data requirements are added
   bool deviceStateRequiresAuxiliaryData(State state);
-
 }

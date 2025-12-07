@@ -82,6 +82,18 @@ void HourglassDisplayManager::updateColorConfig(ColorConfig config)
                          { interface->updateColorConfig(config); });
 }
 
+void HourglassDisplayManager::updateLEDOffset(uint8_t offset)
+{
+    applyToAllInterfaces([offset](HGDisplayInterface *interface)
+                         { interface->updateLEDOffset(offset); });
+}
+
+void HourglassDisplayManager::updateLEDCount(uint8_t count)
+{
+    applyToAllInterfaces([count](HGDisplayInterface *interface)
+                         { interface->updateLEDCount(count); });
+}
+
 void HourglassDisplayManager::applyToAllInterfaces(std::function<void(HGDisplayInterface *)> func)
 {
     for (HGDisplayInterface *interface : interfaces)

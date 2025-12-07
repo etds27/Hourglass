@@ -1,10 +1,10 @@
 #include "device_state.h"
+#include "colors.h"
 
 namespace DeviceState
 {
 
-    const uint8_t NUMBER_OF_STATES = 20;
-
+    const uint8_t NUMBER_OF_STATES = 21;
 
     const std::array<State, 9> ACTIVE_TURN_STATES = {
         State::ActiveTurnEnforced,
@@ -29,7 +29,7 @@ namespace DeviceState
         State::BuzzerAwaitingTurnEnd,
         State::BuzzerWinnerPeriod,
         State::BuzzerWinnerPeriodTimed,
-        State::BuzzerAwaitingTurnStart, 
+        State::BuzzerAwaitingTurnStart,
         State::BuzzerAwaitingBuzzerEnabled};
 
     const std::array<State, 11> SKIP_ELIGIBLE_STATES = {
@@ -40,9 +40,10 @@ namespace DeviceState
         State::BuzzerAwaitingTurnEnd,
         State::BuzzerResults,
         State::BuzzerAwaitingBuzz,
-        State::BuzzerAwaitingBuzzTimed,        
-        State::BuzzerAwaitingTurnStart, 
-        State::BuzzerAwaitingBuzzerEnabled,};
+        State::BuzzerAwaitingBuzzTimed,
+        State::BuzzerAwaitingTurnStart,
+        State::BuzzerAwaitingBuzzerEnabled,
+    };
 
     const std::array<State, 7> SEQUENTIAL_TURN_ORDER_MODE_STATES = {
         State::AwaitingConnection,
@@ -63,10 +64,9 @@ namespace DeviceState
         State::BuzzerAwaitingTurnEnd,
         State::BuzzerAwaitingBuzzerEnabled,
         State::BuzzerResults,
-        State::BuzzerAwaitingTurnStart, 
+        State::BuzzerAwaitingTurnStart,
         State::Skipped,
         State::Paused};
-
 
     const std::array<State, 3> TIME_DATA_REQUIRED = {
         State::ActiveTurnEnforced,
@@ -118,9 +118,10 @@ namespace DeviceState
     {
         return std::find(TURN_SEQUENCE_DATA_REQUIRED.begin(), TURN_SEQUENCE_DATA_REQUIRED.end(), state) != TURN_SEQUENCE_DATA_REQUIRED.end();
     }
-    
+
     bool deviceStateRequiresAuxiliaryData(State state)
     {
         return deviceStateRequiresGameStartData(state) || deviceStateRequiresTurnSequenceData(state) || deviceStateRequiresTimeData(state);
     }
+
 }

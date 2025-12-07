@@ -68,7 +68,11 @@ protected:
 
     ColorConfig m_colorConfig;
 
-    virtual void loadCurrentColorConfig();
+    // Used by Ring Light displays to determine which LEDs to light up
+    uint8_t m_ledOffset = 0;
+    uint8_t m_ledCount = 16;
+
+    virtual void loadCurrentDisplayConfig();
 
     // MARK: Light Modes
 
@@ -127,6 +131,8 @@ protected:
     /// @brief Update the display for Device Color Mode (App Colors)
     virtual void updateDeviceColorMode() = 0;
 
+    /// @brief Update the display for Device LED Offset Mode
+    virtual void updateLightModeDeviceLEDOffsetMode() = 0;
 
 public:
     virtual ~HGDisplayInterface();
@@ -162,6 +168,13 @@ public:
     /// @brief Update the color configuration for the display interface
     void updateColorConfig(ColorConfig config);
 
+    /// @brief Update LED offset for the display interface
+    /// @param offset New LED offset
+    void updateLEDOffset(uint8_t offset);
+
+    /// @brief Update LED count for the display interface
+    /// @param count New LED count
+    void updateLEDCount(uint8_t count);
     
     /// @brief Update primary color of the display interface
     /// @param color New primary color
