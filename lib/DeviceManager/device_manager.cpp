@@ -61,7 +61,11 @@ void DeviceManager::start()
   m_interface->sendDeviceLEDOffset(DeviceConfigurator::readLEDOffset());
   // logger.info(loggerTag, ": Sent device name to central: ", m_deviceName);
   // logger.info(loggerTag, ": Sending default color configuration to central");
-  m_interface->sendDeviceColorConfig(DeviceConfigurator::DEFAULT_COLOR_CONFIG);
+
+  ColorConfig deviceConfig = DeviceConfigurator::readColorConfig(static_cast<uint16_t>(DeviceState::State::DeviceColorMode));
+  DeviceConfigurator::printColorConfig(deviceConfig, static_cast<uint16_t>(DeviceState::State::DeviceColorMode));
+
+  m_interface->sendDeviceColorConfig(deviceConfig);
 
   uint32_t now = millis();
   m_lastUpdate = now;
@@ -230,7 +234,8 @@ bool DeviceManager::updateCommandedDeviceState()
 void DeviceManager::updateTimer()
 {
   int timer = m_interface->getTimer();
-  int elapsedTime = m_interface->getExpectedElapsedTime();
+  // int elapsedTime = m_interface->getExpectedElapsedTime();
+  int elapsedTime = m_interface->getElapsedTime();
   bool isTurnTimeEnforced = m_interface->isTurnTimerEnforced();
   TimerData data{.totalTime = timer, .elapsedTime = elapsedTime, .isTurnTimeEnforced = isTurnTimeEnforced};
 
