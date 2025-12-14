@@ -33,22 +33,22 @@ namespace ColorTransform
         Hsv2Rgb* hsv2Rgb = new Hsv2Rgb(color);
 
         char buffer[50];
-        sprintf(buffer, "RGB Color (Initial): %d", color);
-        logger.debug(buffer);
+        // sprintf(buffer, "RGB Color (Initial): %d", color);
+        // logger.debug(buffer);
         uint32_t hsvColor = rgb2Hsv->applyTransform(color);
-        sprintf(buffer, "HSV Color (Initial): %d", hsvColor);
-        logger.debug(buffer);
+        // sprintf(buffer, "HSV Color (Initial): %d", hsvColor);
+        // logger.debug(buffer);
 
         uint8_t v = hsvColor & 0xFF;
         v = (double)(v * m_brightness) / 255.0;
 
         hsvColor = (hsvColor & 0xFFFF00) | v;
-        sprintf(buffer, "HSV Color (Adjusted): %d", hsvColor);
-        logger.debug(buffer);
+        // sprintf(buffer, "HSV Color (Adjusted): %d", hsvColor);
+        // logger.debug(buffer);
 
         uint32_t adjustedRgb = hsv2Rgb->applyTransform(hsvColor);
-        sprintf(buffer, "RGB Color (Adjusted): %d\n", adjustedRgb);
-        logger.debug(buffer);
+        // sprintf(buffer, "RGB Color (Adjusted): %d\n", adjustedRgb);
+        // logger.debug(buffer);
         
         delete rgb2Hsv;
         delete hsv2Rgb;
@@ -167,8 +167,8 @@ namespace ColorTransform
         double g = ((color >> 8) & 0xFF) / 255.0;
         double b = (color & 0xFF) / 255.0;
         char buffer[50];
-        sprintf(buffer, "rgb2hsv: R: %f G: %f B: %f", r, g, b);
-        logger.debug(buffer);
+        // sprintf(buffer, "rgb2hsv: R: %f G: %f B: %f", r, g, b);
+        // logger.debug(buffer);
         double h, s, v = 0.0;
 
         min = r < g ? r : g;
@@ -214,8 +214,8 @@ namespace ColorTransform
         if (h < 0.0)
             h += 360.0;
 
-        sprintf(buffer, "rgb2hsv: H: %f S: %f V: %f", h, s, v);
-        logger.debug(buffer);
+        // sprintf(buffer, "rgb2hsv: H: %f S: %f V: %f", h, s, v);
+        // logger.debug(buffer);
         h = h / 360.0 * 255;
         s *= 255;
         v *= 255;
@@ -237,8 +237,8 @@ namespace ColorTransform
         double s = ((color >> 8) & 0xFF) / 255.0;
         double v = (color & 0xFF) / 255.0;
         char buffer[50];
-        sprintf(buffer, "hsv2rgb: H: %f S: %f V: %f", h, s, v);
-        logger.debug(buffer);
+        // sprintf(buffer, "hsv2rgb: H: %f S: %f V: %f", h, s, v);
+        // logger.debug(buffer);
 
         double r, g, b = 0;
 
@@ -295,8 +295,8 @@ namespace ColorTransform
             b = q;
             break;
         }
-        sprintf(buffer, "hsv2rgb: R: %f G: %f B: %f", r, g, b);
-        logger.debug(buffer);
+        // sprintf(buffer, "hsv2rgb: R: %f G: %f B: %f", r, g, b);
+        // logger.debug(buffer);
         r *= 255.0;
         g *= 255.0;
         b *= 255.0;

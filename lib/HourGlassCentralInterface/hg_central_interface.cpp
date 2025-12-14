@@ -15,7 +15,7 @@ int HGCentralInterface::getElapsedTime()
 
 unsigned long HGCentralInterface::getExpectedElapsedTime()
 {
-    return (unsigned long)getElapsedTime() - (millis() - m_lastElapsedTimePoll);
+    return (unsigned long)getElapsedTime(); // - (millis() - m_lastElapsedTimePoll);
 }
 
 void HGCentralInterface::registerDeviceNameChangedCallback(std::function<void(char *name)> callback)
