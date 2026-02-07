@@ -11,18 +11,20 @@ MotorNotificationHandler::MotorNotificationHandler(uint8_t motorPin, uint16_t du
 
 void MotorNotificationHandler::handleNotification(HourglassNotification notification)
 {
-    if (notification == HG_NOTIFICATION_USER_POKE)
+    if (notification == HG_NOTIFICATION_TURN_STARTED)
     {
         analogWrite(m_motorPin, m_vibrationIntensity);
         m_vibrationEndTime = millis() + m_vibrationDuration;
     }
 }
 
-void MotorNotificationHandler::update()
+bool MotorNotificationHandler::update(DeviceContext* context, DeviceRuntime* runtime)
 {
     if (m_vibrationEndTime != 0 && millis() >= m_vibrationEndTime)
     {
         analogWrite(m_motorPin, 0);
         m_vibrationEndTime = 0;
+        return true; // Task is complete
     }
+    return false;
 }

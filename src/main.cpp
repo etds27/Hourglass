@@ -12,6 +12,14 @@
 #include "fast_led_light.h"
 #include "hg_display_manager.h"
 #include "device_config.h"
+#include "device_context.h"
+#include "device_runtime.h"
+
+#include "sleep_processor.h"
+#include "runtime_processor.h"
+#include "display_processor.h"
+#include "hg_central_processor.h"
+#include "input_processor.h"
 
 unsigned long lastMemoryUpdate = millis();
 
@@ -26,14 +34,42 @@ HourglassDisplayManager *displayManager;
 InputInterface *inputInterface;
 HGCentralInterface *interface;
 
+DeviceRuntime *createRuntime(char *deviceName)
+{
+  DeviceRuntime *runtime = new DeviceRuntime(deviceName);
+  return runtime;
+}
 
-bool isPrintableString(const char *buf, size_t len) {
+DeviceContext *createContext(char *deviceName)
+{
+  HourglassDisplayManager *displayManager = new HourglassDisplayManager();
+  FastLEDLight *fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
+  displayManager->addDisplayInterface(fastLEDLight);
+
+  DeviceContext *context = new DeviceContext{
+      .centralInterface = new BLEInterface(deviceName),
+      .buttonInputMonitor = new ButtonInputMonitor(new ButtonInputInterface(BUTTON_INPUT_PIN)),
+      .displayManager = displayManager,
+      .sleepProcessor = new SleepProcessor(),
+      .displayProcessor = new DisplayProcessor(),
+      .centralProcessor = new CentralProcessor(),
+      .runtimeProcessor = new RuntimeProcessor(),
+      .inputProcessor = new InputProcessor()};
+  return context;
+}
+
+bool isPrintableString(const char *buf, size_t len)
+{
   bool allPrintable = true;
-  for (size_t i = 0; i < len; i++) {
+  for (size_t i = 0; i < len; i++)
+  {
     uint8_t c = buf[i];
-    if (c == 0xFF) return false;  // uninitialized EEPROM
-    if (c == 0x00) break;         // reached end of string
-    if (c < 0x20 || c > 0x7E) return false; // invalid char
+    if (c == 0xFF)
+      return false; // uninitialized EEPROM
+    if (c == 0x00)
+      break; // reached end of string
+    if (c < 0x20 || c > 0x7E)
+      return false; // invalid char
     allPrintable = true;
   }
   return allPrintable;
@@ -41,9 +77,9 @@ bool isPrintableString(const char *buf, size_t len) {
 
 void setup()
 {
-  #ifdef PROD_RELEASE
-    loggerLevel = Logging::LoggerLevel::Off;
-  #else
+#ifdef PROD_RELEASE
+  loggerLevel = Logging::LoggerLevel::Off;
+#else
   switch (LOGGER_LEVEL)
   {
   case 0:
@@ -65,7 +101,7 @@ void setup()
     loggerLevel = Logging::LoggerLevel::OFF;
     break;
   }
-  #endif
+#endif
 
   Serial.begin(115200);
   delay(1000);
@@ -76,23 +112,23 @@ void setup()
   // DeviceConfigurator::writeLEDCount(16);
   // DeviceConfigurator::writeLEDOffset(0);
 
-  if (!isPrintableString(deviceName, MAX_NAME_LENGTH)) {
+  if (!isPrintableString(deviceName, MAX_NAME_LENGTH))
+  {
     logger.warning(loggerTag, ": Device name in EEPROM is invalid, resetting to default.");
     DeviceConfigurator::writeName("Hourglass");
     DeviceConfigurator::readName(deviceName, MAX_NAME_LENGTH);
   }
 
-  displayManager = new HourglassDisplayManager();
-  inputInterface = new ButtonInputInterface(BUTTON_INPUT_PIN);
-  interface = new BLEInterface(deviceName);
+  // displayManager = new HourglassDisplayManager();
+  // inputInterface = new ButtonInputInterface(BUTTON_INPUT_PIN);
+  // interface = new BLEInterface(deviceName);
 
-
-  fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
-  displayManager->addDisplayInterface(fastLEDLight);
+  // fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
+  // displayManager->addDisplayInterface(fastLEDLight);
 
   // lRing = new LCDRing(16, &tft);
   // displayManager->addDisplayInterface(lRing);
-  
+
   // lTimer = new LCDTimer(&tft);
   // displayManager->addDisplayInterface(lTimer);
 
@@ -102,7 +138,11 @@ void setup()
   // tft.fillScreen(TFT_BACKGROUND_COLOR);
 
   // DeviceConfigurator::writeName("ETHAN_TEST");
-  deviceManager = new DeviceManager(displayManager, inputInterface, interface);
+
+  DeviceContext *context = createContext(deviceName);
+  DeviceRuntime *runtime = createRuntime(deviceName);
+
+  deviceManager = new DeviceManager(context, runtime);
   deviceManager->start();
 }
 

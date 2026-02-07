@@ -31,6 +31,9 @@ void HGDisplayInterface::setAbsoluteOrientation(bool orientation)
 
 void HGDisplayInterface::setDisplayMode(DeviceState::State state)
 {
+  if (m_state == state)
+    return;
+    
   logger.debug(loggerTag, "Setting Light Mode");
   m_startTime = millis();
   clear();

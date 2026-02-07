@@ -4,7 +4,7 @@
 #include "hg_notification_manager.h"
 #include "Arduino.h"
 
-class MotorNotificationHandler : public HGNotificationHandler {
+class MotorNotificationHandler : public HGNotificationHandler{
     public:
     MotorNotificationHandler(uint8_t motorPin, uint16_t duration, uint8_t intensity);
 
@@ -12,7 +12,7 @@ class MotorNotificationHandler : public HGNotificationHandler {
     /// @param notification The notification to handle
     void handleNotification(HourglassNotification notification) override;
 
-    void update() override;
+    bool update(DeviceContext* context, DeviceRuntime* runtime) override;
 
     private:
     uint16_t m_vibrationDuration; // Duration of the vibration in milliseconds
