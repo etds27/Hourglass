@@ -63,6 +63,8 @@ bool DisplayProcessor::update(DeviceContext *context, DeviceRuntime *runtime)
         displayManager->updateTimerData(data);
     }
 
+    displayManager->setDisplayMode(displayState);
+
     displayManager->update(runtime->forceDisplayUpdate);
     return true;
 }

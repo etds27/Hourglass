@@ -53,19 +53,16 @@ void setup()
     };
 
     fastLEDLight->setDisplayMode(DeviceState::State::Debug);
+    pinMode(MOTOR_PIN, OUTPUT);
+    analogWrite(MOTOR_PIN, 255);
 }
 
 void loop()
 {
     if (millis() - lastLightUpdate > 1000)
     {
-        fastLEDLight->updatePrimaryColor(primaryColor);
-        fastLEDLight->updateAccentColor(accentColor);
-        lastLightUpdate = millis();
-        primaryColor += 20 << 16 | 20 << 8 | 20;
-        accentColor += 20 << 16 | 20 << 8 | 20;
+        analogWrite(MOTOR_PIN, 0);
     }
 
 
-    fastLEDLight->update();
 }

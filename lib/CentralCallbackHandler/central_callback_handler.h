@@ -34,4 +34,5 @@ private:
     void onDeviceLEDOffsetWriteChanged(bool write);
     void onDeviceLEDCountChanged(uint8_t count);
     void onDeviceLEDCountWriteChanged(bool write);
+    void onDeviceMotorNotificationReceived(NotificationEvent event);
 };

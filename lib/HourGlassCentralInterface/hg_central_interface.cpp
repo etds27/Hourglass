@@ -62,3 +62,8 @@ void HGCentralInterface::registerDeviceLEDCountWriteCallback(std::function<void(
 {
         m_deviceLEDCountWriteChangeCallback = callback;
 }
+
+void HGCentralInterface::registerDeviceMotorNotificationCallback(std::function<void(NotificationEvent event)> callback)
+{
+        m_deviceMotorNotificationCallback = callback;
+}

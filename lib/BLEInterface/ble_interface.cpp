@@ -30,6 +30,7 @@ const char *DEVICE_LED_OFFSET_UUID = "aea26019-8b62-4292-a999-b565ecc71e1b";
 const char *DEVICE_LED_OFFSET_WRITE_UUID = "7d73338d-cf99-4d10-a946-d2417ea9dca7";
 const char *DEVICE_LED_COUNT_UUID = "d7ce0c0d-833e-45ab-96da-852dc61463af";
 const char *DEVICE_LED_COUNT_WRITE_UUID = "8c00da28-1352-45d9-b7bb-c4a5ba4dea40";
+const char *DEVICE_MOTOR_NOTIFICATION_UUID = "219e00e6-38e0-4a2f-8fe9-625b4e1e170f";
 
 const char *DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb";
 
@@ -108,7 +109,6 @@ DeviceState::State BLEInterface::getCommandedDeviceState()
 {
   int rawState = m_gameState->value();
   m_deviceState = static_cast<DeviceState::State>(rawState);
-  // logger.info(loggerTag, "Current Commanded Device State: ", static_cast<int>(m_deviceState));
   return m_deviceState;
 }
 
@@ -346,6 +346,21 @@ void BLEInterface::onDeviceLEDCountWriteChanged(BLEDevice central, BLECharacteri
   }
 }
 
+void BLEInterface::onDeviceMotorNotificationReceived(BLEDevice central, BLECharacteristic characteristic)
+{
+  logger.info(loggerTag, "Device Motor Notification Received");
+  if (instance->m_deviceMotorNotificationCallback)
+  {
+    NotificationEvent notificationEvent;
+    characteristic.readValue((uint8_t*)&notificationEvent, sizeof(NotificationEvent));
+    instance->m_deviceMotorNotificationCallback(notificationEvent);
+  }
+  else
+  {
+    logger.warning(loggerTag, "No device motor notification callback registered");
+  }
+}
+
 void BLEInterface::setService()
 {
   logger.info(loggerTag, SERVICE_UUID);
@@ -442,6 +457,11 @@ void BLEInterface::setService()
   m_deviceLEDCountWrite = new BLEBoolCharacteristic(DEVICE_LED_COUNT_WRITE_UUID,  BLERead | BLEWrite | BLENotify);
   m_deviceLEDCountWrite->setEventHandler(BLEWritten, onDeviceLEDCountWriteChanged);
   m_service->addCharacteristic(*m_deviceLEDCountWrite);
+
+  // Device Motor Notification Characteristic
+  m_deviceMotorNotification = new BLECharacteristic(DEVICE_MOTOR_NOTIFICATION_UUID,  BLERead | BLEWrite | BLENotify, sizeof(NotificationEvent));
+  m_deviceMotorNotification->setEventHandler(BLEWritten, onDeviceMotorNotificationReceived);
+  m_service->addCharacteristic(*m_deviceMotorNotification);
 
   logger.info(loggerTag, "Advertising with name: ", m_deviceName);
   BLE.setLocalName(m_deviceName);

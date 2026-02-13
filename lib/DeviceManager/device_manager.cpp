@@ -55,26 +55,33 @@ void DeviceManager::start()
   /// 4. Display Processor (This updates the display based on the current device state and any other relevant data)
   /// 5. Notification (This handles any notifications that need to be sent to the central or other components)
   /// 6. Context and runtime cleanup / metric updates
+  logger.info(loggerTag, ": Adding central processor task");
   addTask(m_context->centralProcessor);
+  logger.info(loggerTag, ": Adding sleep processor task");
   addTask(m_context->sleepProcessor);
+  logger.info(loggerTag, ": Adding input processor task");
   addTask(m_context->inputProcessor);
+  logger.info(loggerTag, ": Adding display processor task");
   addTask(m_context->displayProcessor);
   // addTask(m_context->notificationProcessor);
-  addTask(m_context->runtimeProcessor);  
+  logger.info(loggerTag, ": Adding runtime processor task");
 }
 
 void DeviceManager::addTask(ExecutableTask *task)
 {
   tasks.push_back(task);
   task->start(m_context, m_runtime);
+  logger.info(loggerTag, ": Task count: ", tasks.size());
 }
 
 void DeviceManager::removeTask(size_t index)
 {
+  logger.info(loggerTag, ": Removing task at index ", index);
   ExecutableTask *task = tasks[index];
   task->cleanup(m_context, m_runtime);
   delete task;
   tasks.erase(tasks.begin() + index);
+  logger.info(loggerTag, ": Task count: ", tasks.size());
 }
 
 void DeviceManager::update()
@@ -91,8 +98,9 @@ void DeviceManager::update()
   /// 5. Display Processor (This updates the display based on the current device state and any other relevant data)
   /// 6. Notification Processor (This handles any notifications that need to be sent to the central or other components)
   /// 7. Context and runtime cleanup / metric updates
-
   size_t i = 0;
+
+  // Run the existing list of known tasks and remove any that are completed
   while (i < tasks.size())
   {
     ExecutableTask *task = tasks[i];
@@ -105,4 +113,25 @@ void DeviceManager::update()
       removeTask(i);
     }
   }
+
+  // Add any new tasks that were generated from the existing tasks to the main task list and start them
+  while (!m_runtime->pendingTasks.empty())
+  {
+    ExecutableTask* newTask;
+    if (m_runtime->pendingTasks.dequeue(newTask))
+    {
+      addTask(newTask);
+      if (newTask->update(m_context, m_runtime)) {
+        logger.info(loggerTag, ": New task added from runtime pending tasks queue");
+      }
+      else
+      {
+        logger.info(loggerTag, ": New task from runtime pending tasks queue completed immediately");
+        removeTask(tasks.size() - 1);
+      }
+    }
+  }
+
+  // Manually run the runtime processor task's update function to ensure it runs after all other tasks have been updated and cleaned up
+  m_context->runtimeProcessor->update(m_context, m_runtime);
 }

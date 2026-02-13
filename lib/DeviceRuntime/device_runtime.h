@@ -2,6 +2,7 @@
 
 #include "device_state.h"
 #include "hg_notification.h"
+#include "executable_task.h"
 
 
 /// Information is provided from the central device in two way
@@ -16,6 +17,11 @@
 
 /// Each notification event is comprised of the notification (of whatever data type) itself and a timestamp of when it was received.
 /// This timestamp ensures that a unique central/BLE update is processed and prevents issues where multiple identical notifications are sent in rapid succession but not processed
+
+/// The BLE Notification Struct will be added to the event queue
+/// A separate notification task processor will consume the events in order
+/// For each event struct, it will create a new notification task and add it to the runtimes new task queue to be processed and displayed by the display processor
+/// The the DeviceManager will pick up the new tasks from the queue
 
 template <typename T, size_t Size>
 class DeviceRuntimeQueue {
@@ -57,8 +63,8 @@ class DeviceRuntimeQueue {
 /// @brief Event structure for receiving notification data from central
 template<typename T>
 struct HourglassEvent {
+    uint64_t timestamp;
     T data;
-    uint16_t timestamp;
 };
 
 using NotificationEvent = HourglassEvent<HourglassNotification>;
@@ -94,5 +100,14 @@ struct DeviceRuntime {
 
     DeviceRuntimeEvents events;
 
+    /// @brief The DeviceRuntime struct holds all of the new tasks that have been generated from the current update loop to be added to the DeviceManager's main task list at the end of the current update loop.
+    /// This allows us to avoid modifying the main task list while it is being processed.
+    /// This also allows us to add new tasks to the DeviceManager's queue through the runtime without needing to have direct access to the DeviceManager itself
+    DeviceRuntimeQueue<ExecutableTask*, 16> pendingTasks;
+
     explicit DeviceRuntime(const char* name);
+
+    void setDeviceState(DeviceState::State newState);
+    void setConfigState(DeviceState::State newState);
+    
 };

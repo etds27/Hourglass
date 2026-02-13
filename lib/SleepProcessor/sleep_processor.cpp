@@ -27,19 +27,18 @@ void SleepProcessor::start(DeviceContext *context, DeviceRuntime *runtime)
 
 bool SleepProcessor::update(DeviceContext *context, DeviceRuntime *runtime)
 {
-
     if (runtime->deviceState == DeviceState::State::AwaitingConnection &&
         runtime->lastUpdate - runtime->lastConnection > CONNECTION_TIMEOUT)
     {
         logger.info(loggerTag, ": Entering Deep Sleep");
-        runtime->deviceState = DeviceState::State::Off;
+        runtime->setDeviceState(DeviceState::State::Off);
         context->displayManager->setDisplayMode(runtime->deviceState);
         context->displayManager->update(true);
 
 #ifndef SIMULATOR
         delay(1000);
         esp_deep_sleep_start();
-#endif
+    #endif
     }
 
     return true;

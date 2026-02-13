@@ -1,5 +1,7 @@
 #include "central_callback_handler.h"
 
+#include "motor_notification.h"
+
 namespace
 {
     const LogString loggerTag = "CentralCallbackHandler";
@@ -137,6 +139,33 @@ void CentralCallbackHandler::onDeviceLEDCountWriteChanged(bool write)
     }
 }
 
+void hexDump(const void* data, size_t size)
+{
+    const uint8_t* bytes = (const uint8_t*)data;
+
+    for (size_t i = 0; i < size; i++)
+    {
+        if (bytes[i] < 16)
+            Serial.print('0');
+
+        Serial.print(bytes[i], HEX);
+        Serial.print(' ');
+
+        if ((i + 1) % 16 == 0)
+            Serial.println();
+    }
+    Serial.println();
+}
+
+void CentralCallbackHandler::onDeviceMotorNotificationReceived(NotificationEvent event)
+{
+    logger.info(loggerTag, ": onDeviceMotorNotificationReceived received. Event type: ", static_cast<int>(event.data));
+    logger.info(loggerTag, ": onDeviceMotorNotificationReceived sent at " , event.timestamp);
+    hexDump(&event, sizeof(event));
+    MotorNotification* notification = new MotorNotification(MOTOR_PIN, event.data);
+    m_runtime->pendingTasks.enqueue(notification);
+}
+
 
 void CentralCallbackHandler::registerCallbacks(DeviceContext *context, DeviceRuntime *runtime)
 {
@@ -161,4 +190,6 @@ void CentralCallbackHandler::registerCallbacks(DeviceContext *context, DeviceRun
                                                                        { this->onDeviceLEDCountChanged(count); });
     m_context->centralInterface->registerDeviceLEDCountWriteCallback([this](bool write)
                                                                      { this->onDeviceLEDCountWriteChanged(write); });
+    m_context->centralInterface->registerDeviceMotorNotificationCallback([this](NotificationEvent event)
+                                                                          { this->onDeviceMotorNotificationReceived(event); });
 }

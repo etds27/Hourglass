@@ -46,15 +46,32 @@ DeviceContext *createContext(char *deviceName)
   FastLEDLight *fastLEDLight = new FastLEDLight(16, RING_DI_PIN);
   displayManager->addDisplayInterface(fastLEDLight);
 
+  logger.info(loggerTag, "Creating central interface");
+  HGCentralInterface *centralInterface = new BLEInterface(deviceName);
+  logger.info(loggerTag, "Creating button input interface");
+  ButtonInputInterface *buttonInputInterface = new ButtonInputInterface(BUTTON_INPUT_PIN);
+  logger.info(loggerTag, "Creating button input monitor");
+  ButtonInputMonitor *buttonInputMonitor = new ButtonInputMonitor(buttonInputInterface);
+  logger.info(loggerTag, "Creating sleep processor");
+  SleepProcessor *sleepProcessor = new SleepProcessor();
+  logger.info(loggerTag, "Creating display processor");
+  DisplayProcessor *displayProcessor = new DisplayProcessor();
+  logger.info(loggerTag, "Creating central processor");
+  CentralProcessor *centralProcessor = new CentralProcessor();
+  logger.info(loggerTag, "Creating runtime processor");
+  RuntimeProcessor *runtimeProcessor = new RuntimeProcessor();
+  logger.info(loggerTag, "Creating input processor");
+  InputProcessor *inputProcessor = new InputProcessor();
+
   DeviceContext *context = new DeviceContext{
-      .centralInterface = new BLEInterface(deviceName),
-      .buttonInputMonitor = new ButtonInputMonitor(new ButtonInputInterface(BUTTON_INPUT_PIN)),
+      .centralInterface = centralInterface,
+      .buttonInputMonitor = buttonInputMonitor,
       .displayManager = displayManager,
-      .sleepProcessor = new SleepProcessor(),
-      .displayProcessor = new DisplayProcessor(),
-      .centralProcessor = new CentralProcessor(),
-      .runtimeProcessor = new RuntimeProcessor(),
-      .inputProcessor = new InputProcessor()};
+      .sleepProcessor = sleepProcessor,
+      .displayProcessor = displayProcessor,
+      .centralProcessor = centralProcessor,
+      .runtimeProcessor = runtimeProcessor,
+      .inputProcessor = inputProcessor};
   return context;
 }
 
@@ -77,6 +94,10 @@ bool isPrintableString(const char *buf, size_t len)
 
 void setup()
 {
+  // The production board writes the motor pin high by default on boot. This resets it so the motor isnt always running until first notification
+  pinMode(MOTOR_PIN, OUTPUT);
+  analogWrite(MOTOR_PIN, 0);
+
 #ifdef PROD_RELEASE
   loggerLevel = Logging::LoggerLevel::Off;
 #else
@@ -138,6 +159,9 @@ void setup()
   // tft.fillScreen(TFT_BACKGROUND_COLOR);
 
   // DeviceConfigurator::writeName("ETHAN_TEST");
+
+
+
 
   DeviceContext *context = createContext(deviceName);
   DeviceRuntime *runtime = createRuntime(deviceName);

@@ -10,6 +10,11 @@
 #include <Arduino.h>
 #endif
 
+namespace
+{
+    const LogString loggerTag = "CentralProcessor";
+}
+
 CentralProcessor::CentralProcessor()
 {
 }
@@ -17,7 +22,7 @@ CentralProcessor::CentralProcessor()
 void CentralProcessor::start(DeviceContext *context, DeviceRuntime *runtime)
 {
     context->centralInterface->setService();
-    runtime->deviceState = DeviceState::State::AwaitingConnection;
+    runtime->setDeviceState(DeviceState::State::AwaitingConnection);
 
     context->centralInterface->sendDeviceName(runtime->deviceName);
     context->centralInterface->sendDeviceLEDCount(DeviceConfigurator::readLEDCount());
@@ -33,8 +38,15 @@ bool CentralProcessor::update(DeviceContext *context, DeviceRuntime *runtime)
 {
     // Process central interface updates
     context->centralInterface->poll();
-    runtime->deviceState = context->centralInterface->getCommandedDeviceState();
-    runtime->configState = context->centralInterface->getDeviceColorConfigState();
+    runtime->isConnected = context->centralInterface->isConnected();
+    if (!runtime->isConnected)
+    {
+        runtime->setDeviceState(DeviceState::State::AwaitingConnection);
+        return true; // Don't process central updates if we're not connected
+    }
+    
+    runtime->setDeviceState(context->centralInterface->getCommandedDeviceState());
+    runtime->setConfigState(context->centralInterface->getDeviceColorConfigState());
     runtime->isActiveTurn = context->centralInterface->isTurn();
 
     runtime->isConnected = context->centralInterface->isConnected();
