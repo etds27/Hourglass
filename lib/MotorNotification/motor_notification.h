@@ -20,4 +20,6 @@ class MotorNotification : public ExecutableTask{
     HourglassNotification m_notification; // The notification that triggered this motor notification
 
     unsigned long m_vibrationEndTime = 0; // Time when the current vibration should end
+    unsigned long m_vibrationStartTime = 0; // Time when the current vibration started
+
 };

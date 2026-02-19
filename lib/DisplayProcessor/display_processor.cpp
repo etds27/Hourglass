@@ -11,6 +11,7 @@ DisplayProcessor::DisplayProcessor() {}
 bool DisplayProcessor::update(DeviceContext *context, DeviceRuntime *runtime)
 {
     DeviceState::State state = runtime->deviceState;
+    DeviceState::State configState = runtime->configState;
     HGCentralInterface *centralInterface = context->centralInterface;
     HourglassDisplayManager *displayManager = context->displayManager;
     DeviceState::State displayState;
@@ -21,12 +22,14 @@ bool DisplayProcessor::update(DeviceContext *context, DeviceRuntime *runtime)
     // If in configuration mode, display the configured state instead if it doesnt require auxiliary data
     if (state == DeviceState::State::ConfigurationMode)
     {
-        DeviceState::State configState = centralInterface->getDeviceColorConfigState();
 
+        // logger.info(loggerTag, ": updateConfigDisplay: Config state: ", static_cast<int>(configState));
         if (DeviceState::deviceStateRequiresAuxiliaryData(configState))
         {
             logger.info(loggerTag, ": updateConfigDisplay: New config state requires auxiliary data: ", static_cast<int>(configState));
             displayState = DeviceState::State::Off;
+        } else {
+            displayState = configState;
         }
     }
     else
