@@ -127,6 +127,8 @@ private:
   /// @note This callback is static so it can be used as a BLE event handler.
   static void onDeviceLEDCountWriteChanged(BLEDevice central, BLECharacteristic characteristic);
 
+  static void onDeviceMotorNotificationReceived(BLEDevice central, BLECharacteristic characteristic);
+
   static String serviceIds[];
   char *m_deviceName;
   BLEService *m_service;
@@ -149,6 +151,7 @@ private:
   BLEBoolCharacteristic *m_deviceLEDOffsetWrite;
   BLEIntCharacteristic *m_deviceLEDCount;
   BLEBoolCharacteristic *m_deviceLEDCountWrite;
+  BLECharacteristic *m_deviceMotorNotification;
 
   BLEDescriptor *m_activeTurnDescriptor;
   unsigned long lastPoll;

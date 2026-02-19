@@ -1,4 +1,13 @@
 #include "device_manager.h"
+#include "device_context.h"
+#include "device_runtime.h"
+#include "device_state.h"
+#include "executable_task.h"
+#include "sleep_processor.h"
+#include "display_processor.h"
+#include "hg_central_processor.h"
+#include "input_processor.h"
+#include "runtime_processor.h"
 #include "logger.h"
 
 #ifndef SIMULATOR
@@ -14,34 +23,25 @@
 #endif
 
 #include <cstring>
+#include <vector>
 
 namespace
 {
   const LogString loggerTag = "DeviceManager";
 }
 
-DeviceManager::DeviceManager(HourglassDisplayManager *displayManager, InputInterface *inputInterface, HGCentralInterface *centralInterface)
+DeviceManager::DeviceManager(DeviceContext *context, DeviceRuntime *runtime)
 {
-  m_displayManager = displayManager;
-  m_inputInterface = inputInterface;
-  m_interface = centralInterface;
-
   logger.info(loggerTag, ": Initializing Device Manager");
-  m_deviceName = new char[MAX_NAME_LENGTH];
-  readDeviceName(m_deviceName);
-  logger.info(loggerTag, ": Device name: ", m_deviceName);
-
+  logger.info(loggerTag, ": Device name: ", runtime->deviceName);
 
 #ifndef SIMULATOR
-  registerCallbacks();
-
-  // Allows the main device button to wake the device from sleep state
-  esp_sleep_enable_ext0_wakeup(BUTTON_GPIO_PIN, HIGH);
+  m_callbackHandler = new CentralCallbackHandler();
+  m_callbackHandler->registerCallbacks(context, runtime);
 #endif
-  // m_interface->sendDeviceName(m_deviceName);
 
-  logger.info(loggerTag, ": Creating Input Monitor");
-  m_buttonMonitor = new ButtonInputMonitor(m_inputInterface);
+  m_context = context;
+  m_runtime = runtime;
 }
 
 DeviceManager::~DeviceManager() = default;
@@ -49,400 +49,89 @@ DeviceManager::~DeviceManager() = default;
 void DeviceManager::start()
 {
   logger.info(loggerTag, ": Starting the device manager");
-  m_displayManager->setDisplayMode(DeviceState::State::Off);
-
-  m_interface->setService();
-  setWaitingForConnection();
-
-  // Once we are connected, immediately send the device configuration
-  // logger.info(loggerTag, ": Sending initial device configuration to central");
-  m_interface->sendDeviceName(m_deviceName);
-  m_interface->sendDeviceLEDCount(DeviceConfigurator::readLEDCount());
-  m_interface->sendDeviceLEDOffset(DeviceConfigurator::readLEDOffset());
-  // logger.info(loggerTag, ": Sent device name to central: ", m_deviceName);
-  // logger.info(loggerTag, ": Sending default color configuration to central");
-
-  ColorConfig deviceConfig = DeviceConfigurator::readColorConfig(static_cast<uint16_t>(DeviceState::State::DeviceColorMode));
-  DeviceConfigurator::printColorConfig(deviceConfig, static_cast<uint16_t>(DeviceState::State::DeviceColorMode));
-
-  m_interface->sendDeviceColorConfig(deviceConfig);
-
-  uint32_t now = millis();
-  m_lastUpdate = now;
-  m_lastReadOut = now;
-  m_lastConnection = now;
-  m_lastTurnStart = now;
-  m_lastDisconnection = now;
+  /// 1. Central Interface Polling Processor
+  /// 2. Sleep Processor (Must run after polling to determine if we should sleep)
+  /// 3. Input Processor (This reads the inputs generated from the input monitors and performs actions based on them)
+  /// 4. Display Processor (This updates the display based on the current device state and any other relevant data)
+  /// 5. Notification (This handles any notifications that need to be sent to the central or other components)
+  /// 6. Context and runtime cleanup / metric updates
+  logger.info(loggerTag, ": Adding central processor task");
+  addTask(m_context->centralProcessor);
+  logger.info(loggerTag, ": Adding sleep processor task");
+  addTask(m_context->sleepProcessor);
+  logger.info(loggerTag, ": Adding input processor task");
+  addTask(m_context->inputProcessor);
+  logger.info(loggerTag, ": Adding display processor task");
+  addTask(m_context->displayProcessor);
+  // addTask(m_context->notificationProcessor);
+  logger.info(loggerTag, ": Adding runtime processor task");
 }
 
-char *DeviceManager::getDeviceName()
+void DeviceManager::addTask(ExecutableTask *task)
 {
-  return m_deviceName;
+  tasks.push_back(task);
+  task->start(m_context, m_runtime);
+  logger.info(loggerTag, ": Task count: ", tasks.size());
 }
 
-char *DeviceManager::readDeviceName(char *out)
+void DeviceManager::removeTask(size_t index)
 {
-  char arduinoID[MAX_NAME_LENGTH] = {};
-#ifdef SIMULATOR
-  out = new char[10]{'S', 'I', 'M', 'U', 'L', 'A', 'T', 'O', 'R', '\0'};
-#else
-  DeviceConfigurator::readName(arduinoID, MAX_NAME_LENGTH);
-#endif
-
-  strncpy(out, arduinoID, MAX_NAME_LENGTH);
-  out[MAX_NAME_LENGTH - 1] = '\0'; // Ensure null-termination
-  return out;
-}
-
-#ifndef SIMULATOR
-void DeviceManager::writeDeviceName(const char *deviceName, uint8_t length)
-{
-  DeviceConfigurator::writeName(deviceName);
-  readDeviceName(m_deviceName);
-  logger.info(loggerTag, ": Device name changed to: ", deviceName);
-  m_interface->sendDeviceName(deviceName);
-}
-
-void DeviceManager::writeDeviceColorConfig(ColorConfig config, DeviceState::State configState)
-{
-  DeviceConfigurator::writeColorConfig(config, static_cast<uint16_t>(configState));
-  // m_interface->sendDeviceColorConfig(config);
-  DeviceConfigurator::printColorConfig(config, static_cast<uint16_t>(configState));
-}
-
-#endif
-
-bool DeviceManager::isActiveTurn()
-{
-  return m_interface->isTurn();
-}
-
-void DeviceManager::onDeviceNameChanged(char *name)
-{
-  // No-op
-  // Device name writes are handled immediately in onDeviceNameChanged
-}
-
-void DeviceManager::onDeviceNameWriteChanged(bool write)
-{
-  if (write)
-  {
-    logger.info(loggerTag, ": Device name write enabled");
-    m_interface->getDeviceName(m_deviceName, MAX_NAME_LENGTH);
-    logger.info(loggerTag, ": onDeviceNameWriteChanged received. Device name changed to: ", m_deviceName);
-    writeDeviceName(m_deviceName, strlen(m_deviceName));
-  }
-  else
-  {
-    logger.info(loggerTag, ": Device name write not enabled");
-  }
-}
-
-void DeviceManager::onDeviceColorConfigChanged(ColorConfig config)
-{
-  DeviceConfigurator::printColorConfig(config, 0);
-  // writeDeviceColorConfig(config);
-  m_displayManager->updateColorConfig(config);
-}
-
-void DeviceManager::onDeviceColorConfigWriteChanged(bool write)
-{
-  if (write)
-  {
-    logger.info(loggerTag, ": Device color config write enabled");
-    DeviceState::State configState= m_interface->getDeviceColorConfigState();
-    ColorConfig config = m_interface->readColorConfig();
-    // DeviceConfigurator::printColorConfig(config, configState);
-    writeDeviceColorConfig(config, configState);
-  }
-  else
-  {
-    logger.info(loggerTag, ": Device color config write not enabled");
-  }
-}
-
-void DeviceManager::onDeviceColorConfigStateChanged(DeviceState::State state)
-{
-  logger.info(loggerTag, ": onDeviceColorConfigStateChanged received. New state: ", static_cast<int>(state));
-  // Update the app with the new configuration state
-  ColorConfig config = DeviceConfigurator::readColorConfig(static_cast<uint16_t>(state));
-  logger.info(loggerTag, ": Sending color config for state ", static_cast<int>(state), " to central");
-  DeviceConfigurator::printColorConfig(config);
-  m_interface->sendDeviceColorConfig(config);
-}
-
-void DeviceManager::onDeviceLEDOffsetChanged(uint8_t offset)
-{
-  logger.info(loggerTag, ": onDeviceLEDOffsetChanged received. New offset: ", offset);
-  m_displayManager->updateLEDOffset(offset);
-}
-
-void DeviceManager::onDeviceLEDOffsetWriteChanged(bool write)
-{
-  logger.info(loggerTag, ": onDeviceLEDOffsetWriteChanged received. New value: ", write);
-  if (write) {
-    uint8_t offset = m_interface->readDeviceLEDOffset();
-    DeviceConfigurator::writeLEDOffset(offset);
-    logger.info(loggerTag, ": LED offset changed to: ", offset);
-  } else {
-    logger.info(loggerTag, ": LED offset write not enabled");
-  }
-}
-
-void DeviceManager::onDeviceLEDCountChanged(uint8_t count)
-{
-  logger.info(loggerTag, ": onDeviceLEDCountChanged received. New count: ", count);
-  m_displayManager->updateLEDCount(count);
-}
-
-void DeviceManager::onDeviceLEDCountWriteChanged(bool write)
-{
-  logger.info(loggerTag, ": onDeviceLEDCountWriteChanged received. New value: ", write);
-  if (write) {
-    uint8_t count = m_interface->readDeviceLEDCount();
-    DeviceConfigurator::writeLEDCount(count);
-    logger.info(loggerTag, ": LED count changed to: ", count);
-  } else {
-    logger.info(loggerTag, ": LED count write not enabled");
-  }
-}
-
-void DeviceManager::sendEndTurn()
-{
-  m_interface->endTurn();
-}
-
-bool DeviceManager::updateCommandedDeviceState()
-{
-  DeviceState::State newDeviceState = m_interface->getCommandedDeviceState();
-  bool diff = m_deviceState != newDeviceState;
-  if (diff)
-  {
-    logger.info(loggerTag, ": Device State transition: ",
-                static_cast<int>(m_deviceState), " -> ",
-                static_cast<int>(newDeviceState));
-  }
-
-  if (newDeviceState != DeviceState::State::ConfigurationMode) {
-    m_configState = DeviceState::State::Off;
-  }
-
-  m_deviceState = newDeviceState;
-  return diff;
-}
-
-void DeviceManager::updateTimer()
-{
-  int timer = m_interface->getTimer();
-  // int elapsedTime = m_interface->getExpectedElapsedTime();
-  int elapsedTime = m_interface->getElapsedTime();
-  bool isTurnTimeEnforced = m_interface->isTurnTimerEnforced();
-  TimerData data{.totalTime = timer, .elapsedTime = elapsedTime, .isTurnTimeEnforced = isTurnTimeEnforced};
-
-  m_displayManager->updateTimerData(data);
-}
-
-void DeviceManager::setWaitingForConnection()
-{
-  if (m_deviceState == DeviceState::State::AwaitingConnection)
-    return;
-
-  logger.info(loggerTag, ": Setting device state to: AwaitingConnection");
-  m_deviceState = DeviceState::State::AwaitingConnection;
-  updateDisplayMode();
-}
-
-void DeviceManager::toggleDeviceOrientation()
-{
-  m_absoluteOrientation = !m_absoluteOrientation;
-  logger.info(loggerTag, ": Updated absolute orientation to: ", m_absoluteOrientation);
-  m_displayManager->setAbsoluteOrientation(m_absoluteOrientation);
-  updateDisplay();
-}
-
-void DeviceManager::toggleColorBlindMode()
-{
-  m_colorBlindMode = !m_colorBlindMode;
-  logger.info(loggerTag, ": Setting Color Blind Mode to: ", m_colorBlindMode);
-  m_displayManager->setColorBlindMode(m_colorBlindMode);
-  updateDisplay();
-}
-
-void DeviceManager::enterDeepSleep()
-{
-  logger.info(loggerTag, ": Entering Deep Sleep");
-  m_deviceState = DeviceState::State::Off;
-  updateDisplayMode();
-  updateDisplay(true);
-
-#ifndef SIMULATOR
-  delay(1000);
-  esp_deep_sleep_start();
-#endif
-}
-
-void DeviceManager::updateDisplay(bool force)
-{
-  if (m_deviceState == DeviceState::State::ConfigurationMode)
-  {
-    updateConfigDisplay(force);
-    return;
-  }
-
-  m_displayManager->update(force);
-}
-
-void DeviceManager::updateConfigDisplay(bool force)
-{
-  DeviceState::State configState = m_interface->getDeviceColorConfigState();
-
-  if (DeviceState::deviceStateRequiresAuxiliaryData(configState))
-  {
-    logger.info(loggerTag, ": updateConfigDisplay: New config state requires auxiliary data: ", static_cast<int>(configState));
-    configState = DeviceState::State::Off;
-  }
-
-  bool diff = m_configState != configState;
-  if (diff || configState == DeviceState::State::Off)
-  {
-    logger.info(loggerTag, ": Device Config State transition: ",
-                static_cast<int>(m_configState), " -> ",
-                static_cast<int>(configState));
-    m_displayManager->setDisplayMode(configState);
-  }
-  m_configState = configState;
-  m_displayManager->update(force);
-}
-
-void DeviceManager::updateAwaitingGameStartData()
-{
-  GameStartData data{.totalPlayers = m_interface->getTotalPlayers()};
-  m_displayManager->updateAwaitingGameStartData(data);
-}
-
-void DeviceManager::updateTurnSequence()
-{
-  TurnSequenceData data{
-      .totalPlayers = m_interface->getTotalPlayers(),
-      .myPlayerIndex = m_interface->getMyPlayer(),
-      .currentPlayerIndex = m_interface->getCurrentPlayer(),
-      .skippedPlayers = m_interface->getSkippedPlayers()};
-  m_displayManager->updateTurnSequenceData(data);
-}
-
-void DeviceManager::registerCallbacks()
-{
-  m_interface->registerDeviceNameChangedCallback([this](char *name)
-                                                 { this->onDeviceNameChanged(name); });
-
-  m_interface->registerDeviceColorConfigChangedCallback([this](ColorConfig config)
-                                                        { this->onDeviceColorConfigChanged(config); });
-  m_interface->registerDeviceNameWriteCallback([this](bool write)
-                                               { this->onDeviceNameWriteChanged(write); });
-  m_interface->registerDeviceColorConfigStateChangeCallback([this](DeviceState::State state)
-                                                            { this->onDeviceColorConfigStateChanged(state); });
-  m_interface->registerDeviceColorConfigWriteCallback([this](bool write)
-                                                      { this->onDeviceColorConfigWriteChanged(write); });
-  m_interface->registerDeviceLEDOffsetChangedCallback([this](uint8_t offset)
-                                                      { this->onDeviceLEDOffsetChanged(offset); });
-  m_interface->registerDeviceLEDOffsetWriteCallback([this](bool write)
-                                                   { this->onDeviceLEDOffsetWriteChanged(write); });
-  m_interface->registerDeviceLEDCountChangedCallback([this](uint8_t count)
-                                                    { this->onDeviceLEDCountChanged(count); });
-  m_interface->registerDeviceLEDCountWriteCallback([this](bool write)
-                                                  { this->onDeviceLEDCountWriteChanged(write); });
-}
-
-void DeviceManager::updateDisplayMode()
-{
-  logger.info(loggerTag, ": Updating display mode to: ", static_cast<int>(m_deviceState));
-  m_displayManager->setDisplayMode(m_deviceState);
+  logger.info(loggerTag, ": Removing task at index ", index);
+  ExecutableTask *task = tasks[index];
+  task->cleanup(m_context, m_runtime);
+  delete task;
+  tasks.erase(tasks.begin() + index);
+  logger.info(loggerTag, ": Task count: ", tasks.size());
 }
 
 void DeviceManager::update()
 {
-  unsigned long currentTime = millis();
-  unsigned long deltaTime = currentTime - m_lastUpdate;
-  m_lastUpdate = currentTime;
+  /// The main processing loop for the device
+  /// This will run all of the registered executable tasks
+  /// and update the device state accordingly
+  /// This will also remove any completed tasks from the list
+  /// The static tasks for the device are performed in the following order:
+  /// 1. Central Interface Polling Processor
+  /// 2. Sleep Processor (Must run after polling to determine if we should sleep)
+  /// 3. Input Monitor (This checks the actual input lines for updates and then publishes them to the context)
+  /// 4. Input Processor (This reads the inputs generated from the input monitors and performs actions based on them)
+  /// 5. Display Processor (This updates the display based on the current device state and any other relevant data)
+  /// 6. Notification Processor (This handles any notifications that need to be sent to the central or other components)
+  /// 7. Context and runtime cleanup / metric updates
+  size_t i = 0;
 
-  if (currentTime - m_lastReadOut > 2000)
+  // Run the existing list of known tasks and remove any that are completed
+  while (i < tasks.size())
   {
-    // logger.info(loggerTag, ": Update Period: ", deltaTime);
-
-    if (ENABLE_DEBUG)
-      m_interface->readData();
-
-    m_lastReadOut = currentTime;
+    ExecutableTask *task = tasks[i];
+    if (task->update(m_context, m_runtime))
+    {
+      i++;
+    }
+    else
+    {
+      removeTask(i);
+    }
   }
 
-#ifndef SIMULATOR
-  m_interface->poll();
-#endif
-  processGameState();
-  updateDisplay();
-}
-
-void DeviceManager::processGameState()
-{
-  ButtonInputType buttonAction = m_buttonMonitor->getAction();
-
-  if (m_started)
+  // Add any new tasks that were generated from the existing tasks to the main task list and start them
+  while (!m_runtime->pendingTasks.empty())
   {
-    logger.error(loggerTag, ": Attempting to update before running `start()`");
-    while (1)
-      ;
+    ExecutableTask* newTask;
+    if (m_runtime->pendingTasks.dequeue(newTask))
+    {
+      addTask(newTask);
+      if (newTask->update(m_context, m_runtime)) {
+        logger.info(loggerTag, ": New task added from runtime pending tasks queue");
+      }
+      else
+      {
+        logger.info(loggerTag, ": New task from runtime pending tasks queue completed immediately");
+        removeTask(tasks.size() - 1);
+      }
+    }
   }
 
-  if (m_deviceState == DeviceState::State::AwaitingConnection &&
-      m_lastUpdate - m_lastConnection > CONNECTION_TIMEOUT)
-  {
-    logger.debug(loggerTag, ": Entering deep sleep");
-    // enterDeepSleep();
-  }
-
-  if (buttonAction == ButtonInputType::LongPress)
-    toggleDeviceOrientation();
-
-  if (buttonAction == ButtonInputType::TripleButtonPress)
-    toggleColorBlindMode();
-
-  if (!m_interface->isConnected())
-  {
-    m_lastDisconnection = m_lastUpdate;
-    setWaitingForConnection();
-    return;
-  }
-
-  m_lastConnection = m_lastUpdate;
-
-  if (m_lastUpdate - m_lastDisconnection < EXPECTED_CHARACTERISTIC_DISCOVERY)
-    return;
-
-  bool updateDeviceState = updateCommandedDeviceState();
-
-  if (m_deviceState == DeviceState::State::ConfigurationMode)
-  {
-    return;
-  }
-
-  if (DeviceState::deviceStateRequiresGameStartData(m_deviceState))
-    updateAwaitingGameStartData();
-
-  if (DeviceState::deviceStateRequiresTurnSequenceData(m_deviceState))
-    updateTurnSequence();
-
-  if (DeviceState::deviceStateRequiresTimeData(m_deviceState))
-    updateTimer();
-
-  if (updateDeviceState)
-    m_displayManager->setDisplayMode(m_deviceState);
-
-  if (buttonAction == ButtonInputType::DoubleButtonPress &&
-      DeviceState::isStateSkipEligible(m_deviceState))
-  {
-    m_interface->toggleSkippedState();
-  }
-
-  if (isActiveTurn() && buttonAction == ButtonInputType::ButtonPress)
-    sendEndTurn();
+  // Manually run the runtime processor task's update function to ensure it runs after all other tasks have been updated and cleaned up
+  m_context->runtimeProcessor->update(m_context, m_runtime);
 }

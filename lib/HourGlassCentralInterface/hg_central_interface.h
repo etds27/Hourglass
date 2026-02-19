@@ -4,6 +4,7 @@
 // #include "device_manager.h"
 #include "device_state.h"
 #include "device_config.h"
+#include "device_runtime.h"
 
 namespace DeviceState {
     enum State;
@@ -69,6 +70,7 @@ public:
     void registerDeviceLEDOffsetWriteCallback(std::function<void(bool write)> callback);
     void registerDeviceLEDCountChangedCallback(std::function<void(uint8_t count)> callback);
     void registerDeviceLEDCountWriteCallback(std::function<void(bool write)> callback);
+    void registerDeviceMotorNotificationCallback(std::function<void(NotificationEvent event)> callback);
 
 
     virtual void sendDeviceName(const char *name) = 0;
@@ -106,4 +108,5 @@ protected:
     std::function<void(bool write)> m_deviceLEDOffsetWriteChangeCallback;
     std::function<void(uint8_t count)> m_deviceLEDCountChangeCallback;
     std::function<void(bool write)> m_deviceLEDCountWriteChangeCallback;
+    std::function<void(NotificationEvent event)> m_deviceMotorNotificationCallback;
 };
