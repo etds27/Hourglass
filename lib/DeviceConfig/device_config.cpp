@@ -7,7 +7,34 @@ namespace
 {
     // Local logger tag for this module
     const LogString loggerTag = "DeviceConfigurator";
+
+    DeviceConfig_v3 migrate2to3(const DeviceConfig_v2 &v2) {
+        DeviceConfig_v3 v3;
+        v3.version = 3;
+        strncpy(v3.name, v2.name, MAX_NAME_LENGTH - 1);
+        v3.name[MAX_NAME_LENGTH - 1] = '\0';
+        v3.ledOffset = 0;
+        v3.ledCount = 16;
+        return v3;
+    }
+
+    DeviceConfig_v4 migrate3to4(const DeviceConfig_v3 &v3) {
+        DeviceConfig_v4 v4;
+        v4.version = 4;
+        strncpy(v4.name, v3.name, MAX_NAME_LENGTH - 1);
+        v4.name[MAX_NAME_LENGTH - 1] = '\0';
+        v4.ledOffset = v3.ledOffset;
+        v4.ledCount = v3.ledCount;
+        v4.buttonPin = 255;
+        v4.lightPin = 255;
+        v4.motorPin = 255;
+        return v4;
+    }
 }
+
+
+
+
 
 // Write the main device configuration to EEPROM
 void DeviceConfigurator::writeConfig(const DeviceConfig &config)
@@ -18,16 +45,10 @@ void DeviceConfigurator::writeConfig(const DeviceConfig &config)
         return;
     }
 
-    // Write the config struct to EEPROM at static location
-    EEPROM.put(DEVICE_CONFIG_LOCATION, config);
-
-    // Commit changes to EEPROM and log result
-    if (!EEPROM.commit()) {
-        logger.error(loggerTag, ": Failed to commit device config to EEPROM");
-    } else {
-        logger.info(loggerTag, ": Device config written successfully");
-    }
+    writeConfig<DeviceConfig>(config);
 }
+
+
 
 // Update only the device name in EEPROM
 void DeviceConfigurator::writeName(const char *name)
@@ -73,6 +94,42 @@ void DeviceConfigurator::writeLEDCount(uint8_t count)
     writeConfig(config);
 }
 
+void DeviceConfigurator::writeButtonPin(uint8_t pin)
+{
+    DeviceConfig config = readConfig();
+    config.buttonPin = pin;
+    if (config.buttonPin != pin) {
+        logger.info(loggerTag, ": Button pin unchanged");
+        return;
+    }
+    logger.info(loggerTag, ": Button pin updated to: ", config.buttonPin);
+    writeConfig(config);
+}
+
+void DeviceConfigurator::writeLightPin(uint8_t pin)
+{
+    DeviceConfig config = readConfig();
+    config.lightPin = pin;
+    if (config.lightPin != pin) {
+        logger.info(loggerTag, ": Light pin unchanged");
+        return;
+    }
+    logger.info(loggerTag, ": Light pin updated to: ", config.lightPin);
+    writeConfig(config);
+}
+
+void DeviceConfigurator::writeMotorPin(uint8_t pin)
+{
+    DeviceConfig config = readConfig();
+    config.motorPin = pin;
+    if (config.motorPin != pin) {
+        logger.info(loggerTag, ": Motor pin unchanged");
+        return;
+    }
+    logger.info(loggerTag, ": Motor pin updated to: ", config.motorPin);
+    writeConfig(config);
+}
+
 // Write a dynamic color configuration to EEPROM
 // If index is UINT16_MAX (default), append to end of stored configs
 void DeviceConfigurator::writeColorConfig(const ColorConfig &colorConfig, uint16_t index)
@@ -101,26 +158,91 @@ void DeviceConfigurator::writeColorConfig(const ColorConfig &colorConfig, uint16
     }
 }
 
+uint8_t DeviceConfigurator::readConfigVersion()
+{
+    uint8_t version = 0;
+    EEPROM.get(DEVICE_CONFIG_VERSION_LOCATION, version);
+    return version;
+}
+
+uint8_t DeviceConfigurator::readVersion()
+{
+    return readConfigVersion();
+}
+
+void DeviceConfigurator::writeVersion(uint8_t version)
+{
+    EEPROM.put(DEVICE_CONFIG_VERSION_LOCATION, version);
+    EEPROM.commit();
+}
+
+DeviceConfig DeviceConfigurator::migrateConfig(uint8_t storedVersion)
+{
+    if (storedVersion == DEVICE_CONFIG_VERSION) {
+        logger.info(loggerTag, ": Stored config version matches current version (", DEVICE_CONFIG_VERSION, "), migration complete");
+        return readConfig<DeviceConfig>();
+    }
+
+    if (storedVersion < 2 || storedVersion == 0xFF || storedVersion > DEVICE_CONFIG_VERSION) {
+        logger.warning(loggerTag, ": Invalid stored config version (", storedVersion, "), resetting to default config");
+        DeviceConfig defaultConfig = DeviceConfig{};
+        defaultConfig.version = DEVICE_CONFIG_VERSION;
+        strncpy(defaultConfig.name, "Default", MAX_NAME_LENGTH - 1);
+        defaultConfig.name[MAX_NAME_LENGTH - 1] = '\0';
+        writeConfig<DeviceConfig>(defaultConfig);
+        return defaultConfig;
+    }
+
+    logger.info(loggerTag, ": Starting migration step for schema version ", storedVersion);
+
+    if (storedVersion == 2) {
+        DeviceConfig_v2 v2 = readConfig<DeviceConfig_v2>();
+        logger.info(loggerTag, ": Migrating config 2 -> 3");
+        DeviceConfig_v3 v3 = migrate2to3(v2);
+        writeConfig<DeviceConfig_v3>(v3);
+    } else if (storedVersion == 3) {
+        DeviceConfig_v3 v3 = readConfig<DeviceConfig_v3>();
+        logger.info(loggerTag, ": Migrating config 3 -> 4");
+        DeviceConfig_v4 v4 = migrate3to4(v3);
+        writeConfig<DeviceConfig_v4>(v4);
+    }
+
+    return migrateConfig(storedVersion + 1);
+}
+
 // Read the main device configuration from EEPROM
 DeviceConfig DeviceConfigurator::readConfig()
 {
-    DeviceConfig config = DeviceConfig{};
-    EEPROM.get(DEVICE_CONFIG_LOCATION, config);
+    uint8_t storedVersion = readConfigVersion();
 
-    // Handle invalid or uninitialized EEPROM
-    if (config.version != DEVICE_CONFIG_VERSION) {
-        config = DeviceConfig{};
-        logger.warning(loggerTag, ": Invalid device config version, initializing defaults");
-        config.version = DEVICE_CONFIG_VERSION;
-        strncpy(config.name, "Default", MAX_NAME_LENGTH);
-
-        // Save default config back to EEPROM
-        writeConfig(config);
+    // Handle invalid, uninitialized (0xFF / < 2), or downgraded EEPROM
+    if (storedVersion < 2 || storedVersion == 0xFF || storedVersion > DEVICE_CONFIG_VERSION) {
+        logger.warning(loggerTag, ": Invalid/uninitialized/downgraded device config version (", storedVersion, "), initializing defaults");
+        DeviceConfig defaultConfig = DeviceConfig{};
+        defaultConfig.version = DEVICE_CONFIG_VERSION;
+        strncpy(defaultConfig.name, "Default", MAX_NAME_LENGTH - 1);
+        defaultConfig.name[MAX_NAME_LENGTH - 1] = '\0';
+        writeConfig<DeviceConfig>(defaultConfig);
+        printConfig(defaultConfig);
+        return defaultConfig;
     }
 
+    // Stepwise migration if stored version is out of date
+    if (storedVersion < DEVICE_CONFIG_VERSION) {
+        DeviceConfig migratedConfig = migrateConfig(storedVersion);
+        printConfig(migratedConfig);
+        return migratedConfig;
+    }
+
+    // Current version
+    DeviceConfig config = readConfig<DeviceConfig>();
     printConfig(config);
     return config;
 }
+
+
+
+
 
 // Read only the device name from EEPROM
 void DeviceConfigurator::readName(char *name, size_t maxLength)
@@ -205,6 +327,24 @@ uint8_t DeviceConfigurator::readLEDCount()
     return config.ledCount;
 }
 
+uint8_t DeviceConfigurator::readButtonPin()
+{
+    DeviceConfig config = readConfig();
+    return config.buttonPin;
+}
+
+uint8_t DeviceConfigurator::readLightPin()
+{
+    DeviceConfig config = readConfig();
+    return config.lightPin;
+}
+
+uint8_t DeviceConfigurator::readMotorPin()
+{
+    DeviceConfig config = readConfig();
+    return config.motorPin;
+}
+
 // Read the header for dynamic color configs
 ColorConfigHeader DeviceConfigurator::readColorConfigHeader()
 {
@@ -232,6 +372,9 @@ void DeviceConfigurator::printConfig(const DeviceConfig &config)
     logger.info(loggerTag, "Name:         ", config.name);
     logger.info(loggerTag, "LED Offset:   ", config.ledOffset);
     logger.info(loggerTag, "LED Count:    ", config.ledCount);
+    logger.info(loggerTag, "Button Pin:   ", config.buttonPin);
+    logger.info(loggerTag, "Light Pin:    ", config.lightPin);
+    logger.info(loggerTag, "Motor Pin:    ", config.motorPin);
     logger.info(loggerTag, "=====================");
 }
 
